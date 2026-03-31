@@ -3,63 +3,84 @@ import { signIn } from "@/auth";
 export default function LoginPage() {
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
+      className="fixed inset-0 flex items-center justify-center"
       style={{ background: "var(--bg)" }}
     >
-      {/* Background glow */}
+      {/* Radial glow top */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59,130,246,0.08), transparent)",
+          background:
+            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(59,130,246,0.1), transparent 70%)",
         }}
       />
 
-      <div className="relative w-full max-w-sm px-4">
-        {/* Card */}
-        <div
-          className="rounded-2xl p-8"
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <span
-              className="inline-block text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-md mb-5"
-              style={{ background: "var(--blue-dim)", color: "var(--blue)", border: "1px solid var(--blue-border)" }}
-            >
-              CMS
-            </span>
-            <h1 className="text-xl font-semibold mb-2" style={{ color: "var(--text)" }}>
-              Content Manager
-            </h1>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Sign in to your workspace
-            </p>
-          </div>
-
-          {/* Google sign in */}
-          <form
-            action={async () => {
-              "use server";
-              await signIn("google", { redirectTo: "/" });
+      {/* Card */}
+      <div
+        className="relative w-full max-w-sm mx-4 rounded-2xl p-8"
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
+        }}
+      >
+        {/* Logo badge */}
+        <div className="flex justify-center mb-6">
+          <span
+            className="text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-lg"
+            style={{
+              background: "var(--blue-dim)",
+              color: "var(--blue)",
+              border: "1px solid var(--blue-border)",
             }}
           >
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-3 px-5 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{ background: "#fff", color: "#1a1a1a" }}
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-          </form>
+            CMS
+          </span>
+        </div>
 
-          <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)" }}>
-            Access restricted to authorized accounts only.
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-xl font-semibold mb-1.5" style={{ color: "var(--text)" }}>
+            Content Manager
+          </h1>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            Sign in to your workspace
           </p>
         </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+            continue with
+          </span>
+          <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+        </div>
+
+        {/* Google button */}
+        <form
+          action={async () => {
+            "use server";
+            await signIn("google", { redirectTo: "/" });
+          }}
+        >
+          <button
+            type="submit"
+            className="w-full flex items-center justify-center gap-3 px-5 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              background: "#fff",
+              color: "#1a1a1a",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+            }}
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
+        </form>
+
+        <p className="text-center text-xs mt-5" style={{ color: "var(--text-muted)" }}>
+          Access restricted to authorized accounts only.
+        </p>
       </div>
     </div>
   );

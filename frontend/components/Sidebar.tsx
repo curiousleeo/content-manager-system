@@ -30,6 +30,7 @@ const manage = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  if (pathname === "/login") return null;
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
