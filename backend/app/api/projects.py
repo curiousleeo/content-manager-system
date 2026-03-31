@@ -1,0 +1,89 @@
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from typing import Optional
+from app.core.database import get_db
+from app.models.content import Project
+
+router = APIRouter()
+
+
+class ProjectCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    tone: Optional[str] = None
+    style: Optional[str] = None
+    avoid: Optional[str] = None
+    target_audience: Optional[str] = None
+    content_pillars: Optional[list[str]] = None
+    default_subreddits: Optional[list[str]] = None
+    default_platform: Optional[str] = "x"
+    posting_days: Optional[list[str]] = None
+    posting_times: Optional[list[str]] = None
+
+
+class ProjectUpdate(ProjectCreate):
+    name: Optional[str] = None
+
+
+def serialize(p: Project) -> dict:
+    return {
+        "id": p.id,
+        "name": p.name,
+        "description": p.description,
+        "tone": p.tone,
+        "style": p.style,
+        "avoid": p.avoid,
+        "target_audience": p.target_audience,
+        "content_pillars": p.content_pillars or [],
+        "default_subreddits": p.default_subreddits or [],
+        "default_platform": p.default_platform,
+        "posting_days": p.posting_days or [],
+        "posting_times": p.posting_times or [],
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+    }
+
+
+@router.get("/")
+def list_projects(db: Session = Depends(get_db)):
+    projects = db.query(Project).order_by(Project.created_at.desc()).all()
+    return {"projects": [serialize(p) for p in projects]}
+
+
+@router.post("/")
+def create_project(req: ProjectCreate, db: Session = Depends(get_db)):
+    project = Project(**req.model_dump())
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return serialize(project)
+
+
+@router.get("/{project_id}")
+def get_project(project_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return serialize(project)
+
+
+@router.patch("/{project_id}")
+def update_project(project_id: int, req: ProjectUpdate, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    for field, value in req.model_dump(exclude_none=True).items():
+        setattr(project, field, value)
+    db.commit()
+    db.refresh(project)
+    return serialize(project)
+
+
+@router.delete("/{project_id}")
+def delete_project(project_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    db.delete(project)
+    db.commit()
+    return {"status": "deleted"}
