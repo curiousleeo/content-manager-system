@@ -66,7 +66,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
   const greeting = firstName ? `${tod}, ${firstName}.` : `${tod}.`;
 
   return (
-    <div className="flex flex-col min-h-full" style={{ padding: "40px 44px", maxWidth: "1200px" }}>
+    <div className="flex flex-col min-h-full" style={{ padding: "40px 48px" }}>
 
       {/* ── Greeting ── */}
       <div className="mb-10">
@@ -117,7 +117,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
       </div>
 
       {/* ── Two-column — flex-1 so it fills remaining height ── */}
-      <div className="flex gap-6 flex-1 min-h-0">
+      <div className="flex gap-8 flex-1 min-h-0">
 
         {/* Left */}
         <div className="flex flex-col flex-1 min-w-0 gap-6">
@@ -245,7 +245,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
         </div>
 
         {/* Right — fixed width, fills height */}
-        <div className="flex flex-col gap-5" style={{ width: "300px", minWidth: "300px" }}>
+        <div className="flex flex-col gap-5" style={{ width: "360px", minWidth: "360px" }}>
 
           {/* Quick actions */}
           <div className="rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px" }}>
