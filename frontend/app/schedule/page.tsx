@@ -16,10 +16,10 @@ interface ScheduledPost {
 }
 
 const statusConfig = {
-  scheduled:  { label: "Scheduled",  color: "var(--yellow)", bg: "var(--yellow-dim)", border: "rgba(234,179,8,0.25)"  },
-  posted:     { label: "Posted",     color: "var(--green)",  bg: "var(--green-dim)",  border: "rgba(16,185,129,0.25)" },
-  failed:     { label: "Failed",     color: "var(--red)",    bg: "var(--red-dim)",    border: "rgba(239,68,68,0.25)"  },
-  cancelled:  { label: "Cancelled",  color: "var(--text-muted)", bg: "var(--surface-3)", border: "var(--border)"     },
+  scheduled:  { label: "Scheduled",  color: "var(--yellow)",     bg: "var(--yellow-dim)", border: "var(--yellow-border)" },
+  posted:     { label: "Posted",     color: "var(--green)",      bg: "var(--green-dim)",  border: "var(--green-border)"  },
+  failed:     { label: "Failed",     color: "var(--red)",        bg: "var(--red-dim)",    border: "var(--red-border)"    },
+  cancelled:  { label: "Cancelled",  color: "var(--text-muted)", bg: "var(--surface-3)",  border: "var(--border-2)"      },
 };
 
 export default function SchedulePage() {
@@ -74,36 +74,38 @@ export default function SchedulePage() {
 
   return (
     <div className="p-8 max-w-2xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-1">
-        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "var(--blue-dim)", color: "var(--blue)" }}>05</span>
-        <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>Schedule</h2>
+      {/* Page header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[11px] font-mono tabular-nums" style={{ color: "var(--text-subtle)" }}>05</span>
+          <h2 className="text-[20px] font-semibold tracking-tight" style={{ color: "var(--text)" }}>Schedule</h2>
+        </div>
+        <p className="text-[13px] ml-6" style={{ color: "var(--text-muted)" }}>
+          Post immediately or pick a time. Manage your queue below.
+        </p>
       </div>
-      <p className="text-sm mb-8 ml-9" style={{ color: "var(--text-muted)" }}>
-        Post immediately or pick a time. Manage your queue below.
-      </p>
 
       {/* Compose card */}
       <div className="rounded-xl overflow-hidden mb-6" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         <div className="p-5 flex flex-col gap-4">
           <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Post</label>
+            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>Post</label>
             <textarea
               value={text}
               onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }}
               rows={4}
               placeholder="Your post content."
-              className="w-full px-4 py-3 text-sm rounded-lg resize-none"
+              className="w-full px-4 py-3 rounded-lg resize-none"
             />
             <div className="flex justify-end mt-1">
-              <span className="text-xs font-mono" style={{ color: text.length > 280 ? "var(--red)" : "var(--text-muted)" }}>
+              <span className="text-[12px] font-mono" style={{ color: text.length > 280 ? "var(--red)" : "var(--text-muted)" }}>
                 {text.length}/280
               </span>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
               Schedule for
             </label>
             <input
@@ -111,7 +113,7 @@ export default function SchedulePage() {
               value={scheduledAt}
               min={minDatetime}
               onChange={(e) => setScheduledAt(e.target.value)}
-              className="px-4 py-2.5 text-sm rounded-lg"
+              className="px-4 py-2.5 rounded-lg"
             />
           </div>
         </div>
@@ -120,7 +122,7 @@ export default function SchedulePage() {
           <button
             onClick={schedule}
             disabled={loading || !text.trim() || !scheduledAt || text.length > 280}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm transition-all disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] transition-all disabled:opacity-40"
             style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : <CalendarClock size={13} />}
@@ -129,8 +131,8 @@ export default function SchedulePage() {
           <button
             onClick={postNow}
             disabled={posting || !text.trim() || text.length > 280}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
-            style={{ background: "var(--blue)", color: "#fff" }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
+            style={{ background: "var(--accent)", color: "#fff" }}
           >
             {posting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
             {posting ? "Posting..." : "Post now"}
@@ -138,42 +140,42 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {error   && <p className="text-xs mb-4 font-mono" style={{ color: "var(--red)"   }}>{error}</p>}
-      {success && <p className="text-xs mb-4 font-mono" style={{ color: "var(--green)" }}>{success}</p>}
+      {error   && <p className="text-[12px] mb-4 font-mono" style={{ color: "var(--red)"   }}>{error}</p>}
+      {success && <p className="text-[12px] mb-4 font-mono" style={{ color: "var(--green)" }}>{success}</p>}
 
       {/* Queue */}
       <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
           <div className="flex items-center gap-2">
             <Clock size={13} style={{ color: "var(--text-muted)" }} />
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-dim)" }}>Queue</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--text-dim)" }}>Queue</p>
           </div>
-          <button onClick={loadPosts} className="flex items-center gap-1.5 text-xs transition-colors hover:opacity-80" style={{ color: "var(--text-muted)" }}>
+          <button onClick={loadPosts} className="flex items-center gap-1.5 text-[12px] transition-colors hover:opacity-80" style={{ color: "var(--text-muted)" }}>
             <RefreshCw size={11} />
             Refresh
           </button>
         </div>
 
         {posts.length === 0 ? (
-          <p className="px-5 py-6 text-sm text-center" style={{ color: "var(--text-muted)" }}>No scheduled posts.</p>
+          <p className="px-5 py-6 text-[13px] text-center" style={{ color: "var(--text-muted)" }}>No scheduled posts.</p>
         ) : (
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
             {posts.map((post) => {
               const s = statusConfig[post.status] ?? statusConfig.cancelled;
               return (
                 <div key={post.id} className="px-5 py-4">
-                  <p className="text-sm mb-2.5 line-clamp-2" style={{ color: "var(--text)" }}>{post.text}</p>
+                  <p className="text-[13px] mb-2.5 line-clamp-2" style={{ color: "var(--text)" }}>{post.text}</p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
+                      <span className="text-[11px] px-2 py-0.5 rounded font-medium" style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
                         {s.label}
                       </span>
-                      <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+                      <span className="text-[12px] font-mono" style={{ color: "var(--text-muted)" }}>
                         {new Date(post.scheduled_at).toLocaleString()}
                       </span>
                     </div>
                     {post.status === "scheduled" && (
-                      <button onClick={() => cancel(post.id)} className="flex items-center gap-1 text-xs transition-colors hover:opacity-80" style={{ color: "var(--text-muted)" }}>
+                      <button onClick={() => cancel(post.id)} className="flex items-center gap-1 text-[12px] transition-colors hover:opacity-80" style={{ color: "var(--text-muted)" }}>
                         <XIcon size={11} /> Cancel
                       </button>
                     )}

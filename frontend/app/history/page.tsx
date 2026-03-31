@@ -14,11 +14,11 @@ interface Post {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  scheduled: { label: "Scheduled", color: "var(--yellow)",     bg: "var(--yellow-dim)", border: "rgba(234,179,8,0.25)"  },
-  posted:    { label: "Posted",    color: "var(--green)",      bg: "var(--green-dim)",  border: "rgba(16,185,129,0.25)" },
-  failed:    { label: "Failed",    color: "var(--red)",        bg: "var(--red-dim)",    border: "rgba(239,68,68,0.25)"  },
-  cancelled: { label: "Cancelled", color: "var(--text-muted)", bg: "var(--surface-3)",  border: "var(--border)"         },
-  draft:     { label: "Draft",     color: "var(--text-dim)",   bg: "var(--surface-2)",  border: "var(--border)"         },
+  scheduled: { label: "Scheduled", color: "var(--yellow)",     bg: "var(--yellow-dim)", border: "var(--yellow-border)" },
+  posted:    { label: "Posted",    color: "var(--green)",      bg: "var(--green-dim)",  border: "var(--green-border)"  },
+  failed:    { label: "Failed",    color: "var(--red)",        bg: "var(--red-dim)",    border: "var(--red-border)"    },
+  cancelled: { label: "Cancelled", color: "var(--text-muted)", bg: "var(--surface-3)",  border: "var(--border-2)"      },
+  draft:     { label: "Draft",     color: "var(--text-dim)",   bg: "var(--surface-2)",  border: "var(--border-2)"      },
 };
 
 export default function HistoryPage() {
@@ -38,26 +38,27 @@ export default function HistoryPage() {
 
   return (
     <div className="p-8 max-w-4xl">
+      {/* Page header */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-1" style={{ color: "var(--text)" }}>History</h2>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>All scheduled and posted content.</p>
+        <h2 className="text-[20px] font-semibold tracking-tight mb-1" style={{ color: "var(--text)" }}>History</h2>
+        <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>All scheduled and posted content.</p>
       </div>
 
       <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         {/* Table header */}
         <div
-          className="grid text-xs font-semibold uppercase tracking-wide px-5 py-3"
+          className="grid px-5 py-3"
           style={{
             gridTemplateColumns: "1fr 120px 120px 160px",
             borderBottom: "1px solid var(--border)",
             background: "var(--surface-2)",
-            color: "var(--text-muted)",
           }}
         >
-          <span>Post</span>
-          <span>Platform</span>
-          <span>Status</span>
-          <span>Date</span>
+          {["Post", "Platform", "Status", "Date"].map((col) => (
+            <span key={col} className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+              {col}
+            </span>
+          ))}
         </div>
 
         {loading ? (
@@ -65,7 +66,7 @@ export default function HistoryPage() {
             <Loader2 size={18} className="animate-spin" style={{ color: "var(--text-muted)" }} />
           </div>
         ) : posts.length === 0 ? (
-          <p className="px-5 py-10 text-sm text-center" style={{ color: "var(--text-muted)" }}>
+          <p className="px-5 py-10 text-[13px] text-center" style={{ color: "var(--text-muted)" }}>
             No posts yet.
           </p>
         ) : (
@@ -76,22 +77,22 @@ export default function HistoryPage() {
               return (
                 <div
                   key={post.id}
-                  className="grid items-center px-5 py-4 text-sm"
+                  className="grid items-center px-5 py-4"
                   style={{ gridTemplateColumns: "1fr 120px 120px 160px" }}
                 >
-                  <p className="pr-6 line-clamp-2" style={{ color: "var(--text)" }}>{post.text}</p>
-                  <span className="text-xs font-mono uppercase" style={{ color: "var(--text-muted)" }}>
+                  <p className="pr-6 line-clamp-2 text-[13px]" style={{ color: "var(--text)" }}>{post.text}</p>
+                  <span className="text-[12px] font-mono uppercase" style={{ color: "var(--text-muted)" }}>
                     {post.platform}
                   </span>
                   <span>
                     <span
-                      className="text-xs px-2 py-0.5 rounded font-medium"
+                      className="text-[11px] px-2 py-0.5 rounded font-medium"
                       style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}
                     >
                       {s.label}
                     </span>
                   </span>
-                  <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+                  <span className="text-[12px] font-mono" style={{ color: "var(--text-muted)" }}>
                     {date ? new Date(date).toLocaleString() : "—"}
                   </span>
                 </div>

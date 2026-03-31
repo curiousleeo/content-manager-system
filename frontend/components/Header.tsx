@@ -1,80 +1,53 @@
 import { auth, signOut } from "@/auth";
-import { Search, Bell, Settings } from "lucide-react";
 
 export default async function Header() {
   const session = await auth();
   if (!session?.user) return null;
 
-  const initials = session.user.name
-    ? session.user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : session.user.email?.[0].toUpperCase() ?? "U";
+  const name = session.user.name ?? session.user.email ?? "User";
+  const initials = name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <header
-      className="h-14 shrink-0 flex items-center gap-4 px-6"
-      style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)" }}
+      className="h-[52px] shrink-0 flex items-center justify-between px-6"
+      style={{
+        borderBottom: "1px solid var(--border)",
+        background: "rgba(13,13,13,0.8)",
+        backdropFilter: "blur(12px)",
+      }}
     >
-      {/* Search */}
-      <div className="flex-1 max-w-lg relative">
-        <Search
-          size={14}
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ color: "var(--text-muted)" }}
-        />
-        <input
-          type="text"
-          placeholder="Topic, task, account, publication..."
-          className="w-full pl-9 pr-4 py-2 text-sm rounded-lg"
-          style={{
-            background: "var(--bg)",
-            border: "1px solid var(--border)",
-            color: "var(--text)",
-          }}
-        />
+      {/* Left: breadcrumb placeholder */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[13px]" style={{ color: "var(--text-muted)" }}>Content Manager</span>
       </div>
 
-      <div className="flex items-center gap-3 ml-auto">
-        {/* Bell */}
-        <button
-          className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:bg-white/5"
-          style={{ color: "var(--text-muted)" }}
+      {/* Right: avatar + user */}
+      <div className="flex items-center gap-3">
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/login" });
+          }}
         >
-          <Bell size={15} />
-        </button>
+          <button
+            type="submit"
+            className="text-[12px] px-3 py-1.5 rounded-md transition-all hover:bg-white/5"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Sign out
+          </button>
+        </form>
 
-        {/* Settings */}
-        <button
-          className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:bg-white/5"
-          style={{ color: "var(--text-muted)" }}
-        >
-          <Settings size={15} />
-        </button>
-
-        {/* Divider */}
-        <div className="w-px h-5" style={{ background: "var(--border)" }} />
-
-        {/* Avatar + signout */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background: "var(--blue)", color: "#fff" }}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
+            style={{ background: "var(--accent)", color: "#fff" }}
           >
             {initials}
           </div>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <button
-              type="submit"
-              className="text-xs transition-colors hover:text-slate-200"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Sign out
-            </button>
-          </form>
+          <span className="text-[13px]" style={{ color: "var(--text-dim)" }}>
+            {name.split(" ")[0]}
+          </span>
         </div>
       </div>
     </header>

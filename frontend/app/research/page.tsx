@@ -51,14 +51,16 @@ export default function ResearchPage() {
 
   return (
     <div className="p-8 max-w-3xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-1">
-        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "var(--blue-dim)", color: "var(--blue)" }}>01</span>
-        <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>Research</h2>
+      {/* Page header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[11px] font-mono tabular-nums" style={{ color: "var(--text-subtle)" }}>01</span>
+          <h2 className="text-[20px] font-semibold tracking-tight" style={{ color: "var(--text)" }}>Research</h2>
+        </div>
+        <p className="text-[13px] ml-6" style={{ color: "var(--text-muted)" }}>
+          Search across sources to find what people are talking about.
+        </p>
       </div>
-      <p className="text-sm mb-8 ml-9" style={{ color: "var(--text-muted)" }}>
-        Search across sources to find what people are talking about.
-      </p>
 
       {/* Card */}
       <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
@@ -66,7 +68,7 @@ export default function ResearchPage() {
           {/* Content pillars */}
           {pillars.length > 0 && (
             <div>
-              <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              <p className="text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
                 Content pillars
               </p>
               <div className="flex gap-2 flex-wrap">
@@ -74,9 +76,9 @@ export default function ResearchPage() {
                   <button
                     key={pillar}
                     onClick={() => run(pillar)}
-                    className="px-3 py-1.5 rounded-lg text-xs transition-colors"
+                    className="px-3 py-1.5 rounded-md text-[12px] transition-colors"
                     style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--blue-border)"; (e.currentTarget as HTMLElement).style.color = "var(--blue)"; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-border)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-2)"; (e.currentTarget as HTMLElement).style.color = "var(--text-dim)"; }}
                   >
                     {pillar}
@@ -88,7 +90,7 @@ export default function ResearchPage() {
 
           {/* Query */}
           <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
               Topic or keyword
             </label>
             <div className="flex gap-3">
@@ -100,14 +102,14 @@ export default function ResearchPage() {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && run()}
                   placeholder="e.g. crypto perps, self-custody trading"
-                  className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-lg"
                 />
               </div>
               <button
                 onClick={() => run()}
                 disabled={loading || !query.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
-                style={{ background: "var(--blue)", color: "#fff" }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
+                style={{ background: "var(--accent)", color: "#fff" }}
               >
                 {loading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
                 {loading ? "Searching..." : "Search"}
@@ -117,7 +119,7 @@ export default function ResearchPage() {
 
           {/* Sources */}
           <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
               Sources
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -125,11 +127,11 @@ export default function ResearchPage() {
                 <button
                   key={s}
                   onClick={() => toggleSource(s)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-mono transition-all"
+                  className="px-3 py-1.5 rounded-md text-[12px] font-mono transition-all"
                   style={{
-                    background: sources.includes(s) ? "var(--blue-dim)" : "var(--surface-3)",
-                    border: `1px solid ${sources.includes(s) ? "var(--blue-border)" : "var(--border)"}`,
-                    color: sources.includes(s) ? "var(--blue)" : "var(--text-muted)",
+                    background: sources.includes(s) ? "var(--accent-dim)" : "var(--surface-3)",
+                    border: `1px solid ${sources.includes(s) ? "var(--accent-border)" : "var(--border-2)"}`,
+                    color: sources.includes(s) ? "var(--accent)" : "var(--text-muted)",
                   }}
                 >
                   {SOURCE_LABELS[s]}
@@ -141,7 +143,7 @@ export default function ResearchPage() {
           {/* Reddit subreddits */}
           {sources.includes("reddit") && (
             <div>
-              <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
                 Subreddits (comma-separated)
               </label>
               <input
@@ -149,20 +151,20 @@ export default function ResearchPage() {
                 value={subreddits}
                 onChange={(e) => setSubreddits(e.target.value)}
                 placeholder="e.g. CryptoCurrency, trading, DeFi"
-                className="w-full px-4 py-2.5 text-sm rounded-lg"
+                className="w-full px-4 py-2.5 rounded-lg"
               />
             </div>
           )}
         </div>
       </div>
 
-      {error && <p className="text-xs mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
+      {error && <p className="text-[12px] mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
 
       {/* Results */}
       {results && (
         <div className="mt-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm" style={{ color: "var(--text-dim)" }}>
+            <p className="text-[13px]" style={{ color: "var(--text-dim)" }}>
               Results for{" "}
               <span style={{ color: "var(--text)" }} className="font-medium">
                 {(results as { query?: string }).query}
@@ -170,8 +172,8 @@ export default function ResearchPage() {
             </p>
             <button
               onClick={() => router.push("/insights")}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all"
-              style={{ background: "var(--blue)", color: "#fff" }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-md text-[12px] font-medium transition-all"
+              style={{ background: "var(--accent)", color: "#fff" }}
             >
               Analyze insights <ArrowRight size={12} />
             </button>
@@ -181,25 +183,25 @@ export default function ResearchPage() {
             {Object.entries((results as { data?: Record<string, unknown> }).data ?? {}).map(([source, items]) => (
               <div key={source} className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <div className="px-4 py-2.5 flex items-center" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-dim)" }}>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--text-dim)" }}>
                     {SOURCE_LABELS[source] ?? source}
                   </span>
                 </div>
                 {Array.isArray(items) && items.length > 0 ? (
                   <div className="divide-y" style={{ borderColor: "var(--border)" }}>
                     {(items as Record<string, unknown>[]).slice(0, 5).map((item, i) => (
-                      <div key={i} className="px-4 py-3 text-sm" style={{ color: "var(--text-dim)" }}>
+                      <div key={i} className="px-4 py-3 text-[13px]" style={{ color: "var(--text-dim)" }}>
                         {source === "x" && <p>{String(item.text ?? "")}</p>}
                         {source === "reddit" && (
                           <div>
                             <p className="font-medium mb-0.5" style={{ color: "var(--text)" }}>{String(item.title ?? "")}</p>
-                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>r/{String(item.subreddit ?? "")} · {Number(item.score ?? 0)} pts</p>
+                            <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>r/{String(item.subreddit ?? "")} · {Number(item.score ?? 0)} pts</p>
                           </div>
                         )}
                         {source === "youtube" && (
                           <div>
                             <p className="font-medium mb-0.5" style={{ color: "var(--text)" }}>{String(item.title ?? "")}</p>
-                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{String(item.channel ?? "")}</p>
+                            <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>{String(item.channel ?? "")}</p>
                           </div>
                         )}
                         {source === "google_trends" && <p>{String(item)}</p>}
@@ -207,7 +209,7 @@ export default function ResearchPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="px-4 py-3 text-sm" style={{ color: "var(--text-muted)" }}>No results</p>
+                  <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-muted)" }}>No results</p>
                 )}
               </div>
             ))}

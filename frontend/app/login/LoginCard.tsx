@@ -19,7 +19,7 @@ export default function LoginCard({ signInAction }: Props) {
       <div
         className="absolute inset-0 rounded-2xl"
         style={{
-          background: "radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.15), transparent 70%)",
+          background: "radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.15), transparent 70%)",
           filter: "blur(20px)",
           transform: "translateY(-10px) scale(1.05)",
         }}
@@ -29,10 +29,10 @@ export default function LoginCard({ signInAction }: Props) {
       <div
         className="relative rounded-2xl p-8"
         style={{
-          background: "rgba(8, 10, 18, 0.85)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: "rgba(14,14,14,0.9)",
+          border: "1px solid rgba(255,255,255,0.08)",
           backdropFilter: "blur(24px)",
-          boxShadow: "0 0 0 1px rgba(59,130,246,0.08), 0 32px 80px rgba(0,0,0,0.8)",
+          boxShadow: "0 0 0 1px rgba(167,139,250,0.08), 0 32px 80px rgba(0,0,0,0.8)",
         }}
       >
         {/* Top badge */}
@@ -45,9 +45,9 @@ export default function LoginCard({ signInAction }: Props) {
           <span
             className="text-[10px] font-bold tracking-[0.2em] uppercase px-3 py-1.5 rounded-lg"
             style={{
-              background: "rgba(59,130,246,0.1)",
-              color: "rgba(59,130,246,0.9)",
-              border: "1px solid rgba(59,130,246,0.2)",
+              background: "var(--accent-dim)",
+              color: "var(--accent)",
+              border: "1px solid var(--accent-border)",
               letterSpacing: "0.18em",
             }}
           >
