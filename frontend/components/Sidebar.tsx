@@ -4,8 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Search, Lightbulb, PenLine,
-  CheckCircle, CalendarClock, FolderOpen, History,
-  Zap, Plus,
+  CheckCircle, CalendarClock, FolderOpen, History, LogOut,
 } from "lucide-react";
 
 const manage = [
@@ -22,6 +21,13 @@ const pipeline = [
   { href: "/schedule", label: "Schedule", icon: CalendarClock },
 ];
 
+interface User { name: string; initials: string; }
+
+interface Props {
+  user?: User | null;
+  signOutAction?: () => Promise<void>;
+}
+
 function NavItem({
   href, label, icon: Icon, active,
 }: {
@@ -30,30 +36,24 @@ function NavItem({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] transition-all duration-100 relative"
+      className="flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] transition-all duration-100"
       style={{
-        background: active ? "rgba(255,255,255,0.07)" : "transparent",
-        color: active ? "var(--text)" : "var(--text-muted)",
+        background: active ? "var(--accent-dim)" : "transparent",
+        color: active ? "var(--accent-light)" : "var(--text-muted)",
         fontWeight: active ? 500 : 400,
       }}
     >
-      {active && (
-        <div
-          className="absolute left-0 top-[6px] bottom-[6px] w-[2px] rounded-r-full"
-          style={{ background: "var(--accent)" }}
-        />
-      )}
       <Icon
-        size={14}
+        size={15}
         strokeWidth={active ? 2 : 1.75}
-        style={{ color: active ? "var(--text)" : "var(--text-muted)", opacity: active ? 1 : 0.7 }}
+        style={{ opacity: active ? 1 : 0.7 }}
       />
       {label}
     </Link>
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ user, signOutAction }: Props) {
   const pathname = usePathname();
   if (pathname === "/login") return null;
 
@@ -62,42 +62,39 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="w-[220px] shrink-0 flex flex-col h-full select-none"
-      style={{
-        borderRight: "1px solid var(--border)",
-        background: "var(--bg)",
-      }}
+      className="w-[240px] shrink-0 flex flex-col h-full select-none"
+      style={{ borderRight: "1px solid var(--border)", background: "var(--sidebar)" }}
     >
       {/* Logo */}
       <div
-        className="h-[52px] flex items-center px-4 shrink-0"
+        className="h-[52px] flex items-center px-5 shrink-0"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div className="flex items-center gap-2.5">
           <div
-            className="w-[26px] h-[26px] rounded-lg flex items-center justify-center shrink-0"
+            className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[11px] font-semibold tracking-wide shrink-0"
             style={{
-              background: "var(--accent)",
-              boxShadow: "0 0 12px rgba(167,139,250,0.35)",
+              background: "linear-gradient(135deg, #7f77dd 0%, #534ab7 100%)",
+              color: "#fff",
             }}
           >
-            <Zap size={13} color="#fff" fill="#fff" />
+            CMS
           </div>
           <span
-            className="text-[13.5px] font-semibold tracking-tight"
-            style={{ color: "var(--text)", letterSpacing: "-0.01em" }}
+            className="text-[14px] font-medium"
+            style={{ color: "var(--text)" }}
           >
-            CMS
+            Content Manager
           </span>
         </div>
       </div>
 
       {/* Nav */}
-      <div className="flex-1 overflow-y-auto py-5 px-3 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-5">
         <nav className="flex flex-col gap-0.5">
           <p
-            className="text-[10px] font-bold uppercase px-3 mb-2"
-            style={{ color: "var(--text-subtle)", letterSpacing: "0.12em" }}
+            className="text-[10px] font-semibold uppercase px-2.5 mb-2"
+            style={{ color: "var(--text-subtle)", letterSpacing: "0.09em" }}
           >
             Overview
           </p>
@@ -108,8 +105,8 @@ export default function Sidebar() {
 
         <nav className="flex flex-col gap-0.5">
           <p
-            className="text-[10px] font-bold uppercase px-3 mb-2"
-            style={{ color: "var(--text-subtle)", letterSpacing: "0.12em" }}
+            className="text-[10px] font-semibold uppercase px-2.5 mb-2"
+            style={{ color: "var(--text-subtle)", letterSpacing: "0.09em" }}
           >
             Pipeline
           </p>
@@ -119,29 +116,48 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* New Post CTA */}
-      <div
-        className="p-3 shrink-0 relative"
-        style={{ borderTop: "1px solid var(--border)" }}
-      >
-        {/* Glow behind button */}
+      {/* User profile */}
+      {user && (
         <div
-          className="absolute inset-3 rounded-lg pointer-events-none"
-          style={{
-            background: "var(--accent)",
-            opacity: 0.15,
-            filter: "blur(12px)",
-          }}
-        />
-        <Link
-          href="/research"
-          className="relative flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
-          style={{ background: "var(--accent)", color: "#fff" }}
+          className="p-3 shrink-0"
+          style={{ borderTop: "1px solid var(--border)" }}
         >
-          <Plus size={14} strokeWidth={2.5} />
-          New post
-        </Link>
-      </div>
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg">
+            <div
+              className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px] font-semibold shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #7f77dd, #3c3489)",
+                color: "#fff",
+              }}
+            >
+              {user.initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-[13px] font-medium truncate"
+                style={{ color: "rgba(255,255,255,0.8)" }}
+              >
+                {user.name}
+              </p>
+              <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>
+                Admin · GTR
+              </p>
+            </div>
+            {signOutAction && (
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  title="Sign out"
+                  className="p-1.5 rounded-md transition-colors hover:bg-white/[0.08]"
+                  style={{ color: "var(--text-subtle)" }}
+                >
+                  <LogOut size={13} />
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

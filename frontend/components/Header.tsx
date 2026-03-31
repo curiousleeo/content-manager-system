@@ -1,54 +1,67 @@
-import { auth, signOut } from "@/auth";
+import Link from "next/link";
+import { auth } from "@/auth";
+import Breadcrumb from "./Breadcrumb";
+
+function CurrentDate() {
+  const label = new Date().toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  });
+  return (
+    <span
+      className="text-[11px] font-medium uppercase"
+      style={{ color: "var(--text-subtle)", letterSpacing: "0.07em" }}
+    >
+      {label}
+    </span>
+  );
+}
 
 export default async function Header() {
   const session = await auth();
   if (!session?.user) return null;
 
-  const name = session.user.name ?? session.user.email ?? "User";
-  const initials = name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
-
   return (
     <header
-      className="h-[52px] shrink-0 flex items-center justify-between px-6"
-      style={{
-        borderBottom: "1px solid var(--border)",
-        background: "rgba(13,13,13,0.8)",
-        backdropFilter: "blur(12px)",
-      }}
+      className="h-[52px] shrink-0 flex items-center justify-between px-8"
+      style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}
     >
-      {/* Left: breadcrumb placeholder */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[13px]" style={{ color: "var(--text-muted)" }}>Content Manager</span>
+      {/* Left: breadcrumb + date */}
+      <div className="flex items-center gap-5">
+        <Breadcrumb />
+        <CurrentDate />
       </div>
 
-      {/* Right: avatar + user */}
-      <div className="flex items-center gap-3">
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
+      {/* Right: actions */}
+      <div className="flex items-center gap-2">
+        <Link
+          href="/schedule"
+          className="text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all hover:bg-white/[0.07]"
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid var(--border-2)",
+            color: "var(--text-muted)",
           }}
         >
-          <button
-            type="submit"
-            className="text-[12px] px-3 py-1.5 rounded-md transition-all hover:bg-white/5"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Sign out
-          </button>
-        </form>
-
-        <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
-            style={{ background: "var(--accent)", color: "#fff" }}
-          >
-            {initials}
-          </div>
-          <span className="text-[13px]" style={{ color: "var(--text-dim)" }}>
-            {name.split(" ")[0]}
-          </span>
-        </div>
+          View calendar
+        </Link>
+        <button
+          className="text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all hover:bg-white/[0.07]"
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid var(--border-2)",
+            color: "var(--text-muted)",
+          }}
+        >
+          Import draft
+        </button>
+        <Link
+          href="/research"
+          className="flex items-center gap-1.5 text-[13px] font-medium px-4 py-1.5 rounded-lg transition-opacity hover:opacity-90"
+          style={{ background: "var(--accent)", color: "#fff" }}
+        >
+          <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+          New post
+        </Link>
       </div>
     </header>
   );

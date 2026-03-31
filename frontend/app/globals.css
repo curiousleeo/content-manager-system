@@ -1,37 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --bg:           #070708;
-  --surface:      #0e0e10;
-  --surface-2:    #131315;
-  --surface-3:    #1a1a1d;
-  --surface-4:    #202024;
-  --border:       rgba(255,255,255,0.08);
+  --bg:           #0b0b0e;
+  --sidebar:      #111115;
+  --surface:      #17171c;
+  --surface-2:    #1d1d23;
+  --surface-3:    #222228;
+  --surface-4:    #282830;
+  --border:       rgba(255,255,255,0.07);
   --border-2:     rgba(255,255,255,0.13);
-  --border-focus: rgba(167,139,250,0.45);
-  --text:         #f0f0f2;
-  --text-dim:     rgba(240,240,242,0.6);
-  --text-muted:   rgba(240,240,242,0.35);
-  --text-subtle:  rgba(240,240,242,0.18);
-  --accent:       #a78bfa;
-  --accent-dim:   rgba(167,139,250,0.1);
-  --accent-border:rgba(167,139,250,0.25);
+  --border-focus: rgba(127,119,221,0.45);
+  --text:         #e8e6f0;
+  --text-dim:     rgba(232,230,240,0.6);
+  --text-muted:   rgba(232,230,240,0.45);
+  --text-subtle:  rgba(232,230,240,0.25);
+  --accent:       #7f77dd;
+  --accent-light: #a89fe8;
+  --accent-dim:   rgba(127,119,221,0.12);
+  --accent-border:rgba(127,119,221,0.35);
+  --teal:         #1d9e75;
+  --teal-dim:     rgba(29,158,117,0.12);
+  --teal-text:    #3dc99a;
+  --teal-border:  rgba(29,158,117,0.3);
+  --amber:        #ef9f27;
+  --amber-dim:    rgba(239,159,39,0.12);
+  --amber-text:   #f5b84a;
+  --amber-border: rgba(239,159,39,0.28);
   --green:        #86efac;
   --green-dim:    rgba(134,239,172,0.09);
   --green-border: rgba(134,239,172,0.22);
-  --yellow:       #fde68a;
-  --yellow-dim:   rgba(253,230,138,0.09);
-  --yellow-border:rgba(253,230,138,0.22);
   --red:          #fca5a5;
   --red-dim:      rgba(252,165,165,0.09);
   --red-border:   rgba(252,165,165,0.22);
   --blue:         #93c5fd;
   --blue-dim:     rgba(147,197,253,0.09);
   --blue-border:  rgba(147,197,253,0.22);
+  --pink:         #d4537e;
+  --pink-dim:     rgba(212,83,126,0.12);
+  --pink-text:    #e87da6;
+  --pink-border:  rgba(212,83,126,0.3);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body { height: 100%; }
 
 body {
@@ -61,7 +71,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(167,139,250,0.08);
+  box-shadow: 0 0 0 3px rgba(127,119,221,0.08);
 }
 input::placeholder, textarea::placeholder { color: var(--text-muted); }
 input[type="datetime-local"] { color-scheme: dark; }
