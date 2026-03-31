@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { store } from "@/lib/store";
+import { Loader2, ArrowRight, X, ChevronRight } from "lucide-react";
 
 interface ReviewResult {
   passed: boolean;
@@ -13,33 +14,17 @@ interface ReviewResult {
   ai_likelihood: "low" | "medium" | "high";
 }
 
-const aiLikelihoodColor = {
-  low: "text-emerald-400",
-  medium: "text-yellow-400",
-  high: "text-red-400",
-};
-
-const aiLikelihoodBg = {
-  low: "bg-emerald-950 border-emerald-800",
-  medium: "bg-yellow-950 border-yellow-800",
-  high: "bg-red-950 border-red-800",
-};
-
 function scoreColor(s: number) {
-  if (s >= 8) return "text-emerald-400";
-  if (s >= 5) return "text-yellow-400";
-  return "text-red-400";
+  if (s >= 8) return "var(--green)";
+  if (s >= 5) return "var(--yellow)";
+  return "var(--red)";
 }
 
-function scoreBarWidth(s: number) {
-  return `${(s / 10) * 100}%`;
-}
-
-function scoreBarColor(s: number) {
-  if (s >= 8) return "bg-emerald-500";
-  if (s >= 5) return "bg-yellow-500";
-  return "bg-red-500";
-}
+const aiColors = {
+  low:    { color: "var(--green)",  bg: "var(--green-dim)",  border: "rgba(16,185,129,0.25)" },
+  medium: { color: "var(--yellow)", bg: "var(--yellow-dim)", border: "rgba(234,179,8,0.25)"  },
+  high:   { color: "var(--red)",    bg: "var(--red-dim)",    border: "rgba(239,68,68,0.25)"  },
+};
 
 export default function ReviewPage() {
   const router = useRouter();
@@ -68,136 +53,138 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <h2 className="text-xl font-semibold mb-1">04 — Review</h2>
-      <p className="text-zinc-500 text-sm mb-8">
+    <div className="p-8 max-w-2xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "var(--blue-dim)", color: "var(--blue)" }}>04</span>
+        <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>Review</h2>
+      </div>
+      <p className="text-sm mb-8 ml-9" style={{ color: "var(--text-muted)" }}>
         Check before it goes out. Catches weak angles and AI-sounding language.
       </p>
 
-      <div className="mb-5">
-        <label className="block text-xs text-zinc-600 font-mono mb-2 uppercase tracking-wide">
-          Post to review
-        </label>
-        <textarea
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            store.setContent(e.target.value);
-          }}
-          rows={5}
-          placeholder="Paste or edit your post here."
-          className="w-full bg-zinc-900 border border-zinc-700 rounded px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 resize-none"
-        />
-      </div>
-
-      <div className="flex gap-3 mb-8">
-        <button
-          onClick={check}
-          disabled={loading || !text.trim()}
-          className="px-5 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? "Checking..." : "Run review"}
-        </button>
-        {result?.passed && (
+      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="p-5">
+          <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Post to review
+          </label>
+          <textarea
+            value={text}
+            onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }}
+            rows={5}
+            placeholder="Paste or edit your post here."
+            className="w-full px-4 py-3 text-sm rounded-lg resize-none"
+          />
+        </div>
+        <div className="px-5 py-4 flex gap-3" style={{ borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
           <button
-            onClick={() => router.push("/schedule")}
-            className="px-5 py-2.5 border border-zinc-700 text-sm rounded hover:bg-zinc-800 transition-colors"
+            onClick={check}
+            disabled={loading || !text.trim()}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+            style={{ background: "var(--blue)", color: "#fff" }}
           >
-            Schedule →
+            {loading && <Loader2 size={13} className="animate-spin" />}
+            {loading ? "Checking..." : "Run review"}
           </button>
-        )}
+          {result?.passed && (
+            <button
+              onClick={() => router.push("/schedule")}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm transition-all"
+              style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
+            >
+              Schedule <ArrowRight size={12} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {error && <p className="text-red-400 text-sm mb-4 font-mono">{error}</p>}
+      {error && <p className="text-xs mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
 
       {result && (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 mt-6">
           {/* Score card */}
-          <div className="border border-zinc-800 rounded-lg p-5 bg-zinc-900">
-            <div className="flex items-end justify-between mb-4">
+          <div className="rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-xs font-mono text-zinc-600 uppercase tracking-wide mb-1">
-                  Quality score
-                </p>
+                <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: "var(--text-muted)" }}>Quality Score</p>
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-5xl font-bold tracking-tight ${scoreColor(result.score)}`}>
+                  <span className="text-5xl font-bold" style={{ color: scoreColor(result.score) }}>
                     {result.score}
                   </span>
-                  <span className="text-zinc-600 text-xl">/10</span>
+                  <span className="text-lg" style={{ color: "var(--text-muted)" }}>/10</span>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                {/* Pass/fail badge */}
+              <div className="flex flex-col gap-2 items-end">
                 <span
-                  className={`text-xs font-mono font-medium px-2.5 py-1 rounded border ${
-                    result.passed
-                      ? "bg-emerald-950 border-emerald-800 text-emerald-400"
-                      : "bg-red-950 border-red-900 text-red-400"
-                  }`}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-lg"
+                  style={{
+                    background: result.passed ? "var(--green-dim)" : "var(--red-dim)",
+                    border: `1px solid ${result.passed ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+                    color: result.passed ? "var(--green)" : "var(--red)",
+                  }}
                 >
                   {result.passed ? "Passed" : "Needs work"}
                 </span>
-                {/* AI likelihood badge */}
                 <span
-                  className={`text-xs font-mono px-2.5 py-1 rounded border ${aiLikelihoodBg[result.ai_likelihood]}`}
+                  className="text-xs px-2.5 py-1 rounded-lg"
+                  style={{
+                    background: aiColors[result.ai_likelihood].bg,
+                    border: `1px solid ${aiColors[result.ai_likelihood].border}`,
+                    color: aiColors[result.ai_likelihood].color,
+                  }}
                 >
-                  <span className={aiLikelihoodColor[result.ai_likelihood]}>
-                    AI:{" "}
-                  </span>
-                  <span className="text-zinc-400">{result.ai_likelihood}</span>
+                  AI: {result.ai_likelihood}
                 </span>
               </div>
             </div>
             {/* Score bar */}
-            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--surface-3)" }}>
               <div
-                className={`h-full rounded-full transition-all duration-500 ${scoreBarColor(result.score)}`}
-                style={{ width: scoreBarWidth(result.score) }}
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${(result.score / 10) * 100}%`, background: scoreColor(result.score) }}
               />
             </div>
           </div>
 
           {/* Issues */}
           {result.issues.length > 0 && (
-            <div>
-              <p className="text-xs font-mono text-red-600 uppercase tracking-wide mb-3">
-                Issues ({result.issues.length})
-              </p>
-              <ul className="flex flex-col gap-2">
+            <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--red)" }}>
+                  Issues ({result.issues.length})
+                </p>
+              </div>
+              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
                 {result.issues.map((issue, i) => (
-                  <li
-                    key={i}
-                    className="flex gap-3 text-sm text-zinc-300 bg-red-950/30 border border-red-900/40 rounded px-3 py-2.5"
-                  >
-                    <span className="text-red-500 shrink-0">×</span>
+                  <div key={i} className="flex gap-3 px-4 py-3 text-sm" style={{ color: "var(--text-dim)" }}>
+                    <X size={13} className="shrink-0 mt-0.5" style={{ color: "var(--red)" }} />
                     {issue}
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
           {/* Suggestions */}
           {result.suggestions.length > 0 && (
-            <div>
-              <p className="text-xs font-mono text-zinc-500 uppercase tracking-wide mb-3">
-                Suggestions
-              </p>
-              <ul className="flex flex-col gap-2">
+            <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-dim)" }}>
+                  Suggestions
+                </p>
+              </div>
+              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
                 {result.suggestions.map((s, i) => (
-                  <li key={i} className="flex gap-3 text-sm text-zinc-400">
-                    <span className="text-zinc-600 shrink-0 mt-0.5">→</span>
+                  <div key={i} className="flex gap-3 px-4 py-3 text-sm" style={{ color: "var(--text-dim)" }}>
+                    <ChevronRight size={13} className="shrink-0 mt-0.5" style={{ color: "var(--text-muted)" }} />
                     {s}
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
-          <button
-            onClick={() => router.push("/content")}
-            className="text-sm text-zinc-600 hover:text-zinc-400 transition-colors w-fit"
-          >
+          <button onClick={() => router.push("/content")} className="text-sm w-fit" style={{ color: "var(--text-muted)" }}>
             ← Back to generate
           </button>
         </div>

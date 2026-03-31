@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { store } from "@/lib/store";
+import { Loader2, ArrowRight, TrendingUp, TrendingDown, Sparkles, Hash, Crosshair } from "lucide-react";
 
 interface Insights {
   trending_topics: string[];
@@ -14,48 +15,18 @@ interface Insights {
   best_angles: string[];
 }
 
-const categoryConfig: {
-  key: keyof Insights;
-  label: string;
-  tagCls: string;
-  labelCls: string;
-}[] = [
-  {
-    key: "trending_topics",
-    label: "Trending now",
-    tagCls: "bg-emerald-950 border-emerald-800 text-emerald-300",
-    labelCls: "text-emerald-600",
-  },
-  {
-    key: "emerging_topics",
-    label: "About to trend",
-    tagCls: "bg-blue-950 border-blue-800 text-blue-300",
-    labelCls: "text-blue-600",
-  },
-  {
-    key: "dying_trends",
-    label: "Dying out",
-    tagCls: "bg-zinc-900 border-zinc-800 text-zinc-600 line-through",
-    labelCls: "text-zinc-600",
-  },
-  {
-    key: "key_themes",
-    label: "Key themes",
-    tagCls: "bg-zinc-900 border-zinc-700 text-zinc-300",
-    labelCls: "text-zinc-500",
-  },
-  {
-    key: "best_angles",
-    label: "Best angles",
-    tagCls: "bg-amber-950 border-amber-800 text-amber-300",
-    labelCls: "text-amber-600",
-  },
-];
+const categoryConfig = [
+  { key: "trending_topics",  label: "Trending now",    icon: TrendingUp,   tagStyle: { background: "var(--green-dim)", border: "1px solid rgba(16,185,129,0.25)", color: "var(--green)" }, labelColor: "var(--green)" },
+  { key: "emerging_topics",  label: "About to trend",  icon: Sparkles,     tagStyle: { background: "var(--blue-dim)",  border: "1px solid var(--blue-border)",       color: "var(--blue)"  }, labelColor: "var(--blue)"  },
+  { key: "dying_trends",     label: "Dying out",       icon: TrendingDown, tagStyle: { background: "var(--surface-3)", border: "1px solid var(--border)",            color: "var(--text-muted)", textDecoration: "line-through" }, labelColor: "var(--text-muted)" },
+  { key: "key_themes",       label: "Key themes",      icon: Hash,         tagStyle: { background: "var(--surface-2)", border: "1px solid var(--border-2)",           color: "var(--text-dim)"  }, labelColor: "var(--text-dim)"  },
+  { key: "best_angles",      label: "Best angles",     icon: Crosshair,    tagStyle: { background: "var(--yellow-dim)",border: "1px solid rgba(234,179,8,0.25)",      color: "var(--yellow)" }, labelColor: "var(--yellow)" },
+] as const;
 
-const sentimentColor: Record<string, string> = {
-  positive: "text-emerald-400",
-  negative: "text-red-400",
-  neutral: "text-zinc-400",
+const sentimentStyle: Record<string, { color: string; bg: string; border: string }> = {
+  positive: { color: "var(--green)",  bg: "var(--green-dim)",  border: "rgba(16,185,129,0.25)" },
+  negative: { color: "var(--red)",    bg: "var(--red-dim)",    border: "rgba(239,68,68,0.25)"  },
+  neutral:  { color: "var(--text-dim)", bg: "var(--surface-3)", border: "var(--border)"         },
 };
 
 export default function InsightsPage() {
@@ -68,8 +39,7 @@ export default function InsightsPage() {
   const [project, setProject] = useState<any>(null);
 
   useEffect(() => {
-    const data = store.getResearch();
-    setHasResearch(!!data);
+    setHasResearch(!!store.getResearch());
     const saved = store.getInsights();
     if (saved) setInsights(saved as Insights);
     setProject(store.getProject());
@@ -92,19 +62,20 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-1">02 — Insights</h2>
-      <p className="text-zinc-500 text-sm mb-8">
-        Analyze research findings to find angles worth writing about.
+    <div className="p-8 max-w-3xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "var(--blue-dim)", color: "var(--blue)" }}>02</span>
+        <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>Insights</h2>
+      </div>
+      <p className="text-sm mb-8 ml-9" style={{ color: "var(--text-muted)" }}>
+        Analyze findings to find angles worth writing about.
       </p>
 
       {!hasResearch && (
-        <div className="border border-zinc-800 rounded-lg p-4 text-sm text-zinc-500 mb-6">
-          No research data.{" "}
-          <button
-            onClick={() => router.push("/research")}
-            className="text-zinc-300 underline underline-offset-2"
-          >
+        <div className="rounded-xl p-4 mb-6 flex items-center gap-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <span className="text-sm" style={{ color: "var(--text-muted)" }}>No research data.</span>
+          <button onClick={() => router.push("/research")} className="text-sm underline underline-offset-2" style={{ color: "var(--blue)" }}>
             Run research first →
           </button>
         </div>
@@ -114,53 +85,56 @@ export default function InsightsPage() {
         <button
           onClick={analyze}
           disabled={loading || !hasResearch}
-          className="px-5 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+          style={{ background: "var(--blue)", color: "#fff" }}
         >
+          {loading && <Loader2 size={13} className="animate-spin" />}
           {loading ? "Analyzing..." : insights ? "Re-analyze" : "Analyze"}
         </button>
         {insights && (
           <button
             onClick={() => router.push("/content")}
-            className="px-5 py-2.5 border border-zinc-700 text-sm rounded hover:bg-zinc-800 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-dim)" }}
           >
-            Generate content →
+            Generate content <ArrowRight size={13} />
           </button>
         )}
       </div>
 
-      {error && <p className="text-red-400 text-sm mb-6 font-mono">{error}</p>}
+      {error && <p className="text-xs mb-6 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
 
       {insights && (
-        <div className="flex flex-col gap-6">
-          {/* Sentiment */}
-          <div className="flex items-center gap-3 pb-5 border-b border-zinc-800">
-            <span className="text-xs font-mono text-zinc-600 uppercase tracking-wide">
-              Sentiment
-            </span>
-            <span
-              className={`text-sm font-medium capitalize ${
-                sentimentColor[insights.sentiment] ?? "text-zinc-300"
-              }`}
-            >
-              {insights.sentiment}
-            </span>
+        <div className="flex flex-col gap-5">
+          {/* Sentiment badge */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Sentiment</span>
+            {(() => {
+              const s = sentimentStyle[insights.sentiment] ?? sentimentStyle.neutral;
+              return (
+                <span className="text-xs font-medium px-2.5 py-1 rounded-lg capitalize" style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
+                  {insights.sentiment}
+                </span>
+              );
+            })()}
           </div>
 
-          {/* Categories */}
-          {categoryConfig.map(({ key, label, tagCls, labelCls }) => {
-            const items = insights[key] as string[];
+          <div className="w-full h-px" style={{ background: "var(--border)" }} />
+
+          {categoryConfig.map(({ key, label, icon: Icon, tagStyle, labelColor }) => {
+            const items = insights[key as keyof Insights] as string[];
             if (!items?.length) return null;
             return (
               <div key={key}>
-                <p className={`text-xs font-mono uppercase tracking-wide mb-2.5 ${labelCls}`}>
-                  {label}
-                </p>
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon size={13} style={{ color: labelColor }} />
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: labelColor }}>
+                    {label}
+                  </p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {items.map((item, i) => (
-                    <span
-                      key={i}
-                      className={`border rounded px-3 py-1 text-sm ${tagCls}`}
-                    >
+                    <span key={i} className="px-3 py-1.5 rounded-lg text-xs" style={tagStyle}>
                       {item}
                     </span>
                   ))}

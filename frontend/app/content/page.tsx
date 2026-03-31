@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { store } from "@/lib/store";
+import { Loader2, ArrowRight, Send } from "lucide-react";
 
 export default function ContentPage() {
   const router = useRouter();
@@ -13,16 +14,11 @@ export default function ContentPage() {
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState("");
   const [posted, setPosted] = useState<{ tweet_id: string } | null>(null);
-  const [charCount, setCharCount] = useState(0);
 
   useEffect(() => {
     const saved = store.getContent();
     if (saved) setText(saved);
   }, []);
-
-  useEffect(() => {
-    setCharCount(text.length);
-  }, [text]);
 
   async function generate() {
     if (!topic.trim()) return;
@@ -59,94 +55,104 @@ export default function ContentPage() {
     store.setContent(val);
   }
 
+  const charCount = text.length;
   const overLimit = charCount > 280;
 
   return (
-    <div className="max-w-2xl">
-      <h2 className="text-xl font-semibold mb-1">03 — Generate</h2>
-      <p className="text-zinc-500 text-sm mb-8">
+    <div className="p-8 max-w-2xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "var(--blue-dim)", color: "var(--blue)" }}>03</span>
+        <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>Generate</h2>
+      </div>
+      <p className="text-sm mb-8 ml-9" style={{ color: "var(--text-muted)" }}>
         Generate a post based on your research and insights.
       </p>
 
-      {/* Topic */}
-      <div className="mb-5">
-        <label className="block text-xs text-zinc-600 font-mono mb-2 uppercase tracking-wide">
-          Topic / angle
-        </label>
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && generate()}
-            placeholder="e.g. Why self-custody matters for active traders"
-            className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
-          />
+      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="p-5 flex flex-col gap-5">
+          {/* Topic input */}
+          <div>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Topic / angle
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && generate()}
+                placeholder="e.g. Why self-custody matters for active traders"
+                className="flex-1 px-4 py-2.5 text-sm rounded-lg"
+              />
+              <button
+                onClick={generate}
+                disabled={loading || !topic.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+                style={{ background: "var(--blue)", color: "#fff" }}
+              >
+                {loading ? <Loader2 size={13} className="animate-spin" /> : null}
+                {loading ? "Generating..." : "Generate"}
+              </button>
+            </div>
+          </div>
+
+          {/* Editor */}
+          <div>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Post
+            </label>
+            <textarea
+              value={text}
+              onChange={(e) => handleTextChange(e.target.value)}
+              rows={6}
+              placeholder="Generated content will appear here. You can edit it directly."
+              className="w-full px-4 py-3 text-sm rounded-lg resize-none"
+            />
+            <div className="flex justify-end mt-1.5">
+              <span className="text-xs font-mono" style={{ color: overLimit ? "var(--red)" : "var(--text-muted)" }}>
+                {charCount}/280
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer actions */}
+        <div className="px-5 py-4 flex items-center gap-3" style={{ borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
           <button
-            onClick={generate}
-            disabled={loading || !topic.trim()}
-            className="px-5 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            onClick={() => { store.setContent(text); router.push("/review"); }}
+            disabled={!text.trim()}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all disabled:opacity-40"
+            style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
           >
-            {loading ? "Generating..." : "Generate"}
+            Review <ArrowRight size={12} />
+          </button>
+          <button
+            onClick={() => { store.setContent(text); router.push("/schedule"); }}
+            disabled={!text.trim()}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all disabled:opacity-40"
+            style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
+          >
+            Schedule <ArrowRight size={12} />
+          </button>
+          <button
+            onClick={postNow}
+            disabled={posting || !text.trim() || overLimit}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40 ml-auto"
+            style={{ background: "var(--blue)", color: "#fff" }}
+          >
+            {posting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+            {posting ? "Posting..." : "Post now"}
           </button>
         </div>
       </div>
 
-      {/* Editor */}
-      <div className="mb-3">
-        <label className="block text-xs text-zinc-600 font-mono mb-2 uppercase tracking-wide">
-          Post
-        </label>
-        <textarea
-          value={text}
-          onChange={(e) => handleTextChange(e.target.value)}
-          rows={6}
-          placeholder="Generated content will appear here. You can edit it directly."
-          className="w-full bg-zinc-900 border border-zinc-700 rounded px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 resize-none"
-        />
-        <div className="flex justify-end">
-          <span className={`text-xs font-mono ${overLimit ? "text-red-400" : "text-zinc-600"}`}>
-            {charCount}/280
-          </span>
-        </div>
-      </div>
-
-      {error && <p className="text-red-400 text-sm mb-4 font-mono">{error}</p>}
+      {error && <p className="text-xs mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
       {posted && (
-        <p className="text-green-400 text-sm mb-4 font-mono">
+        <p className="text-xs mt-4 font-mono" style={{ color: "var(--green)" }}>
           Posted — tweet ID: {posted.tweet_id}
         </p>
       )}
-
-      <div className="flex gap-3">
-        <button
-          onClick={() => {
-            store.setContent(text);
-            router.push("/review");
-          }}
-          disabled={!text.trim()}
-          className="px-5 py-2.5 border border-zinc-600 text-sm rounded hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          Review →
-        </button>
-        <button
-          onClick={() => {
-            store.setContent(text);
-            router.push("/schedule");
-          }}
-          disabled={!text.trim()}
-          className="px-5 py-2.5 border border-zinc-600 text-sm rounded hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          Schedule →
-        </button>
-        <button
-          onClick={postNow}
-          disabled={posting || !text.trim() || overLimit}
-          className="ml-auto px-5 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {posting ? "Posting..." : "Post now"}
-        </button>
-      </div>
     </div>
   );
 }

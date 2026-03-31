@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
 interface Post {
   id: string;
@@ -12,12 +13,12 @@ interface Post {
   status: string;
 }
 
-const statusColor: Record<string, string> = {
-  scheduled: "text-yellow-400",
-  posted: "text-green-400",
-  failed: "text-red-400",
-  cancelled: "text-zinc-600",
-  draft: "text-zinc-400",
+const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  scheduled: { label: "Scheduled", color: "var(--yellow)",     bg: "var(--yellow-dim)", border: "rgba(234,179,8,0.25)"  },
+  posted:    { label: "Posted",    color: "var(--green)",      bg: "var(--green-dim)",  border: "rgba(16,185,129,0.25)" },
+  failed:    { label: "Failed",    color: "var(--red)",        bg: "var(--red-dim)",    border: "rgba(239,68,68,0.25)"  },
+  cancelled: { label: "Cancelled", color: "var(--text-muted)", bg: "var(--surface-3)",  border: "var(--border)"         },
+  draft:     { label: "Draft",     color: "var(--text-dim)",   bg: "var(--surface-2)",  border: "var(--border)"         },
 };
 
 export default function HistoryPage() {
@@ -29,46 +30,76 @@ export default function HistoryPage() {
       try {
         const res = await api.scheduler.list() as { posts: Post[] };
         setPosts(res.posts);
-      } catch {
-        // backend not running
-      } finally {
-        setLoading(false);
-      }
+      } catch { /* backend not running */ }
+      finally { setLoading(false); }
     }
     load();
   }, []);
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-1">History</h2>
-      <p className="text-zinc-400 text-sm mb-8">All scheduled and posted content.</p>
+    <div className="p-8 max-w-4xl">
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-1" style={{ color: "var(--text)" }}>History</h2>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>All scheduled and posted content.</p>
+      </div>
 
-      {loading ? (
-        <p className="text-zinc-500 text-sm">Loading...</p>
-      ) : posts.length === 0 ? (
-        <p className="text-zinc-600 text-sm">No posts yet.</p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {posts.map((post) => (
-            <div
-              key={post.id}
-              className="bg-zinc-900 border border-zinc-800 rounded p-4"
-            >
-              <p className="text-sm text-zinc-200 mb-3">{post.text}</p>
-              <div className="flex gap-6 text-xs font-mono text-zinc-500">
-                <span className={statusColor[post.status]}>{post.status}</span>
-                {post.scheduled_at && (
-                  <span>scheduled: {new Date(post.scheduled_at).toLocaleString()}</span>
-                )}
-                {post.posted_at && (
-                  <span>posted: {new Date(post.posted_at).toLocaleString()}</span>
-                )}
-                <span className="text-zinc-600">{post.platform}</span>
-              </div>
-            </div>
-          ))}
+      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        {/* Table header */}
+        <div
+          className="grid text-xs font-semibold uppercase tracking-wide px-5 py-3"
+          style={{
+            gridTemplateColumns: "1fr 120px 120px 160px",
+            borderBottom: "1px solid var(--border)",
+            background: "var(--surface-2)",
+            color: "var(--text-muted)",
+          }}
+        >
+          <span>Post</span>
+          <span>Platform</span>
+          <span>Status</span>
+          <span>Date</span>
         </div>
-      )}
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 size={18} className="animate-spin" style={{ color: "var(--text-muted)" }} />
+          </div>
+        ) : posts.length === 0 ? (
+          <p className="px-5 py-10 text-sm text-center" style={{ color: "var(--text-muted)" }}>
+            No posts yet.
+          </p>
+        ) : (
+          <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+            {posts.map((post) => {
+              const s = statusConfig[post.status] ?? statusConfig.draft;
+              const date = post.posted_at ?? post.scheduled_at;
+              return (
+                <div
+                  key={post.id}
+                  className="grid items-center px-5 py-4 text-sm"
+                  style={{ gridTemplateColumns: "1fr 120px 120px 160px" }}
+                >
+                  <p className="pr-6 line-clamp-2" style={{ color: "var(--text)" }}>{post.text}</p>
+                  <span className="text-xs font-mono uppercase" style={{ color: "var(--text-muted)" }}>
+                    {post.platform}
+                  </span>
+                  <span>
+                    <span
+                      className="text-xs px-2 py-0.5 rounded font-medium"
+                      style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}
+                    >
+                      {s.label}
+                    </span>
+                  </span>
+                  <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+                    {date ? new Date(date).toLocaleString() : "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

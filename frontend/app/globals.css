@@ -1,11 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #f4f4f5;
+  --bg:        #080d18;
+  --surface:   #0f1729;
+  --surface-2: #141f35;
+  --surface-3: #1a2640;
+  --border:    #1e3048;
+  --border-2:  #243650;
+  --text:      #cbd5e1;
+  --text-dim:  #94a3b8;
+  --text-muted:#4b6080;
+  --blue:      #3b82f6;
+  --blue-dim:  rgba(59,130,246,0.12);
+  --blue-border: rgba(59,130,246,0.3);
+  --green:     #10b981;
+  --green-dim: rgba(16,185,129,0.12);
+  --orange:    #f97316;
+  --orange-dim:rgba(249,115,22,0.12);
+  --red:       #ef4444;
+  --red-dim:   rgba(239,68,68,0.12);
+  --yellow:    #eab308;
+  --yellow-dim:rgba(234,179,8,0.12);
 }
 
+* { box-sizing: border-box; }
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Inputs */
+input, textarea, select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  transition: border-color 0.15s, background 0.15s;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--blue-border);
+  background: var(--surface-2);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* datetime-local color scheme */
+input[type="datetime-local"] {
+  color-scheme: dark;
 }

@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { store } from "@/lib/store";
+import { Search, ArrowRight, Loader2 } from "lucide-react";
 
 const SOURCES = ["x", "reddit", "youtube", "google_trends"];
+const SOURCE_LABELS: Record<string, string> = {
+  x: "X (Twitter)", reddit: "Reddit", youtube: "YouTube", google_trends: "Google Trends",
+};
 
 export default function ResearchPage() {
   const router = useRouter();
@@ -15,20 +19,16 @@ export default function ResearchPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState("");
-  const [project, setProject] = useState(store.getProject());
   const [pillars, setPillars] = useState<string[]>([]);
 
   useEffect(() => {
     const p = store.getProject();
-    setProject(p);
     if (p?.content_pillars?.length) setPillars(p.content_pillars);
     if (p?.default_subreddits?.length) setSubreddits(p.default_subreddits.join(", "));
   }, []);
 
   function toggleSource(s: string) {
-    setSources((prev) =>
-      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-    );
+    setSources((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
   }
 
   async function run(q?: string) {
@@ -50,143 +50,168 @@ export default function ResearchPage() {
   }
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-start justify-between mb-2">
-        <h2 className="text-xl font-semibold">01 — Research</h2>
-        {project && (
-          <span className="text-xs font-mono text-zinc-500 border border-zinc-800 rounded px-2 py-1">
-            {project.name}
-          </span>
-        )}
+    <div className="p-8 max-w-3xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "var(--blue-dim)", color: "var(--blue)" }}>01</span>
+        <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>Research</h2>
       </div>
-      <p className="text-zinc-500 text-sm mb-8">Search across sources to find what people are talking about.</p>
+      <p className="text-sm mb-8 ml-9" style={{ color: "var(--text-muted)" }}>
+        Search across sources to find what people are talking about.
+      </p>
 
-      {/* Content pillars shortcut */}
-      {pillars.length > 0 && (
-        <div className="mb-5">
-          <p className="text-xs text-zinc-600 font-mono uppercase tracking-wide mb-2">Content pillars</p>
-          <div className="flex gap-2 flex-wrap">
-            {pillars.map((pillar) => (
+      {/* Card */}
+      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="p-5 flex flex-col gap-5">
+          {/* Content pillars */}
+          {pillars.length > 0 && (
+            <div>
+              <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                Content pillars
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {pillars.map((pillar) => (
+                  <button
+                    key={pillar}
+                    onClick={() => run(pillar)}
+                    className="px-3 py-1.5 rounded-lg text-xs transition-colors"
+                    style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--blue-border)"; (e.currentTarget as HTMLElement).style.color = "var(--blue)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-2)"; (e.currentTarget as HTMLElement).style.color = "var(--text-dim)"; }}
+                  >
+                    {pillar}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Query */}
+          <div>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Topic or keyword
+            </label>
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--text-muted)" }} />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && run()}
+                  placeholder="e.g. crypto perps, self-custody trading"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg"
+                />
+              </div>
               <button
-                key={pillar}
-                onClick={() => run(pillar)}
-                className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-300 hover:border-zinc-500 hover:text-zinc-100 transition-colors"
+                onClick={() => run()}
+                disabled={loading || !query.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+                style={{ background: "var(--blue)", color: "#fff" }}
               >
-                {pillar}
+                {loading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+                {loading ? "Searching..." : "Search"}
               </button>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Query */}
-      <div className="mb-5">
-        <label className="block text-xs text-zinc-600 font-mono mb-2 uppercase tracking-wide">
-          Topic or keyword
-        </label>
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && run()}
-            placeholder="e.g. crypto perps, self-custody trading"
-            className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
-          />
-          <button
-            onClick={() => run()}
-            disabled={loading || !query.trim()}
-            className="px-5 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? "Searching..." : "Search"}
-          </button>
-        </div>
-      </div>
+          {/* Sources */}
+          <div>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Sources
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {SOURCES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => toggleSource(s)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-mono transition-all"
+                  style={{
+                    background: sources.includes(s) ? "var(--blue-dim)" : "var(--surface-3)",
+                    border: `1px solid ${sources.includes(s) ? "var(--blue-border)" : "var(--border)"}`,
+                    color: sources.includes(s) ? "var(--blue)" : "var(--text-muted)",
+                  }}
+                >
+                  {SOURCE_LABELS[s]}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Sources */}
-      <div className="mb-5">
-        <label className="block text-xs text-zinc-600 font-mono mb-2 uppercase tracking-wide">Sources</label>
-        <div className="flex gap-3 flex-wrap">
-          {SOURCES.map((s) => (
-            <button
-              key={s}
-              onClick={() => toggleSource(s)}
-              className={`px-3 py-1.5 rounded border text-sm font-mono transition-colors ${
-                sources.includes(s)
-                  ? "border-zinc-400 text-zinc-100 bg-zinc-800"
-                  : "border-zinc-700 text-zinc-500 hover:border-zinc-600"
-              }`}
-            >
-              {s === "google_trends" ? "Google Trends" : s === "x" ? "X (Twitter)" : s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
+          {/* Reddit subreddits */}
+          {sources.includes("reddit") && (
+            <div>
+              <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                Subreddits (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={subreddits}
+                onChange={(e) => setSubreddits(e.target.value)}
+                placeholder="e.g. CryptoCurrency, trading, DeFi"
+                className="w-full px-4 py-2.5 text-sm rounded-lg"
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {sources.includes("reddit") && (
-        <div className="mb-8">
-          <label className="block text-xs text-zinc-600 font-mono mb-2 uppercase tracking-wide">
-            Subreddits (comma-separated)
-          </label>
-          <input
-            type="text"
-            value={subreddits}
-            onChange={(e) => setSubreddits(e.target.value)}
-            placeholder="e.g. CryptoCurrency, trading, DeFi"
-            className="w-full bg-zinc-900 border border-zinc-700 rounded px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
-          />
-        </div>
-      )}
+      {error && <p className="text-xs mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
 
-      {error && <p className="text-red-400 text-sm mb-6 font-mono">{error}</p>}
-
+      {/* Results */}
       {results && (
-        <div className="mt-4">
+        <div className="mt-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-zinc-400">
-              Results for <span className="text-zinc-200 font-medium">{(results as { query?: string }).query}</span>
+            <p className="text-sm" style={{ color: "var(--text-dim)" }}>
+              Results for{" "}
+              <span style={{ color: "var(--text)" }} className="font-medium">
+                {(results as { query?: string }).query}
+              </span>
             </p>
             <button
               onClick={() => router.push("/insights")}
-              className="text-sm px-4 py-2 border border-zinc-600 rounded hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all"
+              style={{ background: "var(--blue)", color: "#fff" }}
             >
-              Analyze insights →
+              Analyze insights <ArrowRight size={12} />
             </button>
           </div>
-          {Object.entries((results as { data?: Record<string, unknown> }).data ?? {}).map(([source, items]) => (
-            <div key={source} className="mb-6">
-              <p className="text-xs font-mono text-zinc-500 uppercase tracking-wide mb-2">
-                {source === "x" ? "X (Twitter)" : source === "google_trends" ? "Google Trends" : source}
-              </p>
-              {Array.isArray(items) && items.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {(items as Record<string, unknown>[]).slice(0, 5).map((item, i) => (
-                    <div key={i} className="bg-zinc-900 border border-zinc-800 rounded p-3 text-sm text-zinc-300">
-                      {source === "x" && <p>{String(item.text ?? "")}</p>}
-                      {source === "reddit" && (
-                        <div>
-                          <p className="font-medium text-zinc-200">{String(item.title ?? "")}</p>
-                          <p className="text-zinc-500 text-xs mt-1">r/{String(item.subreddit ?? "")} · {Number(item.score ?? 0)} pts</p>
-                        </div>
-                      )}
-                      {source === "youtube" && (
-                        <div>
-                          <p className="font-medium text-zinc-200">{String(item.title ?? "")}</p>
-                          <p className="text-zinc-500 text-xs mt-1">{String(item.channel ?? "")}</p>
-                        </div>
-                      )}
-                      {source === "google_trends" && <p>{String(item)}</p>}
-                      {typeof item === "object" && item !== null && (item as Record<string, unknown>).error ? (
-                        <p className="text-red-400 text-xs">{String((item as Record<string, unknown>).error)}</p>
-                      ) : null}
-                    </div>
-                  ))}
+
+          <div className="flex flex-col gap-3">
+            {Object.entries((results as { data?: Record<string, unknown> }).data ?? {}).map(([source, items]) => (
+              <div key={source} className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="px-4 py-2.5 flex items-center" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-dim)" }}>
+                    {SOURCE_LABELS[source] ?? source}
+                  </span>
                 </div>
-              ) : (
-                <p className="text-zinc-600 text-sm">No results</p>
-              )}
-            </div>
-          ))}
+                {Array.isArray(items) && items.length > 0 ? (
+                  <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+                    {(items as Record<string, unknown>[]).slice(0, 5).map((item, i) => (
+                      <div key={i} className="px-4 py-3 text-sm" style={{ color: "var(--text-dim)" }}>
+                        {source === "x" && <p>{String(item.text ?? "")}</p>}
+                        {source === "reddit" && (
+                          <div>
+                            <p className="font-medium mb-0.5" style={{ color: "var(--text)" }}>{String(item.title ?? "")}</p>
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>r/{String(item.subreddit ?? "")} · {Number(item.score ?? 0)} pts</p>
+                          </div>
+                        )}
+                        {source === "youtube" && (
+                          <div>
+                            <p className="font-medium mb-0.5" style={{ color: "var(--text)" }}>{String(item.title ?? "")}</p>
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{String(item.channel ?? "")}</p>
+                          </div>
+                        )}
+                        {source === "google_trends" && <p>{String(item)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="px-4 py-3 text-sm" style={{ color: "var(--text-muted)" }}>No results</p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
