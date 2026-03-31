@@ -66,17 +66,17 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
   const greeting = firstName ? `${tod}, ${firstName}.` : `${tod}.`;
 
   return (
-    <div className="flex flex-col min-h-full" style={{ padding: "40px 48px" }}>
+    <div className="flex flex-col min-h-full" style={{ padding: "48px 56px" }}>
 
       {/* ── Greeting ── */}
       <div className="mb-10">
         <h1
-          className="font-semibold mb-2.5"
-          style={{ fontSize: "32px", letterSpacing: "-0.028em", color: "var(--text)" }}
+          className="font-semibold mb-3"
+          style={{ fontSize: "34px", letterSpacing: "-0.03em", color: "var(--text)" }}
         >
           {greeting}
         </h1>
-        <p style={{ fontSize: "15px", color: "var(--text-muted)", lineHeight: 1.6 }}>
+        <p style={{ fontSize: "15px", color: "var(--text-muted)", lineHeight: 1.65 }}>
           {stepsCompleted === 0
             ? "Your pipeline is empty — pick a step below to start creating your first post."
             : `${stepsCompleted} of 5 pipeline steps complete.`}
@@ -84,7 +84,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-3 gap-5 mb-12">
         {[
           { label: "Pipeline",  labelColor: "var(--accent-light)", topColor: "var(--accent)", progColor: "var(--accent)",
             value: stepsCompleted, denom: "/ 5 steps", sub: stepsCompleted === 0 ? "No active post in progress" : `${stepsCompleted} steps done`, progress: (stepsCompleted / 5) * 100 },
@@ -96,19 +96,19 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
           <div
             key={label}
             className="rounded-xl relative overflow-hidden"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "22px 24px 20px" }}
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "28px 30px 26px" }}
           >
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: topColor }} />
-            <p className="font-semibold uppercase mb-4" style={{ fontSize: "11px", color: labelColor, letterSpacing: "0.1em" }}>
+            <p className="font-semibold uppercase mb-5" style={{ fontSize: "11px", color: labelColor, letterSpacing: "0.1em" }}>
               {label}
             </p>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span style={{ fontSize: "40px", fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text)" }}>
+            <div className="flex items-baseline gap-2.5 mb-2.5">
+              <span style={{ fontSize: "42px", fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text)" }}>
                 {value}
               </span>
               <span style={{ fontSize: "16px", color: "var(--text-muted)" }}>{denom}</span>
             </div>
-            <p className="mb-5" style={{ fontSize: "13px", color: "var(--text-muted)" }}>{sub}</p>
+            <p className="mb-6" style={{ fontSize: "13.5px", color: "var(--text-muted)" }}>{sub}</p>
             <div className="h-[3px] rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: progColor }} />
             </div>
@@ -117,14 +117,14 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
       </div>
 
       {/* ── Two-column — flex-1 so it fills remaining height ── */}
-      <div className="flex gap-8 flex-1 min-h-0">
+      <div className="flex gap-10 flex-1 min-h-0">
 
         {/* Left */}
-        <div className="flex flex-col flex-1 min-w-0 gap-6">
+        <div className="flex flex-col flex-1 min-w-0 gap-8">
 
           {/* Pipeline */}
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <p className="font-semibold uppercase" style={{ fontSize: "11.5px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>
                 Content pipeline
               </p>
@@ -143,7 +143,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
                       href={href}
                       className="flex items-center gap-5 rounded-xl transition-all duration-150 group"
                       style={{
-                        padding: "16px 20px",
+                        padding: "20px 24px",
                         background: isActive ? "rgba(127,119,221,0.07)" : "var(--surface)",
                         border: `1px solid ${isActive ? "var(--accent-border)" : "var(--border)"}`,
                       }}
@@ -157,7 +157,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
                       }}
                     >
                       <div
-                        className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[13px] font-semibold shrink-0"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-[14px] font-semibold shrink-0"
                         style={{
                           background: isDone ? "var(--teal-dim)" : isActive ? "var(--accent-dim)" : "rgba(255,255,255,0.05)",
                           color:      isDone ? "var(--teal-text)" : isActive ? "var(--accent-light)" : "var(--text-subtle)",
@@ -204,7 +204,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
                     </Link>
 
                     {i < steps.length - 1 && (
-                      <div className="w-px h-2.5" style={{ background: "var(--border)", marginLeft: "38px" }} />
+                      <div className="w-px h-3" style={{ background: "var(--border)", marginLeft: "44px" }} />
                     )}
                   </div>
                 );
@@ -214,7 +214,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
 
           {/* Recent posts — flex-1 so it stretches to fill remaining left-column height */}
           <div className="flex flex-col flex-1">
-            <p className="text-[11px] font-semibold uppercase mb-4" style={{ color: "var(--text-muted)", letterSpacing: "0.08em" }}>
+            <p className="font-semibold uppercase mb-5" style={{ fontSize: "11.5px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>
               Recent posts
             </p>
             <div
@@ -245,29 +245,29 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
         </div>
 
         {/* Right — fixed width, fills height */}
-        <div className="flex flex-col gap-5" style={{ width: "360px", minWidth: "360px" }}>
+        <div className="flex flex-col gap-6" style={{ width: "400px", minWidth: "400px" }}>
 
           {/* Quick actions */}
-          <div className="rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px" }}>
+          <div className="rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "24px" }}>
             <p className="font-semibold uppercase mb-5" style={{ fontSize: "11.5px", color: "var(--text-subtle)", letterSpacing: "0.09em" }}>
               Quick actions
             </p>
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-3">
               {quickActions.map(({ href, label, sub, iconBg, iconColor, icon: QIcon }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-3.5 rounded-lg transition-all group"
-                  style={{ padding: "11px 13px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}
+                  className="flex items-center gap-4 rounded-xl transition-all group"
+                  style={{ padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "var(--border-2)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: iconBg }}>
-                    <QIcon size={15} style={{ color: iconColor }} strokeWidth={1.75} />
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg }}>
+                    <QIcon size={16} style={{ color: iconColor }} strokeWidth={1.75} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium" style={{ fontSize: "14px", color: "rgba(255,255,255,0.75)" }}>{label}</p>
-                    <p style={{ fontSize: "12px", color: "var(--text-subtle)" }}>{sub}</p>
+                    <p className="font-medium mb-0.5" style={{ fontSize: "14.5px", color: "rgba(255,255,255,0.8)" }}>{label}</p>
+                    <p style={{ fontSize: "12.5px", color: "var(--text-subtle)" }}>{sub}</p>
                   </div>
                   <ArrowRight size={14} style={{ color: "var(--text-subtle)" }}
                     className="group-hover:translate-x-0.5 transition-transform duration-150" />
@@ -277,20 +277,20 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
           </div>
 
           {/* Getting started — flex-1 to fill remaining right-column height */}
-          <div className="rounded-xl flex flex-col flex-1" style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px" }}>
+          <div className="rounded-xl flex flex-col flex-1" style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "24px" }}>
             <p className="font-semibold uppercase mb-5" style={{ fontSize: "11.5px", color: "var(--text-subtle)", letterSpacing: "0.09em" }}>
               Getting started
             </p>
-            <div className="flex flex-col gap-0">
+            <div className="flex flex-col">
               {tips.map(({ dot, bold, rest }, i) => (
                 <div
                   key={bold}
-                  className="flex items-start gap-3 py-3.5"
+                  className="flex items-start gap-3.5 py-4"
                   style={{ borderBottom: i < tips.length - 1 ? "1px solid var(--border)" : "none" }}
                 >
-                  <div className="w-[7px] h-[7px] rounded-full mt-[5px] shrink-0" style={{ background: dot }} />
-                  <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.7 }}>
-                    <strong style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>{bold}</strong>{" "}
+                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: dot }} />
+                  <p style={{ fontSize: "13.5px", color: "var(--text-muted)", lineHeight: 1.75 }}>
+                    <strong style={{ color: "rgba(255,255,255,0.82)", fontWeight: 500 }}>{bold}</strong>{" "}
                     {rest}
                   </p>
                 </div>
