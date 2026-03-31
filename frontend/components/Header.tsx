@@ -7,10 +7,7 @@ function CurrentDate() {
     weekday: "long", month: "long", day: "numeric",
   });
   return (
-    <span
-      className="text-[11px] font-medium uppercase"
-      style={{ color: "var(--text-subtle)", letterSpacing: "0.07em" }}
-    >
+    <span style={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-subtle)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
       {label}
     </span>
   );
@@ -22,21 +19,21 @@ export default async function Header() {
 
   return (
     <header
-      className="h-[52px] shrink-0 flex items-center justify-between px-8"
-      style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}
+      className="shrink-0 flex items-center justify-between"
+      style={{ height: "60px", padding: "0 32px", borderBottom: "1px solid var(--border)", background: "var(--bg)" }}
     >
-      {/* Left: breadcrumb + date */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-6">
         <Breadcrumb />
         <CurrentDate />
       </div>
 
-      {/* Right: actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <Link
           href="/schedule"
-          className="text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all hover:bg-white/[0.07]"
+          className="transition-all hover:bg-white/[0.07]"
           style={{
+            fontSize: "13px", fontWeight: 500,
+            padding: "7px 16px", borderRadius: "8px",
             background: "rgba(255,255,255,0.05)",
             border: "1px solid var(--border-2)",
             color: "var(--text-muted)",
@@ -45,21 +42,28 @@ export default async function Header() {
           View calendar
         </Link>
         <button
-          className="text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all hover:bg-white/[0.07]"
+          className="transition-all hover:bg-white/[0.07]"
           style={{
+            fontSize: "13px", fontWeight: 500,
+            padding: "7px 16px", borderRadius: "8px",
             background: "rgba(255,255,255,0.05)",
             border: "1px solid var(--border-2)",
             color: "var(--text-muted)",
+            fontFamily: "inherit", cursor: "pointer",
           }}
         >
           Import draft
         </button>
         <Link
           href="/research"
-          className="flex items-center gap-1.5 text-[13px] font-medium px-4 py-1.5 rounded-lg transition-opacity hover:opacity-90"
-          style={{ background: "var(--accent)", color: "#fff" }}
+          className="flex items-center gap-2 transition-opacity hover:opacity-90"
+          style={{
+            fontSize: "13px", fontWeight: 500,
+            padding: "7px 18px", borderRadius: "8px",
+            background: "var(--accent)", color: "#fff",
+          }}
         >
-          <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+          <span style={{ fontSize: "17px", lineHeight: 1, marginTop: "-1px" }}>+</span>
           New post
         </Link>
       </div>
