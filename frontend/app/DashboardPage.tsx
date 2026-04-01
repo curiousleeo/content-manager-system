@@ -66,25 +66,22 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
   const greeting = firstName ? `${tod}, ${firstName}.` : `${tod}.`;
 
   return (
-    <div className="flex flex-col min-h-full" style={{ padding: "48px 56px" }}>
+    <div style={{ padding: "52px 64px", display: "flex", flexDirection: "column", minHeight: "100%" }}>
 
       {/* ── Greeting ── */}
-      <div className="mb-10">
-        <h1
-          className="font-semibold mb-3"
-          style={{ fontSize: "34px", letterSpacing: "-0.03em", color: "var(--text)" }}
-        >
+      <div style={{ marginBottom: "44px" }}>
+        <h1 style={{ fontSize: "36px", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "10px", lineHeight: 1.2 }}>
           {greeting}
         </h1>
-        <p style={{ fontSize: "15px", color: "var(--text-muted)", lineHeight: 1.65 }}>
+        <p style={{ fontSize: "16px", color: "var(--text-muted)", lineHeight: 1.6 }}>
           {stepsCompleted === 0
-            ? "Your pipeline is empty — pick a step below to start creating your first post."
+            ? "Your pipeline is empty — pick a step below to start creating."
             : `${stepsCompleted} of 5 pipeline steps complete.`}
         </p>
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-3 gap-5 mb-12">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "48px" }}>
         {[
           { label: "Pipeline",  labelColor: "var(--accent-light)", topColor: "var(--accent)", progColor: "var(--accent)",
             value: stepsCompleted, denom: "/ 5 steps", sub: stepsCompleted === 0 ? "No active post in progress" : `${stepsCompleted} steps done`, progress: (stepsCompleted / 5) * 100 },
@@ -95,44 +92,50 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
         ].map(({ label, labelColor, topColor, progColor, value, denom, sub, progress }) => (
           <div
             key={label}
-            className="rounded-xl relative overflow-hidden"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "28px 30px 26px" }}
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "14px",
+              padding: "32px 32px 28px",
+              position: "relative",
+              overflow: "hidden",
+            }}
           >
-            <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: topColor }} />
-            <p className="font-semibold uppercase mb-5" style={{ fontSize: "11px", color: labelColor, letterSpacing: "0.1em" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: topColor }} />
+            <p style={{ fontSize: "11px", fontWeight: 600, color: labelColor, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "20px" }}>
               {label}
             </p>
-            <div className="flex items-baseline gap-2.5 mb-2.5">
-              <span style={{ fontSize: "42px", fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text)" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "48px", fontWeight: 700, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text)" }}>
                 {value}
               </span>
               <span style={{ fontSize: "16px", color: "var(--text-muted)" }}>{denom}</span>
             </div>
-            <p className="mb-6" style={{ fontSize: "13.5px", color: "var(--text-muted)" }}>{sub}</p>
-            <div className="h-[3px] rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: progColor }} />
+            <p style={{ fontSize: "14px", color: "var(--text-muted)", marginBottom: "24px" }}>{sub}</p>
+            <div style={{ height: "3px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)" }}>
+              <div style={{ height: "100%", borderRadius: "9999px", width: `${progress}%`, background: progColor, transition: "width 0.5s ease" }} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* ── Two-column — flex-1 so it fills remaining height ── */}
-      <div className="flex gap-10 flex-1 min-h-0">
+      {/* ── Two columns ── */}
+      <div style={{ display: "flex", gap: "40px", flex: 1, minHeight: 0 }}>
 
-        {/* Left */}
-        <div className="flex flex-col flex-1 min-w-0 gap-8">
+        {/* Left column */}
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: "36px" }}>
 
-          {/* Pipeline */}
+          {/* Pipeline steps */}
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <p className="font-semibold uppercase" style={{ fontSize: "11.5px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 Content pipeline
               </p>
               <span style={{ fontSize: "12px", color: "var(--text-subtle)" }}>{stepsCompleted} / 5 complete</span>
             </div>
 
-            <div>
-              {steps.map(({ href, label, icon: Icon, desc }, i) => {
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {steps.map(({ href, label, desc }, i) => {
                 const state    = getState(i, doneStates);
                 const isActive = state === "active";
                 const isDone   = state === "done";
@@ -141,70 +144,85 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
                   <div key={href}>
                     <Link
                       href={href}
-                      className="flex items-center gap-5 rounded-xl transition-all duration-150 group"
+                      className="group"
                       style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "18px",
                         padding: "20px 24px",
-                        background: isActive ? "rgba(127,119,221,0.07)" : "var(--surface)",
+                        borderRadius: "12px",
+                        background: isActive ? "rgba(127,119,221,0.08)" : "var(--surface)",
                         border: `1px solid ${isActive ? "var(--accent-border)" : "var(--border)"}`,
+                        textDecoration: "none",
+                        transition: "background 0.15s, border-color 0.15s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = isActive ? "rgba(127,119,221,0.12)" : "var(--surface-2)";
+                        e.currentTarget.style.background = isActive ? "rgba(127,119,221,0.14)" : "var(--surface-2)";
                         if (!isActive) e.currentTarget.style.borderColor = "var(--border-2)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = isActive ? "rgba(127,119,221,0.07)" : "var(--surface)";
+                        e.currentTarget.style.background = isActive ? "rgba(127,119,221,0.08)" : "var(--surface)";
                         e.currentTarget.style.borderColor = isActive ? "var(--accent-border)" : "var(--border)";
                       }}
                     >
+                      {/* Step number / checkmark */}
                       <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-[14px] font-semibold shrink-0"
                         style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          fontSize: "15px",
+                          fontWeight: 600,
                           background: isDone ? "var(--teal-dim)" : isActive ? "var(--accent-dim)" : "rgba(255,255,255,0.05)",
                           color:      isDone ? "var(--teal-text)" : isActive ? "var(--accent-light)" : "var(--text-subtle)",
                         }}
                       >
-                        {isDone ? <Check size={15} strokeWidth={2.5} /> : i + 1}
+                        {isDone ? <Check size={17} strokeWidth={2.5} /> : i + 1}
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="font-medium mb-1"
-                          style={{
-                            fontSize: "15px",
-                            color: isActive ? "var(--accent-light)" : isDone ? "var(--text-muted)" : "rgba(255,255,255,0.88)",
-                          }}
-                        >
+                      {/* Text */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          fontSize: "15px",
+                          fontWeight: 500,
+                          marginBottom: "4px",
+                          color: isActive ? "var(--accent-light)" : isDone ? "var(--text-muted)" : "rgba(255,255,255,0.88)",
+                        }}>
                           {label}
                         </p>
-                        <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>{desc}</p>
+                        <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.5 }}>{desc}</p>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      {/* Badge */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
                         {isDone ? (
-                          <span className="text-[11px] font-medium px-3 py-1 rounded-lg"
-                            style={{ background: "var(--teal-dim)", color: "var(--teal-text)", border: "1px solid var(--teal-border)" }}>
-                            Done
-                          </span>
+                          <span style={{
+                            fontSize: "11px", fontWeight: 500, padding: "4px 12px", borderRadius: "8px",
+                            background: "var(--teal-dim)", color: "var(--teal-text)", border: "1px solid var(--teal-border)",
+                          }}>Done</span>
                         ) : isActive ? (
-                          <span className="text-[11px] font-medium px-3 py-1 rounded-lg"
-                            style={{ background: "var(--accent-dim)", color: "var(--accent-light)", border: "1px solid var(--accent-border)" }}>
-                            Start here →
-                          </span>
+                          <span style={{
+                            fontSize: "11px", fontWeight: 500, padding: "4px 12px", borderRadius: "8px",
+                            background: "var(--accent-dim)", color: "var(--accent-light)", border: "1px solid var(--accent-border)",
+                          }}>Start here →</span>
                         ) : (
                           <>
-                            <span className="text-[11px] font-medium px-3 py-1 rounded-lg"
-                              style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-subtle)", border: "1px solid var(--border)" }}>
-                              Locked
-                            </span>
-                            <ArrowRight size={14} style={{ color: "var(--text-subtle)" }}
-                              className="group-hover:translate-x-0.5 transition-transform duration-150" />
+                            <span style={{
+                              fontSize: "11px", fontWeight: 500, padding: "4px 12px", borderRadius: "8px",
+                              background: "rgba(255,255,255,0.05)", color: "var(--text-subtle)", border: "1px solid var(--border)",
+                            }}>Locked</span>
+                            <ArrowRight size={14} style={{ color: "var(--text-subtle)" }} />
                           </>
                         )}
                       </div>
                     </Link>
 
                     {i < steps.length - 1 && (
-                      <div className="w-px h-3" style={{ background: "var(--border)", marginLeft: "44px" }} />
+                      <div style={{ width: "1px", height: "10px", background: "var(--border)", marginLeft: "46px" }} />
                     )}
                   </div>
                 );
@@ -212,31 +230,56 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
             </div>
           </div>
 
-          {/* Recent posts — flex-1 so it stretches to fill remaining left-column height */}
-          <div className="flex flex-col flex-1">
-            <p className="font-semibold uppercase mb-5" style={{ fontSize: "11.5px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>
+          {/* Recent posts */}
+          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "16px" }}>
               Recent posts
             </p>
             <div
-              className="flex flex-col items-center justify-center flex-1 rounded-xl text-center"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "40px 32px" }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: 1,
+                borderRadius: "14px",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                padding: "48px 40px",
+                textAlign: "center",
+              }}
             >
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-                style={{ background: "rgba(255,255,255,0.05)" }}>
-                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.4">
+              <div style={{
+                width: "48px", height: "48px", borderRadius: "12px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(255,255,255,0.05)", marginBottom: "16px",
+              }}>
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.4">
                   <rect x="2" y="2" width="12" height="12" rx="2" /><path d="M5 6.5h6M5 9h4" />
                 </svg>
               </div>
-              <p className="font-medium mb-2" style={{ fontSize: "14px", color: "rgba(255,255,255,0.45)" }}>
+              <p style={{ fontSize: "15px", fontWeight: 500, color: "rgba(255,255,255,0.45)", marginBottom: "8px" }}>
                 No posts yet
               </p>
-              <p className="mb-5" style={{ fontSize: "13px", color: "var(--text-subtle)", lineHeight: 1.7, maxWidth: "240px" }}>
+              <p style={{ fontSize: "13px", color: "var(--text-subtle)", lineHeight: 1.7, maxWidth: "260px", marginBottom: "20px" }}>
                 Once you move a post through the pipeline, it will appear here with status and publish date.
               </p>
               <Link
                 href="/research"
-                className="inline-flex items-center gap-2 font-medium rounded-lg transition-all hover:opacity-90"
-                style={{ fontSize: "12.5px", padding: "8px 16px", background: "var(--accent-dim)", color: "var(--accent-light)", border: "1px solid var(--accent-border)" }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  padding: "9px 18px",
+                  borderRadius: "10px",
+                  background: "var(--accent-dim)",
+                  color: "var(--accent-light)",
+                  border: "1px solid var(--accent-border)",
+                  textDecoration: "none",
+                  transition: "opacity 0.15s",
+                }}
               >
                 <span>+</span> Create your first post
               </Link>
@@ -244,53 +287,83 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
           </div>
         </div>
 
-        {/* Right — fixed width, fills height */}
-        <div className="flex flex-col gap-6" style={{ width: "400px", minWidth: "400px" }}>
+        {/* Right column */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "400px", minWidth: "400px" }}>
 
           {/* Quick actions */}
-          <div className="rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "24px" }}>
-            <p className="font-semibold uppercase mb-5" style={{ fontSize: "11.5px", color: "var(--text-subtle)", letterSpacing: "0.09em" }}>
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "14px",
+            padding: "28px",
+          }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: "20px" }}>
               Quick actions
             </p>
-            <div className="flex flex-col gap-3">
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {quickActions.map(({ href, label, sub, iconBg, iconColor, icon: QIcon }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-4 rounded-xl transition-all group"
-                  style={{ padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    padding: "16px 18px",
+                    borderRadius: "12px",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid var(--border)",
+                    textDecoration: "none",
+                    transition: "background 0.15s, border-color 0.15s",
+                  }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "var(--border-2)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg }}>
-                    <QIcon size={16} style={{ color: iconColor }} strokeWidth={1.75} />
+                  <div style={{
+                    width: "40px", height: "40px", borderRadius: "12px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0, background: iconBg,
+                  }}>
+                    <QIcon size={17} style={{ color: iconColor }} strokeWidth={1.75} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium mb-0.5" style={{ fontSize: "14.5px", color: "rgba(255,255,255,0.8)" }}>{label}</p>
-                    <p style={{ fontSize: "12.5px", color: "var(--text-subtle)" }}>{sub}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: "15px", fontWeight: 500, color: "rgba(255,255,255,0.85)", marginBottom: "3px" }}>{label}</p>
+                    <p style={{ fontSize: "13px", color: "var(--text-subtle)" }}>{sub}</p>
                   </div>
-                  <ArrowRight size={14} style={{ color: "var(--text-subtle)" }}
-                    className="group-hover:translate-x-0.5 transition-transform duration-150" />
+                  <ArrowRight size={15} style={{ color: "var(--text-subtle)", flexShrink: 0 }} />
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Getting started — flex-1 to fill remaining right-column height */}
-          <div className="rounded-xl flex flex-col flex-1" style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "24px" }}>
-            <p className="font-semibold uppercase mb-5" style={{ fontSize: "11.5px", color: "var(--text-subtle)", letterSpacing: "0.09em" }}>
+          {/* Getting started */}
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "14px",
+            padding: "28px",
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+          }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: "20px" }}>
               Getting started
             </p>
-            <div className="flex flex-col">
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {tips.map(({ dot, bold, rest }, i) => (
                 <div
                   key={bold}
-                  className="flex items-start gap-3.5 py-4"
-                  style={{ borderBottom: i < tips.length - 1 ? "1px solid var(--border)" : "none" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "14px",
+                    padding: "16px 0",
+                    borderBottom: i < tips.length - 1 ? "1px solid var(--border)" : "none",
+                  }}
                 >
-                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: dot }} />
-                  <p style={{ fontSize: "13.5px", color: "var(--text-muted)", lineHeight: 1.75 }}>
-                    <strong style={{ color: "rgba(255,255,255,0.82)", fontWeight: 500 }}>{bold}</strong>{" "}
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: dot, marginTop: "6px", flexShrink: 0 }} />
+                  <p style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: 1.7 }}>
+                    <strong style={{ color: "rgba(255,255,255,0.85)", fontWeight: 500 }}>{bold}</strong>{" "}
                     {rest}
                   </p>
                 </div>
