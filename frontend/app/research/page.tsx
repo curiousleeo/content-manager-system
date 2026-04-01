@@ -50,36 +50,37 @@ export default function ResearchPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div style={{ padding: "52px 64px", maxWidth: "860px" }}>
+
       {/* Page header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-mono tabular-nums" style={{ color: "var(--text-subtle)" }}>01</span>
-          <h2 className="text-[20px] font-semibold tracking-tight" style={{ color: "var(--text)" }}>Research</h2>
+      <div style={{ marginBottom: "36px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-subtle)" }}>01</span>
+          <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)" }}>Research</h2>
         </div>
-        <p className="text-[13px] ml-6" style={{ color: "var(--text-muted)" }}>
+        <p style={{ fontSize: "15px", color: "var(--text-muted)", marginLeft: "22px", lineHeight: 1.5 }}>
           Search across sources to find what people are talking about.
         </p>
       </div>
 
       {/* Card */}
-      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div className="p-5 flex flex-col gap-5">
+      <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+
           {/* Content pillars */}
           {pillars.length > 0 && (
             <div>
-              <p className="text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+              <p style={{ fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
                 Content pillars
               </p>
-              <div className="flex gap-2 flex-wrap">
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 {pillars.map((pillar) => (
                   <button
                     key={pillar}
                     onClick={() => run(pillar)}
-                    className="px-3 py-1.5 rounded-md text-[12px] transition-colors"
-                    style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-border)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-2)"; (e.currentTarget as HTMLElement).style.color = "var(--text-dim)"; }}
+                    style={{ padding: "8px 16px", borderRadius: "8px", fontSize: "13px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer", transition: "border-color 0.15s, color 0.15s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent-border)"; e.currentTarget.style.color = "var(--accent)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.color = "var(--text-dim)"; }}
                   >
                     {pillar}
                   </button>
@@ -90,28 +91,27 @@ export default function ResearchPage() {
 
           {/* Query */}
           <div>
-            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
               Topic or keyword
             </label>
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--text-muted)" }} />
+            <div style={{ display: "flex", gap: "12px" }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <Search size={14} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && run()}
                   placeholder="e.g. crypto perps, self-custody trading"
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg"
+                  style={{ width: "100%", paddingLeft: "42px", paddingRight: "16px", paddingTop: "12px", paddingBottom: "12px", borderRadius: "10px", fontSize: "14px" }}
                 />
               </div>
               <button
                 onClick={() => run()}
                 disabled={loading || !query.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
-                style={{ background: "var(--accent)", color: "#fff" }}
+                style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", opacity: (loading || !query.trim()) ? 0.4 : 1, transition: "opacity 0.15s" }}
               >
-                {loading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
                 {loading ? "Searching..." : "Search"}
               </button>
             </div>
@@ -119,16 +119,16 @@ export default function ResearchPage() {
 
           {/* Sources */}
           <div>
-            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
               Sources
             </label>
-            <div className="flex gap-2 flex-wrap">
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {SOURCES.map((s) => (
                 <button
                   key={s}
                   onClick={() => toggleSource(s)}
-                  className="px-3 py-1.5 rounded-md text-[12px] font-mono transition-all"
                   style={{
+                    padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontFamily: "monospace", cursor: "pointer", transition: "all 0.15s",
                     background: sources.includes(s) ? "var(--accent-dim)" : "var(--surface-3)",
                     border: `1px solid ${sources.includes(s) ? "var(--accent-border)" : "var(--border-2)"}`,
                     color: sources.includes(s) ? "var(--accent)" : "var(--text-muted)",
@@ -143,7 +143,7 @@ export default function ResearchPage() {
           {/* Reddit subreddits */}
           {sources.includes("reddit") && (
             <div>
-              <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+              <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
                 Subreddits (comma-separated)
               </label>
               <input
@@ -151,57 +151,56 @@ export default function ResearchPage() {
                 value={subreddits}
                 onChange={(e) => setSubreddits(e.target.value)}
                 placeholder="e.g. CryptoCurrency, trading, DeFi"
-                className="w-full px-4 py-2.5 rounded-lg"
+                style={{ width: "100%", padding: "12px 16px", borderRadius: "10px", fontSize: "14px" }}
               />
             </div>
           )}
         </div>
       </div>
 
-      {error && <p className="text-[12px] mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
+      {error && <p style={{ fontSize: "13px", marginTop: "16px", fontFamily: "monospace", color: "var(--red)" }}>{error}</p>}
 
       {/* Results */}
       {results && (
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[13px]" style={{ color: "var(--text-dim)" }}>
+        <div style={{ marginTop: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+            <p style={{ fontSize: "14px", color: "var(--text-dim)" }}>
               Results for{" "}
-              <span style={{ color: "var(--text)" }} className="font-medium">
+              <strong style={{ color: "var(--text)", fontWeight: 500 }}>
                 {(results as { query?: string }).query}
-              </span>
+              </strong>
             </p>
             <button
               onClick={() => router.push("/insights")}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-md text-[12px] font-medium transition-all"
-              style={{ background: "var(--accent)", color: "#fff" }}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 20px", borderRadius: "10px", fontSize: "13px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer" }}
             >
-              Analyze insights <ArrowRight size={12} />
+              Analyze insights <ArrowRight size={13} />
             </button>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {Object.entries((results as { data?: Record<string, unknown> }).data ?? {}).map(([source, items]) => (
-              <div key={source} className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                <div className="px-4 py-2.5 flex items-center" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--text-dim)" }}>
+              <div key={source} style={{ borderRadius: "12px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>
                     {SOURCE_LABELS[source] ?? source}
                   </span>
                 </div>
                 {Array.isArray(items) && items.length > 0 ? (
-                  <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+                  <div>
                     {(items as Record<string, unknown>[]).slice(0, 5).map((item, i) => (
-                      <div key={i} className="px-4 py-3 text-[13px]" style={{ color: "var(--text-dim)" }}>
+                      <div key={i} style={{ padding: "14px 20px", fontSize: "14px", color: "var(--text-dim)", borderBottom: i < 4 ? "1px solid var(--border)" : "none" }}>
                         {source === "x" && <p>{String(item.text ?? "")}</p>}
                         {source === "reddit" && (
                           <div>
-                            <p className="font-medium mb-0.5" style={{ color: "var(--text)" }}>{String(item.title ?? "")}</p>
-                            <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>r/{String(item.subreddit ?? "")} · {Number(item.score ?? 0)} pts</p>
+                            <p style={{ fontWeight: 500, marginBottom: "4px", color: "var(--text)" }}>{String(item.title ?? "")}</p>
+                            <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>r/{String(item.subreddit ?? "")} · {Number(item.score ?? 0)} pts</p>
                           </div>
                         )}
                         {source === "youtube" && (
                           <div>
-                            <p className="font-medium mb-0.5" style={{ color: "var(--text)" }}>{String(item.title ?? "")}</p>
-                            <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>{String(item.channel ?? "")}</p>
+                            <p style={{ fontWeight: 500, marginBottom: "4px", color: "var(--text)" }}>{String(item.title ?? "")}</p>
+                            <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>{String(item.channel ?? "")}</p>
                           </div>
                         )}
                         {source === "google_trends" && <p>{String(item)}</p>}
@@ -209,7 +208,7 @@ export default function ResearchPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-muted)" }}>No results</p>
+                  <p style={{ padding: "16px 20px", fontSize: "14px", color: "var(--text-muted)" }}>No results</p>
                 )}
               </div>
             ))}

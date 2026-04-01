@@ -59,41 +59,42 @@ export default function ContentPage() {
   const overLimit = charCount > 280;
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div style={{ padding: "52px 64px", maxWidth: "760px" }}>
+
       {/* Page header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-mono tabular-nums" style={{ color: "var(--text-subtle)" }}>03</span>
-          <h2 className="text-[20px] font-semibold tracking-tight" style={{ color: "var(--text)" }}>Generate</h2>
+      <div style={{ marginBottom: "36px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-subtle)" }}>03</span>
+          <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)" }}>Generate</h2>
         </div>
-        <p className="text-[13px] ml-6" style={{ color: "var(--text-muted)" }}>
+        <p style={{ fontSize: "15px", color: "var(--text-muted)", marginLeft: "22px", lineHeight: 1.5 }}>
           Generate a post based on your research and insights.
         </p>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div className="p-5 flex flex-col gap-5">
+      <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+
           {/* Topic input */}
           <div>
-            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
               Topic / angle
             </label>
-            <div className="flex gap-3">
+            <div style={{ display: "flex", gap: "12px" }}>
               <input
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && generate()}
                 placeholder="e.g. Why self-custody matters for active traders"
-                className="flex-1 px-4 py-2.5 rounded-lg"
+                style={{ flex: 1, padding: "12px 16px", borderRadius: "10px", fontSize: "14px" }}
               />
               <button
                 onClick={generate}
                 disabled={loading || !topic.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
-                style={{ background: "var(--accent)", color: "#fff" }}
+                style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", opacity: (loading || !topic.trim()) ? 0.4 : 1, transition: "opacity 0.15s", whiteSpace: "nowrap" }}
               >
-                {loading ? <Loader2 size={13} className="animate-spin" /> : null}
+                {loading && <Loader2 size={14} className="animate-spin" />}
                 {loading ? "Generating..." : "Generate"}
               </button>
             </div>
@@ -101,18 +102,18 @@ export default function ContentPage() {
 
           {/* Editor */}
           <div>
-            <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
               Post
             </label>
             <textarea
               value={text}
               onChange={(e) => handleTextChange(e.target.value)}
-              rows={6}
+              rows={7}
               placeholder="Generated content will appear here. You can edit it directly."
-              className="w-full px-4 py-3 rounded-lg resize-none"
+              style={{ width: "100%", padding: "14px 16px", borderRadius: "10px", resize: "none", fontSize: "14px", lineHeight: 1.7 }}
             />
-            <div className="flex justify-end mt-1.5">
-              <span className="text-[12px] font-mono" style={{ color: overLimit ? "var(--red)" : "var(--text-muted)" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "6px" }}>
+              <span style={{ fontSize: "12px", fontFamily: "monospace", color: overLimit ? "var(--red)" : "var(--text-muted)" }}>
                 {charCount}/280
               </span>
             </div>
@@ -120,28 +121,25 @@ export default function ContentPage() {
         </div>
 
         {/* Footer actions */}
-        <div className="px-5 py-4 flex items-center gap-3" style={{ borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
+        <div style={{ padding: "16px 28px", display: "flex", alignItems: "center", gap: "10px", borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
           <button
             onClick={() => { store.setContent(text); router.push("/review"); }}
             disabled={!text.trim()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] transition-all disabled:opacity-40"
-            style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px", borderRadius: "10px", fontSize: "13px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer", opacity: !text.trim() ? 0.4 : 1, transition: "opacity 0.15s" }}
           >
-            Review <ArrowRight size={12} />
+            Review <ArrowRight size={13} />
           </button>
           <button
             onClick={() => { store.setContent(text); router.push("/schedule"); }}
             disabled={!text.trim()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] transition-all disabled:opacity-40"
-            style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px", borderRadius: "10px", fontSize: "13px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer", opacity: !text.trim() ? 0.4 : 1, transition: "opacity 0.15s" }}
           >
-            Schedule <ArrowRight size={12} />
+            Schedule <ArrowRight size={13} />
           </button>
           <button
             onClick={postNow}
             disabled={posting || !text.trim() || overLimit}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40 ml-auto"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px", borderRadius: "10px", fontSize: "13px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", opacity: (posting || !text.trim() || overLimit) ? 0.4 : 1, transition: "opacity 0.15s", marginLeft: "auto" }}
           >
             {posting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
             {posting ? "Posting..." : "Post now"}
@@ -149,9 +147,9 @@ export default function ContentPage() {
         </div>
       </div>
 
-      {error && <p className="text-[12px] mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
+      {error && <p style={{ fontSize: "13px", marginTop: "16px", fontFamily: "monospace", color: "var(--red)" }}>{error}</p>}
       {posted && (
-        <p className="text-[12px] mt-4 font-mono" style={{ color: "var(--green)" }}>
+        <p style={{ fontSize: "13px", marginTop: "16px", fontFamily: "monospace", color: "var(--green)" }}>
           Posted — tweet ID: {posted.tweet_id}
         </p>
       )}

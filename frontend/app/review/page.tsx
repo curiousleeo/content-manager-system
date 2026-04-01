@@ -53,113 +53,105 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div style={{ padding: "52px 64px", maxWidth: "760px" }}>
+
       {/* Page header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-mono tabular-nums" style={{ color: "var(--text-subtle)" }}>04</span>
-          <h2 className="text-[20px] font-semibold tracking-tight" style={{ color: "var(--text)" }}>Review</h2>
+      <div style={{ marginBottom: "36px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-subtle)" }}>04</span>
+          <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)" }}>Review</h2>
         </div>
-        <p className="text-[13px] ml-6" style={{ color: "var(--text-muted)" }}>
+        <p style={{ fontSize: "15px", color: "var(--text-muted)", marginLeft: "22px", lineHeight: 1.5 }}>
           Check before it goes out. Catches weak angles and AI-sounding language.
         </p>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div className="p-5">
-          <label className="block text-[11px] font-medium mb-2 uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+      <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div style={{ padding: "28px" }}>
+          <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
             Post to review
           </label>
           <textarea
             value={text}
             onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }}
-            rows={5}
+            rows={6}
             placeholder="Paste or edit your post here."
-            className="w-full px-4 py-3 rounded-lg resize-none"
+            style={{ width: "100%", padding: "14px 16px", borderRadius: "10px", resize: "none", fontSize: "14px", lineHeight: 1.7 }}
           />
         </div>
-        <div className="px-5 py-4 flex gap-3" style={{ borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
+        <div style={{ padding: "16px 28px", display: "flex", gap: "10px", borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
           <button
             onClick={check}
             disabled={loading || !text.trim()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", opacity: (loading || !text.trim()) ? 0.4 : 1, transition: "opacity 0.15s" }}
           >
-            {loading && <Loader2 size={13} className="animate-spin" />}
+            {loading && <Loader2 size={14} className="animate-spin" />}
             {loading ? "Checking..." : "Run review"}
           </button>
           {result?.passed && (
             <button
               onClick={() => router.push("/schedule")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] transition-all"
-              style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
+              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer" }}
             >
-              Schedule <ArrowRight size={12} />
+              Schedule <ArrowRight size={13} />
             </button>
           )}
         </div>
       </div>
 
-      {error && <p className="text-[12px] mt-4 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
+      {error && <p style={{ fontSize: "13px", marginTop: "16px", fontFamily: "monospace", color: "var(--red)" }}>{error}</p>}
 
       {result && (
-        <div className="flex flex-col gap-4 mt-6">
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "28px" }}>
+
           {/* Score card */}
-          <div className="rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
+          <div style={{ borderRadius: "14px", padding: "28px", background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.08em] mb-2" style={{ color: "var(--text-muted)" }}>Quality Score</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-[48px] font-semibold leading-none tracking-tight" style={{ color: scoreColor(result.score) }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px", color: "var(--text-muted)" }}>Quality Score</p>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
+                  <span style={{ fontSize: "56px", fontWeight: 700, lineHeight: 1, letterSpacing: "-0.04em", color: scoreColor(result.score) }}>
                     {result.score}
                   </span>
-                  <span className="text-[18px]" style={{ color: "var(--text-muted)" }}>/10</span>
+                  <span style={{ fontSize: "20px", color: "var(--text-muted)" }}>/10</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 items-end">
-                <span
-                  className="text-[12px] font-semibold px-2.5 py-1 rounded-lg"
-                  style={{
-                    background: result.passed ? "var(--green-dim)" : "var(--red-dim)",
-                    border: `1px solid ${result.passed ? "var(--green-border)" : "var(--red-border)"}`,
-                    color: result.passed ? "var(--green)" : "var(--red)",
-                  }}
-                >
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
+                <span style={{
+                  fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "8px",
+                  background: result.passed ? "var(--green-dim)" : "var(--red-dim)",
+                  border: `1px solid ${result.passed ? "var(--green-border)" : "var(--red-border)"}`,
+                  color: result.passed ? "var(--green)" : "var(--red)",
+                }}>
                   {result.passed ? "Passed" : "Needs work"}
                 </span>
-                <span
-                  className="text-[12px] px-2.5 py-1 rounded-lg"
-                  style={{
-                    background: aiColors[result.ai_likelihood].bg,
-                    border: `1px solid ${aiColors[result.ai_likelihood].border}`,
-                    color: aiColors[result.ai_likelihood].color,
-                  }}
-                >
+                <span style={{
+                  fontSize: "13px", padding: "6px 14px", borderRadius: "8px",
+                  background: aiColors[result.ai_likelihood].bg,
+                  border: `1px solid ${aiColors[result.ai_likelihood].border}`,
+                  color: aiColors[result.ai_likelihood].color,
+                }}>
                   AI: {result.ai_likelihood}
                 </span>
               </div>
             </div>
-            {/* Score bar */}
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--surface-3)" }}>
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${(result.score / 10) * 100}%`, background: scoreColor(result.score) }}
-              />
+            <div style={{ height: "4px", borderRadius: "9999px", overflow: "hidden", background: "var(--surface-3)" }}>
+              <div style={{ height: "100%", borderRadius: "9999px", width: `${(result.score / 10) * 100}%`, background: scoreColor(result.score), transition: "width 0.7s ease" }} />
             </div>
           </div>
 
           {/* Issues */}
           {result.issues.length > 0 && (
-            <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--red)" }}>
+            <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--red)" }}>
                   Issues ({result.issues.length})
                 </p>
               </div>
-              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+              <div>
                 {result.issues.map((issue, i) => (
-                  <div key={i} className="flex gap-3 px-4 py-3 text-[13px]" style={{ color: "var(--text-dim)" }}>
-                    <X size={13} className="shrink-0 mt-0.5" style={{ color: "var(--red)" }} />
+                  <div key={i} style={{ display: "flex", gap: "12px", padding: "14px 24px", fontSize: "14px", color: "var(--text-dim)", borderBottom: i < result.issues.length - 1 ? "1px solid var(--border)" : "none" }}>
+                    <X size={14} style={{ flexShrink: 0, marginTop: "2px", color: "var(--red)" }} />
                     {issue}
                   </div>
                 ))}
@@ -169,16 +161,16 @@ export default function ReviewPage() {
 
           {/* Suggestions */}
           {result.suggestions.length > 0 && (
-            <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--text-dim)" }}>
+            <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>
                   Suggestions
                 </p>
               </div>
-              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+              <div>
                 {result.suggestions.map((s, i) => (
-                  <div key={i} className="flex gap-3 px-4 py-3 text-[13px]" style={{ color: "var(--text-dim)" }}>
-                    <ChevronRight size={13} className="shrink-0 mt-0.5" style={{ color: "var(--text-muted)" }} />
+                  <div key={i} style={{ display: "flex", gap: "12px", padding: "14px 24px", fontSize: "14px", color: "var(--text-dim)", borderBottom: i < result.suggestions.length - 1 ? "1px solid var(--border)" : "none" }}>
+                    <ChevronRight size={14} style={{ flexShrink: 0, marginTop: "2px", color: "var(--text-muted)" }} />
                     {s}
                   </div>
                 ))}
@@ -186,7 +178,7 @@ export default function ReviewPage() {
             </div>
           )}
 
-          <button onClick={() => router.push("/content")} className="text-[13px] w-fit" style={{ color: "var(--text-muted)" }}>
+          <button onClick={() => router.push("/content")} style={{ fontSize: "14px", width: "fit-content", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}>
             ← Back to generate
           </button>
         </div>

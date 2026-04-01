@@ -62,81 +62,80 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div style={{ padding: "52px 64px", maxWidth: "860px" }}>
+
       {/* Page header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-mono tabular-nums" style={{ color: "var(--text-subtle)" }}>02</span>
-          <h2 className="text-[20px] font-semibold tracking-tight" style={{ color: "var(--text)" }}>Insights</h2>
+      <div style={{ marginBottom: "36px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-subtle)" }}>02</span>
+          <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)" }}>Insights</h2>
         </div>
-        <p className="text-[13px] ml-6" style={{ color: "var(--text-muted)" }}>
+        <p style={{ fontSize: "15px", color: "var(--text-muted)", marginLeft: "22px", lineHeight: 1.5 }}>
           Analyze findings to find angles worth writing about.
         </p>
       </div>
 
       {!hasResearch && (
-        <div className="rounded-xl p-4 mb-6 flex items-center gap-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-          <span className="text-[13px]" style={{ color: "var(--text-muted)" }}>No research data.</span>
-          <button onClick={() => router.push("/research")} className="text-[13px] underline underline-offset-2" style={{ color: "var(--accent)" }}>
+        <div style={{ borderRadius: "12px", padding: "16px 20px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "12px", background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <span style={{ fontSize: "14px", color: "var(--text-muted)" }}>No research data.</span>
+          <button onClick={() => router.push("/research")} style={{ fontSize: "14px", textDecoration: "underline", textUnderlineOffset: "2px", color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>
             Run research first →
           </button>
         </div>
       )}
 
-      <div className="flex gap-3 mb-8">
+      <div style={{ display: "flex", gap: "12px", marginBottom: "36px" }}>
         <button
           onClick={analyze}
           disabled={loading || !hasResearch}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
-          style={{ background: "var(--accent)", color: "#fff" }}
+          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", opacity: (loading || !hasResearch) ? 0.4 : 1, transition: "opacity 0.15s" }}
         >
-          {loading && <Loader2 size={13} className="animate-spin" />}
+          {loading && <Loader2 size={14} className="animate-spin" />}
           {loading ? "Analyzing..." : insights ? "Re-analyze" : "Analyze"}
         </button>
         {insights && (
           <button
             onClick={() => router.push("/content")}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-medium transition-all"
-            style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer", transition: "opacity 0.15s" }}
           >
-            Generate content <ArrowRight size={13} />
+            Generate content <ArrowRight size={14} />
           </button>
         )}
       </div>
 
-      {error && <p className="text-[12px] mb-6 font-mono" style={{ color: "var(--red)" }}>{error}</p>}
+      {error && <p style={{ fontSize: "13px", marginBottom: "24px", fontFamily: "monospace", color: "var(--red)" }}>{error}</p>}
 
       {insights && (
-        <div className="flex flex-col gap-5">
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Sentiment badge */}
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>Sentiment</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>Sentiment</span>
             {(() => {
               const s = sentimentStyle[insights.sentiment] ?? sentimentStyle.neutral;
               return (
-                <span className="text-[12px] font-medium px-2.5 py-1 rounded-lg capitalize" style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
+                <span style={{ fontSize: "13px", fontWeight: 500, padding: "5px 14px", borderRadius: "8px", textTransform: "capitalize", background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
                   {insights.sentiment}
                 </span>
               );
             })()}
           </div>
 
-          <div className="w-full h-px" style={{ background: "var(--border)" }} />
+          <div style={{ width: "100%", height: "1px", background: "var(--border)" }} />
 
           {categoryConfig.map(({ key, label, icon: Icon, tagStyle, labelColor }) => {
             const items = insights[key as keyof Insights] as string[];
             if (!items?.length) return null;
             return (
               <div key={key}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon size={13} style={{ color: labelColor }} />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: labelColor }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                  <Icon size={14} style={{ color: labelColor }} />
+                  <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: labelColor }}>
                     {label}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {items.map((item, i) => (
-                    <span key={i} className="px-3 py-1.5 rounded-md text-[12px]" style={tagStyle}>
+                    <span key={i} style={{ padding: "7px 14px", borderRadius: "8px", fontSize: "13px", ...tagStyle }}>
                       {item}
                     </span>
                   ))}

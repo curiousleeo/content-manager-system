@@ -37,62 +37,66 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div style={{ padding: "52px 64px", maxWidth: "1000px" }}>
+
       {/* Page header */}
-      <div className="mb-8">
-        <h2 className="text-[20px] font-semibold tracking-tight mb-1" style={{ color: "var(--text)" }}>History</h2>
-        <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>All scheduled and posted content.</p>
+      <div style={{ marginBottom: "36px" }}>
+        <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "8px", color: "var(--text)" }}>History</h2>
+        <p style={{ fontSize: "15px", color: "var(--text-muted)", lineHeight: 1.5 }}>All scheduled and posted content.</p>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
         {/* Table header */}
-        <div
-          className="grid px-5 py-3"
-          style={{
-            gridTemplateColumns: "1fr 120px 120px 160px",
-            borderBottom: "1px solid var(--border)",
-            background: "var(--surface-2)",
-          }}
-        >
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 120px 120px 180px",
+          padding: "14px 24px",
+          borderBottom: "1px solid var(--border)",
+          background: "var(--surface-2)",
+        }}>
           {["Post", "Platform", "Status", "Date"].map((col) => (
-            <span key={col} className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>
+            <span key={col} style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
               {col}
             </span>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 size={18} className="animate-spin" style={{ color: "var(--text-muted)" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px" }}>
+            <Loader2 size={20} className="animate-spin" style={{ color: "var(--text-muted)" }} />
           </div>
         ) : posts.length === 0 ? (
-          <p className="px-5 py-10 text-[13px] text-center" style={{ color: "var(--text-muted)" }}>
+          <p style={{ padding: "48px 24px", fontSize: "14px", textAlign: "center", color: "var(--text-muted)" }}>
             No posts yet.
           </p>
         ) : (
-          <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-            {posts.map((post) => {
+          <div>
+            {posts.map((post, idx) => {
               const s = statusConfig[post.status] ?? statusConfig.draft;
               const date = post.posted_at ?? post.scheduled_at;
               return (
                 <div
                   key={post.id}
-                  className="grid items-center px-5 py-4"
-                  style={{ gridTemplateColumns: "1fr 120px 120px 160px" }}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 120px 120px 180px",
+                    alignItems: "center",
+                    padding: "18px 24px",
+                    borderBottom: idx < posts.length - 1 ? "1px solid var(--border)" : "none",
+                  }}
                 >
-                  <p className="pr-6 line-clamp-2 text-[13px]" style={{ color: "var(--text)" }}>{post.text}</p>
-                  <span className="text-[12px] font-mono uppercase" style={{ color: "var(--text-muted)" }}>
+                  <p style={{ paddingRight: "24px", fontSize: "14px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", color: "var(--text)" }}>
+                    {post.text}
+                  </p>
+                  <span style={{ fontSize: "12px", fontFamily: "monospace", textTransform: "uppercase", color: "var(--text-muted)" }}>
                     {post.platform}
                   </span>
                   <span>
-                    <span
-                      className="text-[11px] px-2 py-0.5 rounded font-medium"
-                      style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}
-                    >
+                    <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "6px", fontWeight: 500, background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
                       {s.label}
                     </span>
                   </span>
-                  <span className="text-[12px] font-mono" style={{ color: "var(--text-muted)" }}>
+                  <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-muted)" }}>
                     {date ? new Date(date).toLocaleString() : "—"}
                   </span>
                 </div>
