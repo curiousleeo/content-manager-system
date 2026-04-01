@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Search, Lightbulb, PenLine,
   CheckCircle, CalendarClock, FolderOpen, History, LogOut,
 } from "lucide-react";
+import UsageStatus from "./UsageStatus";
 
 const manage = [
   { href: "/",         label: "Dashboard", icon: LayoutDashboard },
@@ -101,6 +102,9 @@ export default function Sidebar({ user, signOutAction }: Props) {
           ))}
         </nav>
       </div>
+
+      {/* API Usage — always visible mini bars */}
+      <UsageStatus />
 
       {/* User */}
       {user && (

@@ -8,6 +8,7 @@ from app.models.content import ContentDraft, ContentStatus, Platform, Project
 from app.services.claude_service import generate_content
 from app.services.x_poster import post_tweet
 from app.services.platform_compliance import hard_block_check
+from app.services.usage_tracker import record_usage
 
 router = APIRouter()
 
@@ -49,6 +50,7 @@ class ReviewRequest(BaseModel):
 def generate(req: GenerateRequest, db: Session = Depends(get_db)):
     project = _get_project(req.project_id, db)
     text = generate_content(req.topic, req.insights, req.platform, project=project)
+    record_usage(db, "claude_calls")
     return {"platform": req.platform, "text": text}
 
 
@@ -68,6 +70,7 @@ def post_now(req: PostRequest, db: Session = Depends(get_db)):
             status=ContentStatus.posted,
         )
         db.add(draft)
+        record_usage(db, "x_posts")
         db.commit()
         return {"status": "posted", "result": result}
     return {"status": "error", "message": f"Platform {req.platform} not supported yet"}

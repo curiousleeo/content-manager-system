@@ -1,13 +1,15 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import research, insights, content, review, scheduler, projects
+from app.api import research, insights, content, review, scheduler, projects, notifications
 from app.core.database import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    from app.services.auto_poster import register_all_projects
+    register_all_projects()
     yield
 
 
@@ -31,6 +33,7 @@ app.include_router(insights.router, prefix="/api/insights", tags=["insights"])
 app.include_router(content.router, prefix="/api/content", tags=["content"])
 app.include_router(review.router, prefix="/api/review", tags=["review"])
 app.include_router(scheduler.router, prefix="/api/scheduler", tags=["scheduler"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 
 
 @app.get("/health")

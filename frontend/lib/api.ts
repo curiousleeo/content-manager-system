@@ -62,6 +62,16 @@ export const api = {
       }),
   },
 
+  notifications: {
+    list: () => request<{
+      notifications: { id: number; type: string; title: string; message: string; read: boolean; created_at: string }[];
+      unread_count: number;
+      usage: { service: string; label: string; count: number; limit: number; pct: number }[];
+    }>("/api/notifications"),
+    markAllRead: () => request("/api/notifications/mark-read", { method: "POST" }),
+    delete: (id: number) => request(`/api/notifications/${id}`, { method: "DELETE" }),
+  },
+
   scheduler: {
     schedule: (text: string, scheduled_at: string, platform = "x", project_id?: number | null) =>
       request("/api/scheduler/schedule", {

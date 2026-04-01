@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import Breadcrumb from "./Breadcrumb";
+import NotificationBell from "./NotificationBell";
 
 function CurrentDate() {
   const label = new Date().toLocaleDateString("en-US", {
@@ -28,6 +29,7 @@ export default async function Header() {
       </div>
 
       <div className="flex items-center gap-2.5">
+        <NotificationBell />
         <Link
           href="/schedule"
           className="transition-all hover:bg-white/[0.07]"

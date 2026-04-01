@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.content import Project
 from app.services.claude_service import analyze_insights
+from app.services.usage_tracker import record_usage
 
 router = APIRouter()
 
@@ -22,4 +23,5 @@ def analyze(req: InsightRequest, db: Session = Depends(get_db)):
         if p:
             project = {"tone": p.tone, "style": p.style, "avoid": p.avoid, "target_audience": p.target_audience}
     insights = analyze_insights(req.research_data, project=project)
+    record_usage(db, "claude_calls")
     return {"insights": insights}

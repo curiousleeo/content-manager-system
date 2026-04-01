@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.models.content import Project
 from app.services.claude_service import review_content
 from app.services.platform_compliance import hard_block_check
+from app.services.usage_tracker import record_usage
 
 router = APIRouter()
 
@@ -35,4 +36,5 @@ def review(req: ReviewRequest, db: Session = Depends(get_db)):
         if p:
             project = {"tone": p.tone, "style": p.style, "avoid": p.avoid, "target_audience": p.target_audience}
     result = review_content(req.text, req.platform, project=project)
+    record_usage(db, "claude_calls")
     return {"review": result}

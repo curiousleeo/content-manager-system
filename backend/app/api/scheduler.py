@@ -3,17 +3,13 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import update
-from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.core.database import get_db
 from app.models.content import ContentDraft, ContentStatus, Platform
 from app.services.x_poster import post_tweet
+from app.scheduler import scheduler
 
 router = APIRouter()
-
-scheduler = BackgroundScheduler()
-scheduler.start()
 
 
 class ScheduleRequest(BaseModel):
