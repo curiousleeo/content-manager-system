@@ -41,6 +41,39 @@
   --pink-border:  rgba(212,83,126,0.3);
 }
 
+/* ── Fluid scale (320px → 1440px viewport) ──────────────────────────────
+   Formula: clamp(min, min + (max - min) * (100vw - 320px) / 1120, max)
+   Simplified to: clamp(min, Xvw + Ypx, max)
+   ──────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Type scale */
+  --text-xs:   clamp(10px, 0.4vw + 8.6px,  12px);
+  --text-sm:   clamp(12px, 0.5vw + 10.4px, 14px);
+  --text-base: clamp(13px, 0.5vw + 11.4px, 15px);
+  --text-md:   clamp(14px, 0.7vw + 11.8px, 16px);
+  --text-lg:   clamp(16px, 1vw  + 12.8px,  20px);
+  --text-xl:   clamp(20px, 1.4vw + 15.5px, 28px);
+  --text-2xl:  clamp(26px, 2vw  + 19.6px,  36px);
+  --text-stat: clamp(32px, 3vw  + 22.4px,  48px);
+
+  /* Space scale */
+  --space-1:  clamp(4px,  0.3vw + 3px,   6px);
+  --space-2:  clamp(8px,  0.5vw + 6.4px, 10px);
+  --space-3:  clamp(10px, 0.7vw + 7.8px, 14px);
+  --space-4:  clamp(14px, 1vw   + 10.8px,18px);
+  --space-5:  clamp(18px, 1.4vw + 13.5px,24px);
+  --space-6:  clamp(24px, 2vw   + 17.6px,32px);
+  --space-7:  clamp(32px, 2.8vw + 23px,  44px);
+  --space-8:  clamp(40px, 3.5vw + 28.8px,52px);
+  --space-9:  clamp(48px, 4.5vw + 33.6px,64px);
+
+  /* Border radius */
+  --radius-sm: clamp(8px,  0.5vw + 6.4px, 10px);
+  --radius-md: clamp(10px, 0.7vw + 7.8px, 14px);
+  --radius-lg: clamp(12px, 1vw   + 8.8px, 16px);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 
