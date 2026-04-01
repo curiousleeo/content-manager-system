@@ -18,7 +18,12 @@ def _get_project(project_id: int | None, db: Session) -> dict | None:
     p = db.query(Project).filter(Project.id == project_id).first()
     if not p:
         return None
-    return {"tone": p.tone, "style": p.style, "avoid": p.avoid, "target_audience": p.target_audience}
+    return {
+        "tone": p.tone, "style": p.style, "avoid": p.avoid, "target_audience": p.target_audience,
+        "x_api_key": p.x_api_key, "x_api_secret": p.x_api_secret,
+        "x_access_token": p.x_access_token, "x_access_token_secret": p.x_access_token_secret,
+        "x_bearer_token": p.x_bearer_token,
+    }
 
 
 class GenerateRequest(BaseModel):
@@ -53,7 +58,8 @@ def post_now(req: PostRequest, db: Session = Depends(get_db)):
     if block:
         raise HTTPException(status_code=422, detail=block["message"])
     if req.platform == "x":
-        result = post_tweet(req.text)
+        project = _get_project(req.project_id, db)
+        result = post_tweet(req.text, project=project)
         draft = ContentDraft(
             project_id=req.project_id,
             topic="posted",

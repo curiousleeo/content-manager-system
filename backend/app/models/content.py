@@ -40,6 +40,15 @@ class Project(Base):
     posting_days = Column(JSON, nullable=True)   # ["mon", "wed", "fri"]
     posting_times = Column(JSON, nullable=True)  # ["09:00", "17:00"]
 
+    # Per-project X API credentials
+    x_api_key = Column(Text, nullable=True)
+    x_api_secret = Column(Text, nullable=True)
+    x_access_token = Column(Text, nullable=True)
+    x_access_token_secret = Column(Text, nullable=True)
+    x_bearer_token = Column(Text, nullable=True)
+    x_client_id = Column(Text, nullable=True)
+    x_client_secret = Column(Text, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
