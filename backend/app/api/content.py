@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.models.content import ContentDraft, ContentStatus, Platform, Project
 from app.services.claude_service import generate_content
 from app.services.x_poster import post_tweet
+from app.services.platform_compliance import hard_block_check
 
 router = APIRouter()
 
@@ -48,6 +49,9 @@ def generate(req: GenerateRequest, db: Session = Depends(get_db)):
 
 @router.post("/post-now")
 def post_now(req: PostRequest, db: Session = Depends(get_db)):
+    block = hard_block_check(req.text)
+    if block:
+        raise HTTPException(status_code=422, detail=block["message"])
     if req.platform == "x":
         result = post_tweet(req.text)
         draft = ContentDraft(

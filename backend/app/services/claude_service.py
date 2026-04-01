@@ -1,5 +1,6 @@
 import anthropic
 from app.core.config import settings
+from app.services.platform_compliance import get_generation_guardrails, get_review_checklist
 
 client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 MODEL_FAST = "claude-haiku-4-5-20251001"   # analysis
@@ -61,13 +62,14 @@ def generate_content(topic: str, insights: dict, platform: str = "x", project: d
 Use these insights to make it relevant:
 {insights}
 
-Rules:
+Content rules:
 - Sound like a real person, not a brand or AI
 - No corporate language
 - No hype words (amazing, incredible, revolutionary)
 - Get to the point immediately
 - Write in first person where it makes sense
 {_project_context(project)}
+{get_generation_guardrails()}
 
 Return only the post text, nothing else."""
 
@@ -86,13 +88,13 @@ def review_content(content: str, platform: str = "x", project: dict | None = Non
         avoid_note = f"\n- Does not use any of these (project rule): {project['avoid']}"
 
     prompt = f"""Review this {platform} post and return a JSON object with:
-- passed: boolean (true if it passes all checks)
+- passed: boolean (true if it passes ALL checks — both quality and compliance)
 - score: 1-10
-- issues: list of specific problems found
+- issues: list of specific problems found (quality OR compliance)
 - suggestions: list of specific improvements
 - ai_likelihood: low/medium/high (how AI-generated does it sound)
 
-Checklist to evaluate against:
+Quality checklist:
 1. Does not sound AI-generated
 2. No corporate buzzwords
 3. No excessive punctuation or emojis
@@ -100,6 +102,8 @@ Checklist to evaluate against:
 5. Appropriate length for platform
 6. Not clickbait
 7. Factually grounded (no wild claims){avoid_note}
+
+{get_review_checklist()}
 
 Post to review:
 {content}
