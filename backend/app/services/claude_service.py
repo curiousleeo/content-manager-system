@@ -1,3 +1,5 @@
+import re
+import json
 import anthropic
 from app.core.config import settings
 from app.services.platform_compliance import get_generation_guardrails, get_review_checklist
@@ -5,6 +7,14 @@ from app.services.platform_compliance import get_generation_guardrails, get_revi
 client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 MODEL_FAST = "claude-haiku-4-5-20251001"   # analysis
 MODEL_SMART = "claude-sonnet-4-6"          # generation + review
+
+
+def _parse_json(text: str) -> dict:
+    """Parse JSON from Claude response, stripping markdown code fences if present."""
+    text = text.strip()
+    text = re.sub(r'^```(?:json)?\s*', '', text)
+    text = re.sub(r'\s*```$', '', text)
+    return json.loads(text.strip())
 
 
 def _project_context(project: dict | None) -> str:
@@ -47,8 +57,7 @@ Return only valid JSON, no explanation."""
         max_tokens=1500,
         messages=[{"role": "user", "content": prompt}],
     )
-    import json
-    return json.loads(response.content[0].text)
+    return _parse_json(response.content[0].text)
 
 
 def generate_content(topic: str, insights: dict, platform: str = "x", project: dict | None = None) -> str:
@@ -115,5 +124,4 @@ Return only valid JSON."""
         max_tokens=800,
         messages=[{"role": "user", "content": prompt}],
     )
-    import json
-    return json.loads(response.content[0].text)
+    return _parse_json(response.content[0].text)
