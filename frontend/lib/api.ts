@@ -101,7 +101,7 @@ export const api = {
 
   niche: {
     listAccounts: (project_id: number) =>
-      request<{ accounts: { id: number; x_handle: string; category: string; added_at: string }[] }>(
+      request<{ accounts: { id: number; x_handle: string; category: string; added_at: string; fetched_at: string | null }[] }>(
         `/api/niche/accounts?project_id=${project_id}`
       ),
     addAccount: (project_id: number, x_handle: string, category: string) =>
