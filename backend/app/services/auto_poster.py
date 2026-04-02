@@ -3,9 +3,9 @@ Auto-poster: runs at each project's scheduled posting times,
 picks a rotating content pillar, generates + posts to X automatically.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.core.database import SessionLocal
-from app.models.content import ContentDraft, ContentStatus, Platform, Project
+from app.models.content import ContentDraft, ContentStatus, Platform, Project, NicheReport
 from app.models.notifications import Notification
 from app.services.claude_service import generate_content
 from app.services.x_poster import post_tweet
@@ -54,9 +54,26 @@ def auto_post_for_project(project_id: int) -> None:
             "x_bearer_token": project.x_bearer_token,
         }
 
+        # Load latest niche report if within 7 days
+        cutoff = datetime.utcnow() - timedelta(days=7)
+        niche_report_row = (
+            db.query(NicheReport)
+            .filter(NicheReport.project_id == project_id, NicheReport.report_date >= cutoff)
+            .order_by(NicheReport.report_date.desc())
+            .first()
+        )
+        niche_ctx = None
+        if niche_report_row:
+            patterns = niche_report_row.patterns or {}
+            niche_ctx = {
+                "dominant_tone": patterns.get("dominant_tone", ""),
+                "hook_patterns": patterns.get("hook_patterns", []),
+                "swipe_file": niche_report_row.swipe_file or [],
+            }
+
         # Generate content
         log.info("Auto-posting for %s — pillar: %s", project.name, pillar)
-        text = generate_content(pillar, {}, "x", project=proj_ctx)
+        text = generate_content(pillar, {}, "x", project=proj_ctx, niche_report=niche_ctx)
         record_usage(db, "claude_calls")
 
         # Compliance check
@@ -147,8 +164,66 @@ def register_project_jobs(project: Project) -> int:
     return count
 
 
+def run_niche_report_for_project(project_id: int) -> None:
+    """Weekly cron job: scrape watched accounts and generate a niche intelligence report."""
+    from app.scrapers.niche_scraper import scrape_watched_accounts
+    from app.services.niche_intelligence import analyze_niche
+    from app.models.content import WatchedAccount
+
+    db = SessionLocal()
+    try:
+        accounts = db.query(WatchedAccount).filter(WatchedAccount.project_id == project_id).all()
+        if not accounts:
+            log.info("Niche report skipped — no watched accounts for project %d", project_id)
+            return
+
+        project = db.query(Project).filter(Project.id == project_id).first()
+        proj_ctx = None
+        if project:
+            proj_ctx = {"tone": project.tone, "target_audience": project.target_audience}
+
+        account_dicts = [{"x_handle": a.x_handle, "category": a.category} for a in accounts]
+        scraped = scrape_watched_accounts(account_dicts)
+        for _ in account_dicts:
+            record_usage(db, "grok_calls", project_id=project_id)
+
+        report_data = analyze_niche(scraped, proj_ctx)
+        record_usage(db, "claude_calls", project_id=project_id)
+
+        report = NicheReport(
+            project_id=project_id,
+            report_date=datetime.utcnow(),
+            accounts_analyzed=len(accounts),
+            patterns={
+                "hook_patterns": report_data.get("hook_patterns", []),
+                "dominant_tone": report_data.get("dominant_tone", ""),
+                "post_formats": report_data.get("post_formats", []),
+                "top_insights": report_data.get("top_insights", []),
+            },
+            swipe_file=report_data.get("swipe_file", []),
+        )
+        db.add(report)
+        db.commit()
+        log.info("Niche report generated for project %d — %d accounts", project_id, len(accounts))
+    except Exception as e:
+        log.exception("Niche report failed for project %d", project_id)
+        try:
+            db.add(Notification(
+                type="error",
+                title=f"Niche report failed — project #{project_id}",
+                message=str(e)[:300],
+            ))
+            db.commit()
+        except Exception:
+            db.rollback()
+    finally:
+        db.close()
+
+
 def register_all_projects() -> None:
     """Called at app startup — registers cron jobs for all projects that have a schedule."""
+    from app.scheduler import scheduler
+
     db = SessionLocal()
     try:
         projects = db.query(Project).all()
@@ -156,6 +231,24 @@ def register_all_projects() -> None:
         for p in projects:
             n = register_project_jobs(p)
             total += n
+
+            # Weekly niche report — every Monday at 06:00 UTC
+            niche_job_id = f"niche_report_{p.id}"
+            try:
+                scheduler.remove_job(niche_job_id)
+            except Exception:
+                pass
+            scheduler.add_job(
+                run_niche_report_for_project,
+                "cron",
+                day_of_week="mon",
+                hour=6,
+                minute=0,
+                args=[p.id],
+                id=niche_job_id,
+            )
+            log.info("Scheduled weekly niche report: project=%s every Monday 06:00 UTC", p.name)
+
         log.info("Auto-poster: registered %d cron jobs across %d projects", total, len(projects))
     finally:
         db.close()

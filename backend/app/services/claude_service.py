@@ -60,7 +60,28 @@ Return only valid JSON, no explanation."""
     return _parse_json(response.content[0].text)
 
 
-def generate_content(topic: str, insights: dict, platform: str = "x", project: dict | None = None) -> str:
+def _niche_context(niche_report: dict | None) -> str:
+    """Format the latest niche intelligence report as prompt context."""
+    if not niche_report:
+        return ""
+    parts = []
+    if niche_report.get("dominant_tone"):
+        parts.append(f"Dominant tone in this niche: {niche_report['dominant_tone']}")
+    if niche_report.get("hook_patterns"):
+        top_hooks = [h["type"] for h in niche_report["hook_patterns"][:3] if h.get("type")]
+        if top_hooks:
+            parts.append(f"Top-performing hook types in this niche: {', '.join(top_hooks)}")
+    if niche_report.get("swipe_file"):
+        examples = niche_report["swipe_file"][:2]
+        if examples:
+            ex_text = "\n".join(f'  - "{e.get("text", "")[:120]}"' for e in examples if e.get("text"))
+            parts.append(f"Example high-performing posts to draw inspiration from (DO NOT copy):\n{ex_text}")
+    if not parts:
+        return ""
+    return "\n\nNiche intelligence (patterns from top accounts in this space):\n" + "\n".join(f"- {p}" for p in parts)
+
+
+def generate_content(topic: str, insights: dict, platform: str = "x", project: dict | None = None, niche_report: dict | None = None) -> str:
     """Layer 3 — generate content based on insights."""
     platform_rules = {
         "x": "Twitter/X post. Max 280 characters. No hashtag spam (max 1-2 if relevant). Direct, punchy, no fluff.",
@@ -78,6 +99,7 @@ Content rules:
 - Get to the point immediately
 - Write in first person where it makes sense
 {_project_context(project)}
+{_niche_context(niche_report)}
 {get_generation_guardrails()}
 
 Return only the post text, nothing else."""

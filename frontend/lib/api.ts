@@ -83,4 +83,35 @@ export const api = {
     cancel: (job_id: string) =>
       request(`/api/scheduler/${job_id}`, { method: "DELETE" }),
   },
+
+  niche: {
+    listAccounts: (project_id: number) =>
+      request<{ accounts: { id: number; x_handle: string; category: string; added_at: string }[] }>(
+        `/api/niche/accounts?project_id=${project_id}`
+      ),
+    addAccount: (project_id: number, x_handle: string, category: string) =>
+      request("/api/niche/accounts", {
+        method: "POST",
+        body: JSON.stringify({ project_id, x_handle, category }),
+      }),
+    removeAccount: (id: number) =>
+      request(`/api/niche/accounts/${id}`, { method: "DELETE" }),
+    runReport: (project_id: number) =>
+      request(`/api/niche/report?project_id=${project_id}`, { method: "POST" }),
+    latestReport: (project_id: number) =>
+      request<{ report: NicheReportData | null }>(`/api/niche/report/latest?project_id=${project_id}`),
+  },
 };
+
+export interface NicheReportData {
+  id: number;
+  project_id: number;
+  report_date: string;
+  accounts_analyzed: number;
+  hook_patterns: { type: string; frequency: number; effectiveness: string; example: string }[];
+  dominant_tone: string;
+  post_formats: { format: string; frequency: number; best_for: string }[];
+  top_insights: string[];
+  swipe_file: { handle: string; text: string; hook_type: string; why: string }[];
+  created_at: string;
+}

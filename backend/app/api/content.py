@@ -4,11 +4,12 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.content import ContentDraft, ContentStatus, Platform, Project
+from app.models.content import ContentDraft, ContentStatus, Platform, Project, NicheReport
 from app.services.claude_service import generate_content
 from app.services.x_poster import post_tweet
 from app.services.platform_compliance import hard_block_check
 from app.services.usage_tracker import record_usage
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -40,10 +41,32 @@ class PostRequest(BaseModel):
     project_id: Optional[int] = None
 
 
+def _get_latest_niche_report(project_id: int | None, db: Session) -> dict | None:
+    """Return the latest niche report for a project if it's less than 7 days old."""
+    if not project_id:
+        return None
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    report = (
+        db.query(NicheReport)
+        .filter(NicheReport.project_id == project_id, NicheReport.report_date >= cutoff)
+        .order_by(NicheReport.report_date.desc())
+        .first()
+    )
+    if not report:
+        return None
+    patterns = report.patterns or {}
+    return {
+        "dominant_tone": patterns.get("dominant_tone", ""),
+        "hook_patterns": patterns.get("hook_patterns", []),
+        "swipe_file": report.swipe_file or [],
+    }
+
+
 @router.post("/generate")
 def generate(req: GenerateRequest, db: Session = Depends(get_db)):
     project = _get_project(req.project_id, db)
-    text = generate_content(req.topic, req.insights, req.platform, project=project)
+    niche_report = _get_latest_niche_report(req.project_id, db)
+    text = generate_content(req.topic, req.insights, req.platform, project=project, niche_report=niche_report)
     record_usage(db, "claude_calls", project_id=req.project_id)
     return {"platform": req.platform, "text": text}
 

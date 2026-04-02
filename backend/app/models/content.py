@@ -80,3 +80,25 @@ class ResearchTopic(Base):
     sources = Column(JSON)
     insights = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class WatchedAccount(Base):
+    __tablename__ = "watched_accounts"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    x_handle = Column(String(100), nullable=False)
+    category = Column(String(50), nullable=False, default="competitor")  # competitor | kol | ecosystem
+    added_at = Column(DateTime, default=datetime.utcnow)
+
+
+class NicheReport(Base):
+    __tablename__ = "niche_reports"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    report_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    accounts_analyzed = Column(Integer, default=0)
+    patterns = Column(JSON, nullable=True)   # hook_patterns, dominant_tone, post_formats
+    swipe_file = Column(JSON, nullable=True) # list of best example posts
+    created_at = Column(DateTime, default=datetime.utcnow)

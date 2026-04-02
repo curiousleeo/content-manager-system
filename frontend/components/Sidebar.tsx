@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Search, Lightbulb, PenLine,
-  CheckCircle, CalendarClock, FolderOpen, History, LogOut,
+  CheckCircle, CalendarClock, FolderOpen, History, LogOut, Telescope,
 } from "lucide-react";
 import UsageStatus from "./UsageStatus";
 import ProjectSwitcher from "./ProjectSwitcher";
@@ -16,11 +16,12 @@ const manage = [
 ];
 
 const pipeline = [
-  { href: "/research", label: "Research", icon: Search        },
-  { href: "/insights", label: "Insights", icon: Lightbulb     },
-  { href: "/content",  label: "Generate", icon: PenLine       },
-  { href: "/review",   label: "Review",   icon: CheckCircle   },
-  { href: "/schedule", label: "Schedule", icon: CalendarClock },
+  { href: "/research", label: "Research",  icon: Search        },
+  { href: "/insights", label: "Insights",  icon: Lightbulb     },
+  { href: "/content",  label: "Generate",  icon: PenLine       },
+  { href: "/review",   label: "Review",    icon: CheckCircle   },
+  { href: "/schedule", label: "Schedule",  icon: CalendarClock },
+  { href: "/niche",    label: "Niche Intel", icon: Telescope   },
 ];
 
 interface User { name: string; initials: string; }
