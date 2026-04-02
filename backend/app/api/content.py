@@ -40,17 +40,11 @@ class PostRequest(BaseModel):
     project_id: Optional[int] = None
 
 
-class ReviewRequest(BaseModel):
-    text: str
-    platform: str = "x"
-    project_id: Optional[int] = None
-
-
 @router.post("/generate")
 def generate(req: GenerateRequest, db: Session = Depends(get_db)):
     project = _get_project(req.project_id, db)
     text = generate_content(req.topic, req.insights, req.platform, project=project)
-    record_usage(db, "claude_calls")
+    record_usage(db, "claude_calls", project_id=req.project_id)
     return {"platform": req.platform, "text": text}
 
 
@@ -59,18 +53,24 @@ def post_now(req: PostRequest, db: Session = Depends(get_db)):
     block = hard_block_check(req.text)
     if block:
         raise HTTPException(status_code=422, detail=block["message"])
+
     if req.platform == "x":
         project = _get_project(req.project_id, db)
         result = post_tweet(req.text, project=project)
+        tweet_id = result.get("tweet_id")
+
         draft = ContentDraft(
             project_id=req.project_id,
             topic="posted",
             platform=Platform.x,
             body=req.text,
             status=ContentStatus.posted,
+            tweet_id=tweet_id,
+            posted_at=__import__("datetime").datetime.utcnow(),
         )
         db.add(draft)
-        record_usage(db, "x_posts")
+        record_usage(db, "x_posts", project_id=req.project_id)
         db.commit()
         return {"status": "posted", "result": result}
+
     return {"status": "error", "message": f"Platform {req.platform} not supported yet"}

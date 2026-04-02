@@ -2,8 +2,10 @@
 
 const KEYS = {
   research: "cms_research",
+  research_id: "cms_research_id",
   insights: "cms_insights",
   content: "cms_content",
+  draft_id: "cms_draft_id",
   project: "cms_project",
 } as const;
 
@@ -38,18 +40,38 @@ const ls = {
 };
 
 export const store = {
-  setResearch: (data: object) => ls.set(KEYS.research, JSON.stringify(data)),
+  // Research
+  setResearch: (data: object, id?: number) => {
+    ls.set(KEYS.research, JSON.stringify(data));
+    if (id != null) ls.set(KEYS.research_id, String(id));
+  },
   getResearch: () => {
     const v = ls.get(KEYS.research);
     return v ? JSON.parse(v) : null;
   },
+  getResearchId: (): number | null => {
+    const v = ls.get(KEYS.research_id);
+    return v ? parseInt(v) : null;
+  },
+
+  // Insights
   setInsights: (data: object) => ls.set(KEYS.insights, JSON.stringify(data)),
   getInsights: () => {
     const v = ls.get(KEYS.insights);
     return v ? JSON.parse(v) : null;
   },
+
+  // Content + draft tracking
   setContent: (text: string) => ls.set(KEYS.content, text),
   getContent: () => ls.get(KEYS.content) ?? "",
+  setDraftId: (id: number) => ls.set(KEYS.draft_id, String(id)),
+  getDraftId: (): number | null => {
+    const v = ls.get(KEYS.draft_id);
+    return v ? parseInt(v) : null;
+  },
+  clearDraftId: () => ls.remove(KEYS.draft_id),
+
+  // Project
   setProject: (project: Project) => ls.set(KEYS.project, JSON.stringify(project)),
   getProject: (): Project | null => {
     const v = ls.get(KEYS.project);

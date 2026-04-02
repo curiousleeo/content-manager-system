@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.notifications import Notification
@@ -8,14 +9,17 @@ router = APIRouter()
 
 
 @router.get("")
-def list_notifications(db: Session = Depends(get_db)):
-    notifs = (
-        db.query(Notification)
-        .order_by(Notification.created_at.desc())
-        .limit(50)
-        .all()
-    )
-    unread_count = db.query(Notification).filter(Notification.read == False).count()
+def list_notifications(
+    project_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Notification)
+    if project_id is not None:
+        query = query.filter(
+            (Notification.project_id == project_id) | (Notification.project_id == None)
+        )
+    notifs = query.order_by(Notification.created_at.desc()).limit(50).all()
+    unread_count = query.filter(Notification.read == False).count()
     return {
         "notifications": [
             {
@@ -29,7 +33,7 @@ def list_notifications(db: Session = Depends(get_db)):
             for n in notifs
         ],
         "unread_count": unread_count,
-        "usage": get_usage_stats(db),
+        "usage": get_usage_stats(db, project_id=project_id),
     }
 
 

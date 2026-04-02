@@ -25,19 +25,19 @@ export const api = {
   },
 
   research: {
-    run: (query: string, sources: string[], subreddits?: string[]) =>
-      request("/api/research/run", {
+    run: (query: string, sources: string[], subreddits?: string[], project_id?: number | null) =>
+      request<{ query: string; data: Record<string, unknown>; research_id: number }>("/api/research/run", {
         method: "POST",
-        body: JSON.stringify({ query, sources, subreddits: subreddits ?? [] }),
+        body: JSON.stringify({ query, sources, subreddits: subreddits ?? [], project_id }),
       }),
     trending: () => request("/api/research/trending"),
   },
 
   insights: {
-    analyze: (research_data: object, project_id?: number | null) =>
+    analyze: (research_data: object, project_id?: number | null, research_id?: number | null) =>
       request("/api/insights/analyze", {
         method: "POST",
-        body: JSON.stringify({ research_data, project_id }),
+        body: JSON.stringify({ research_data, project_id, research_id }),
       }),
   },
 
@@ -55,19 +55,19 @@ export const api = {
   },
 
   review: {
-    check: (text: string, platform = "x", project_id?: number | null) =>
-      request("/api/review/check", {
+    check: (text: string, platform = "x", project_id?: number | null, draft_id?: number | null) =>
+      request<{ review: Record<string, unknown>; draft_id: number | null }>("/api/review/check", {
         method: "POST",
-        body: JSON.stringify({ text, platform, project_id }),
+        body: JSON.stringify({ text, platform, project_id, draft_id }),
       }),
   },
 
   notifications: {
-    list: () => request<{
+    list: (project_id?: number) => request<{
       notifications: { id: number; type: string; title: string; message: string; read: boolean; created_at: string }[];
       unread_count: number;
       usage: { service: string; label: string; count: number; limit: number; pct: number }[];
-    }>("/api/notifications"),
+    }>(`/api/notifications${project_id != null ? `?project_id=${project_id}` : ""}`),
     markAllRead: () => request("/api/notifications/mark-read", { method: "POST" }),
     delete: (id: number) => request(`/api/notifications/${id}`, { method: "DELETE" }),
   },

@@ -64,6 +64,7 @@ class ContentDraft(Base):
     status = Column(Enum(ContentStatus), default=ContentStatus.draft)
     review_notes = Column(Text, nullable=True)
     insight_data = Column(JSON, nullable=True)
+    tweet_id = Column(String(50), nullable=True)
     scheduled_at = Column(DateTime, nullable=True)
     posted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

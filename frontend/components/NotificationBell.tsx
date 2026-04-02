@@ -65,7 +65,9 @@ export default function NotificationBell() {
 
   const load = useCallback(async () => {
     try {
-      const data = await api.notifications.list();
+      const { store } = await import("@/lib/store");
+      const project = store.getProject();
+      const data = await api.notifications.list(project?.id ?? undefined);
       setNotifs(data.notifications);
       setUnread(data.unread_count);
       setUsage(data.usage);

@@ -72,8 +72,9 @@ def auto_post_for_project(project_id: int) -> None:
             return
 
         # Post to X
-        post_tweet(text, project=proj_ctx)
-        record_usage(db, "x_posts")
+        post_result = post_tweet(text, project=proj_ctx)
+        tweet_id = post_result.get("tweet_id")
+        record_usage(db, "x_posts", project_id=project_id)
 
         # Save record
         db.add(ContentDraft(
@@ -82,6 +83,7 @@ def auto_post_for_project(project_id: int) -> None:
             platform=Platform.x,
             body=text,
             status=ContentStatus.posted,
+            tweet_id=tweet_id,
             posted_at=datetime.utcnow(),
         ))
         db.commit()

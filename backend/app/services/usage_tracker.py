@@ -2,29 +2,38 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.notifications import ApiUsage, Notification
 
-# Monthly limits per service
 LIMITS = {
-    "x_posts": 1500,       # X free tier: 1,500 tweet writes/month
-    "claude_calls": 500,   # Soft warning: 500 Claude API calls/month
-    "grok_calls": 200,     # xAI free credits: ~200 research calls/month
+    "x_posts": 1500,
+    "claude_calls": 500,
+    "grok_calls": 200,
 }
 
 
-def record_usage(db: Session, service: str) -> None:
+def record_usage(db: Session, service: str, project_id: int | None = None) -> None:
     """
-    Increment usage counter for a service.
-    Creates a platform notification the first time 90% threshold is crossed.
+    Increment usage counter for a service, scoped per project.
+    Fires a notification the first time 90% and 100% thresholds are crossed.
     """
     limit = LIMITS.get(service, 1000)
     year_month = datetime.utcnow().strftime("%Y-%m")
 
     usage = (
         db.query(ApiUsage)
-        .filter(ApiUsage.service == service, ApiUsage.year_month == year_month)
+        .filter(
+            ApiUsage.service == service,
+            ApiUsage.year_month == year_month,
+            ApiUsage.project_id == project_id,
+        )
         .first()
     )
     if not usage:
-        usage = ApiUsage(service=service, year_month=year_month, count=0, monthly_limit=limit)
+        usage = ApiUsage(
+            service=service,
+            year_month=year_month,
+            count=0,
+            monthly_limit=limit,
+            project_id=project_id,
+        )
         db.add(usage)
         db.flush()
 
@@ -35,13 +44,11 @@ def record_usage(db: Session, service: str) -> None:
     prev_pct = prev_count / limit
     new_pct = usage.count / limit
 
-    # Fire notification exactly when crossing 90%
     if new_pct >= 0.9 and prev_pct < 0.9:
-        _create_usage_warning(db, service, usage.count, limit)
+        _create_usage_warning(db, service, usage.count, limit, project_id)
 
-    # Fire again at 100%
     if new_pct >= 1.0 and prev_pct < 1.0:
-        _create_limit_hit(db, service, usage.count, limit)
+        _create_limit_hit(db, service, usage.count, limit, project_id)
 
     db.commit()
 
@@ -54,49 +61,34 @@ def _service_label(service: str) -> str:
     }.get(service, service)
 
 
-def _create_usage_warning(db: Session, service: str, count: int, limit: int) -> None:
+def _create_usage_warning(db: Session, service: str, count: int, limit: int, project_id: int | None) -> None:
     pct = int((count / limit) * 100)
     label = _service_label(service)
     db.add(Notification(
         type="usage_warning",
+        project_id=project_id,
         title=f"{label} — {pct}% of monthly limit used",
-        message=f"You've used {count:,} of {limit:,} {label} this month. "
-                f"At this rate you may hit the limit before the month ends.",
+        message=f"You've used {count:,} of {limit:,} {label} this month.",
     ))
 
 
-def _create_limit_hit(db: Session, service: str, count: int, limit: int) -> None:
+def _create_limit_hit(db: Session, service: str, count: int, limit: int, project_id: int | None) -> None:
     label = _service_label(service)
     db.add(Notification(
         type="usage_warning",
+        project_id=project_id,
         title=f"{label} — Monthly limit reached",
-        message=f"You've reached {limit:,} {label} this month. "
-                f"Posting or API calls may be blocked until next billing cycle.",
+        message=f"You've reached {limit:,} {label} this month. Calls may be blocked.",
     ))
 
 
-def is_daily_cap_hit(db: Session, service: str, daily_cap: int) -> bool:
-    """Check if a service has hit its daily call cap."""
-    from app.models.content import ContentDraft  # avoid circular
-    today = datetime.utcnow().date()
+def get_usage_stats(db: Session, project_id: int | None = None) -> list[dict]:
+    """Return current month usage for all services, scoped to project if given."""
     year_month = datetime.utcnow().strftime("%Y-%m")
-    # We track monthly; approximate daily by dividing monthly count by days elapsed
-    usage = (
-        db.query(ApiUsage)
-        .filter(ApiUsage.service == service, ApiUsage.year_month == year_month)
-        .first()
-    )
-    if not usage:
-        return False
-    day_of_month = datetime.utcnow().day
-    daily_avg = usage.count / day_of_month
-    return daily_avg >= daily_cap
-
-
-def get_usage_stats(db: Session) -> list[dict]:
-    """Return current month usage for all services."""
-    year_month = datetime.utcnow().strftime("%Y-%m")
-    rows = db.query(ApiUsage).filter(ApiUsage.year_month == year_month).all()
+    query = db.query(ApiUsage).filter(ApiUsage.year_month == year_month)
+    if project_id is not None:
+        query = query.filter(ApiUsage.project_id == project_id)
+    rows = query.all()
     result = []
     for service, limit in LIMITS.items():
         row = next((r for r in rows if r.service == service), None)

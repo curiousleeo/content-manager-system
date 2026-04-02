@@ -13,6 +13,7 @@ class Notification(Base):
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
     read = Column(Boolean, default=False, nullable=False)
+    project_id = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -20,7 +21,8 @@ class ApiUsage(Base):
     __tablename__ = "api_usage"
 
     id = Column(Integer, primary_key=True)
-    service = Column(String(50), nullable=False)   # x_posts | claude_calls
+    project_id = Column(Integer, nullable=True)
+    service = Column(String(50), nullable=False)   # x_posts | claude_calls | grok_calls
     year_month = Column(String(7), nullable=False)  # e.g. "2026-04"
     count = Column(Integer, default=0, nullable=False)
     monthly_limit = Column(Integer, nullable=False)

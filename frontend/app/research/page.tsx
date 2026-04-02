@@ -39,9 +39,10 @@ export default function ResearchPage() {
     if (q) setQuery(q);
     try {
       const subs = subreddits.split(",").map((s) => s.trim()).filter(Boolean);
-      const data = await api.research.run(searchQuery, sources, subs) as Record<string, unknown>;
+      const project = store.getProject();
+      const data = await api.research.run(searchQuery, sources, subs, project?.id);
       setResults(data);
-      store.setResearch(data);
+      store.setResearch(data, data.research_id);
     } catch (e) {
       setError((e as Error).message);
     } finally {

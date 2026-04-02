@@ -51,7 +51,8 @@ export default function InsightsPage() {
     setLoading(true);
     setError("");
     try {
-      const result = await api.insights.analyze(research, project?.id) as { insights: Insights };
+      const researchId = store.getResearchId();
+      const result = await api.insights.analyze(research, project?.id, researchId) as { insights: Insights };
       setInsights(result.insights);
       store.setInsights(result.insights);
     } catch (e) {
