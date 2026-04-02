@@ -18,10 +18,11 @@ export interface Project {
   avoid?: string;
   target_audience?: string;
   content_pillars?: string[];
-  default_subreddits?: string[];
   default_platform?: string;
   posting_days?: string[];
   posting_times?: string[];
+  coingecko_enabled?: boolean;
+  telegram_channels?: string[];
 }
 
 const ls = {

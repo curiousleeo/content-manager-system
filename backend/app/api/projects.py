@@ -16,10 +16,11 @@ class ProjectCreate(BaseModel):
     avoid: Optional[str] = None
     target_audience: Optional[str] = None
     content_pillars: Optional[list[str]] = None
-    default_subreddits: Optional[list[str]] = None
     default_platform: Optional[str] = "x"
     posting_days: Optional[list[str]] = None
     posting_times: Optional[list[str]] = None
+    coingecko_enabled: Optional[bool] = False
+    telegram_channels: Optional[list[str]] = None
 
 
 class ProjectUpdate(ProjectCreate):
@@ -35,12 +36,13 @@ def serialize(p: Project) -> dict:
         "style": p.style,
         "avoid": p.avoid,
         "target_audience": p.target_audience,
-        "content_pillars": p.content_pillars or [],
-        "default_subreddits": p.default_subreddits or [],
-        "default_platform": p.default_platform,
-        "posting_days": p.posting_days or [],
-        "posting_times": p.posting_times or [],
-        "created_at": p.created_at.isoformat() if p.created_at else None,
+        "content_pillars":    p.content_pillars or [],
+        "default_platform":   p.default_platform,
+        "posting_days":       p.posting_days or [],
+        "posting_times":      p.posting_times or [],
+        "coingecko_enabled":  bool(p.coingecko_enabled),
+        "telegram_channels":  p.telegram_channels or [],
+        "created_at":         p.created_at.isoformat() if p.created_at else None,
     }
 
 

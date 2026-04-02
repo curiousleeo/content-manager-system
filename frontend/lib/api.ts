@@ -25,12 +25,16 @@ export const api = {
   },
 
   research: {
-    run: (query: string, sources: string[], subreddits?: string[], project_id?: number | null) =>
+    run: (query: string, sources: string[], project_id?: number | null) =>
       request<{ query: string; data: Record<string, unknown>; research_id: number }>("/api/research/run", {
         method: "POST",
-        body: JSON.stringify({ query, sources, subreddits: subreddits ?? [], project_id }),
+        body: JSON.stringify({ query, sources, project_id }),
       }),
-    trending: () => request("/api/research/trending"),
+    paste: (text: string, query: string, project_id?: number | null) =>
+      request<{ research_id: number; query: string; source: string }>("/api/research/paste", {
+        method: "POST",
+        body: JSON.stringify({ text, query, project_id }),
+      }),
   },
 
   insights: {
@@ -107,8 +111,12 @@ export const api = {
       }),
     removeAccount: (id: number) =>
       request(`/api/niche/accounts/${id}`, { method: "DELETE" }),
-    runReport: (project_id: number) =>
-      request(`/api/niche/report?project_id=${project_id}`, { method: "POST" }),
+    cacheStatus: (project_id: number) =>
+      request<{ accounts: CacheStatusItem[]; api_calls_needed: number; estimated_cost_usd: number }>(
+        `/api/niche/cache-status?project_id=${project_id}`
+      ),
+    runReport: (project_id: number, force = false) =>
+      request(`/api/niche/report?project_id=${project_id}&force=${force}`, { method: "POST" }),
     latestReport: (project_id: number) =>
       request<{ report: NicheReportData | null }>(`/api/niche/report/latest?project_id=${project_id}`),
   },
@@ -134,6 +142,14 @@ export interface TopPost {
   likes: number;
   replies: number;
   retweets: number;
+}
+
+export interface CacheStatusItem {
+  handle: string;
+  status: "never_fetched" | "cached" | "stale" | "fetched_today";
+  label: string;
+  days_ago: number | null;
+  can_refetch: boolean;
 }
 
 export interface NicheReportData {

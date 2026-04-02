@@ -40,6 +40,10 @@ class Project(Base):
     posting_days = Column(JSON, nullable=True)   # ["mon", "wed", "fri"]
     posting_times = Column(JSON, nullable=True)  # ["09:00", "17:00"]
 
+    # Optional data sources
+    coingecko_enabled = Column(JSON, nullable=True, default=False)   # boolean, stored as JSON for flexibility
+    telegram_channels = Column(JSON, nullable=True)                   # list of channel slugs
+
     # Per-project X API credentials
     x_api_key = Column(Text, nullable=True)
     x_api_secret = Column(Text, nullable=True)
@@ -78,6 +82,7 @@ class ResearchTopic(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     query = Column(String(500))
     sources = Column(JSON)
+    source = Column(String(50), nullable=True)   # google_trends | coingecko | telegram | grok_manual
     insights = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -89,6 +94,9 @@ class WatchedAccount(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     x_handle = Column(String(100), nullable=False)
     category = Column(String(50), nullable=False, default="competitor")  # competitor | kol | ecosystem
+    x_user_id = Column(String(30), nullable=True)       # cached permanently after first lookup
+    cached_tweets = Column(JSON, nullable=True)          # last 100 fetched original posts
+    fetched_at = Column(DateTime, nullable=True)         # when cached_tweets was last populated
     added_at = Column(DateTime, default=datetime.utcnow)
 
 

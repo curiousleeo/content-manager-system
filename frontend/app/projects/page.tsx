@@ -14,9 +14,10 @@ const empty = (): Partial<Project> => ({
   avoid: "",
   target_audience: "",
   content_pillars: [],
-  default_subreddits: [],
   posting_days: [],
   posting_times: [],
+  coingecko_enabled: false,
+  telegram_channels: [],
 });
 
 export default function ProjectsPage() {
@@ -139,6 +140,8 @@ export default function ProjectsPage() {
                     {p.tone && <span>tone: {p.tone.slice(0, 40)}{p.tone.length > 40 ? "…" : ""}</span>}
                     {p.content_pillars?.length ? <span>pillars: {p.content_pillars.slice(0, 3).join(", ")}</span> : null}
                     {p.posting_days?.length ? <span>posts: {p.posting_days.join(", ")}</span> : null}
+                    {p.coingecko_enabled ? <span>coingecko ✓</span> : null}
+                    {p.telegram_channels?.length ? <span>tg: {p.telegram_channels.length} channel{p.telegram_channels.length > 1 ? "s" : ""}</span> : null}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
@@ -242,14 +245,33 @@ export default function ProjectsPage() {
               />
             </Field>
 
-            <Field label="Default subreddits" hint="Comma-separated">
+            <SectionDivider label="Data Sources" />
+
+            <Field label="CoinGecko Trending" hint="Free, no key required — shows trending coins in research">
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={!!editing.coingecko_enabled}
+                  onChange={(e) => setEditing({ ...editing, coingecko_enabled: e.target.checked })}
+                  style={{ width: "16px", height: "16px", accentColor: "var(--accent)", cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+                  Enable CoinGecko trending in research
+                </span>
+              </label>
+            </Field>
+
+            <Field label="Telegram channels" hint="Public channel slugs, comma-separated (no @)">
               <input
-                value={(editing.default_subreddits ?? []).join(", ")}
+                value={(editing.telegram_channels ?? []).join(", ")}
                 onChange={(e) =>
-                  setEditing({ ...editing, default_subreddits: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
+                  setEditing({ ...editing, telegram_channels: e.target.value.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean) })
                 }
-                placeholder="e.g. CryptoCurrency, trading, DeFi"
+                placeholder="e.g. coindesk, durov, hyperliquid"
               />
+              <p style={{ fontSize: "12px", color: "var(--text-subtle)", marginTop: "6px" }}>
+                Only public channels. Leave empty to disable. Scraped automatically during research.
+              </p>
             </Field>
 
             <SectionDivider label="Posting Schedule" />

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api, NicheReportData } from "@/lib/api";
+import { api, NicheReportData, CacheStatusItem } from "@/lib/api";
 import { store } from "@/lib/store";
-import { Loader2, Plus, Trash2, RefreshCw, BookOpen, Zap, BarChart2 } from "lucide-react";
+import { Loader2, Plus, Trash2, RefreshCw, BookOpen, Zap, BarChart2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const CATEGORIES = ["competitor", "kol", "ecosystem"] as const;
 type Category = typeof CATEGORIES[number];
@@ -14,19 +14,34 @@ const categoryColors: Record<Category, { color: string; bg: string; border: stri
   ecosystem:  { color: "var(--green)",  bg: "var(--green-dim)",  border: "var(--green-border)"  },
 };
 
-interface Account { id: number; x_handle: string; category: string; added_at: string; }
+const cacheStatusColors: Record<CacheStatusItem["status"], { color: string; icon: React.ReactNode }> = {
+  never_fetched: { color: "var(--yellow)",     icon: <AlertCircle size={12} /> },
+  stale:         { color: "var(--yellow)",     icon: <AlertCircle size={12} /> },
+  cached:        { color: "var(--green)",      icon: <CheckCircle2 size={12} /> },
+  fetched_today: { color: "var(--text-muted)", icon: <CheckCircle2 size={12} /> },
+};
+
+interface Account { id: number; x_handle: string; category: string; added_at: string; fetched_at: string | null; }
+
+type RunStep = "idle" | "preview" | "running";
 
 export default function NichePage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [report, setReport] = useState<NicheReportData | null>(null);
+  const [cacheStatus, setCacheStatus] = useState<CacheStatusItem[]>([]);
+  const [estimatedCost, setEstimatedCost] = useState(0);
+  const [apiCallsNeeded, setApiCallsNeeded] = useState(0);
+
   const [handle, setHandle] = useState("");
   const [category, setCategory] = useState<Category>("competitor");
+
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [loadingReport, setLoadingReport] = useState(true);
-  const [running, setRunning] = useState(false);
+  const [runStep, setRunStep] = useState<RunStep>("idle");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"hooks" | "formats" | "swipe">("hooks");
+  const [fetchSummary, setFetchSummary] = useState<{ handle: string; used_cache: boolean; posts_count: number; error?: string }[]>([]);
 
   const project = store.getProject();
   const projectId = project?.id;
@@ -73,14 +88,32 @@ export default function NichePage() {
     } catch (e) { setError((e as Error).message); }
   }
 
-  async function runReport() {
+  async function previewRun() {
     if (!projectId) return;
-    setRunning(true); setError("");
+    setError("");
     try {
-      const result = await api.niche.runReport(projectId) as NicheReportData;
-      setReport(result);
+      const res = await api.niche.cacheStatus(projectId);
+      setCacheStatus(res.accounts);
+      setEstimatedCost(res.estimated_cost_usd);
+      setApiCallsNeeded(res.api_calls_needed);
+      setRunStep("preview");
     } catch (e) { setError((e as Error).message); }
-    finally { setRunning(false); }
+  }
+
+  async function confirmRun(force: boolean) {
+    if (!projectId) return;
+    setRunStep("running"); setError("");
+    try {
+      const result = await api.niche.runReport(projectId, force) as NicheReportData & {
+        fetch_summary: { handle: string; used_cache: boolean; posts_count: number; error?: string }[];
+      };
+      setReport(result);
+      setFetchSummary(result.fetch_summary ?? []);
+      setRunStep("idle");
+    } catch (e) {
+      setError((e as Error).message);
+      setRunStep("idle");
+    }
   }
 
   const reportAge = report
@@ -97,7 +130,7 @@ export default function NichePage() {
           <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)" }}>Niche Intelligence</h2>
         </div>
         <p style={{ fontSize: "15px", color: "var(--text-muted)", marginLeft: "22px", lineHeight: 1.5 }}>
-          Track competitors and KOLs. Generate weekly pattern reports to improve your content.
+          Track competitors and KOLs. Generate weekly pattern reports to sharpen your content.
         </p>
       </div>
 
@@ -110,10 +143,9 @@ export default function NichePage() {
       {projectId && (
         <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "24px", alignItems: "start" }}>
 
-          {/* Left column: watched accounts */}
+          {/* Left: watched accounts */}
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* Add account */}
             <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
               <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
                 <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>
@@ -148,7 +180,6 @@ export default function NichePage() {
                 </button>
               </div>
 
-              {/* Account list */}
               {loadingAccounts ? (
                 <div style={{ padding: "24px", display: "flex", justifyContent: "center" }}>
                   <Loader2 size={16} className="animate-spin" style={{ color: "var(--text-muted)" }} />
@@ -164,11 +195,18 @@ export default function NichePage() {
                     const c = categoryColors[cat] ?? categoryColors.competitor;
                     return (
                       <div key={acc.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: "1px solid var(--border)" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <span style={{ fontSize: "13px", color: "var(--text)" }}>@{acc.x_handle}</span>
-                          <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "5px", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>
-                            {acc.category}
-                          </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontSize: "13px", color: "var(--text)" }}>@{acc.x_handle}</span>
+                            <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "5px", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>
+                              {acc.category}
+                            </span>
+                          </div>
+                          {acc.fetched_at && (
+                            <span style={{ fontSize: "11px", color: "var(--text-subtle)" }}>
+                              fetched {Math.round((Date.now() - new Date(acc.fetched_at).getTime()) / 86400000)}d ago
+                            </span>
+                          )}
                         </div>
                         <button
                           onClick={() => removeAccount(acc.id)}
@@ -183,180 +221,250 @@ export default function NichePage() {
               )}
             </div>
 
-            {/* Run report button */}
-            <button
-              onClick={runReport}
-              disabled={running || accounts.length === 0}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "12px", borderRadius: "12px", fontSize: "13px", fontWeight: 500, background: "var(--surface)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer", opacity: (running || accounts.length === 0) ? 0.4 : 1 }}
-            >
-              {running ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              {running ? "Running analysis..." : "Run Report Now"}
-            </button>
-            {accounts.length > 0 && !running && (
-              <p style={{ fontSize: "11px", color: "var(--text-subtle)", textAlign: "center", marginTop: "-8px" }}>
-                Costs {accounts.length} Grok call{accounts.length > 1 ? "s" : ""} + 1 Claude call. Runs automatically every Monday.
-              </p>
+            {/* Run button */}
+            {runStep === "idle" && (
+              <button
+                onClick={previewRun}
+                disabled={accounts.length === 0}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "12px", borderRadius: "12px", fontSize: "13px", fontWeight: 500, background: "var(--surface)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer", opacity: accounts.length === 0 ? 0.4 : 1 }}
+              >
+                <RefreshCw size={14} />
+                Run Report
+              </button>
+            )}
+
+            {/* Fetch summary after run */}
+            {fetchSummary.length > 0 && runStep === "idle" && (
+              <div style={{ borderRadius: "12px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>Last run</p>
+                </div>
+                {fetchSummary.map((s, i) => (
+                  <div key={i} style={{ padding: "10px 16px", borderBottom: i < fetchSummary.length - 1 ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>@{s.handle}</span>
+                    <span style={{ fontSize: "11px", color: s.used_cache ? "var(--green)" : "var(--yellow)" }}>
+                      {s.used_cache ? "cache" : "fetched"} · {s.posts_count} posts
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Right column: report */}
+          {/* Right: preview or report */}
           <div>
-            {loadingReport ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: "48px" }}>
-                <Loader2 size={20} className="animate-spin" style={{ color: "var(--text-muted)" }} />
-              </div>
-            ) : !report ? (
-              <div style={{ borderRadius: "14px", background: "var(--surface)", border: "1px solid var(--border)", padding: "48px 32px", textAlign: "center" }}>
-                <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>No report yet.</p>
-                <p style={{ fontSize: "13px", color: "var(--text-subtle)", marginTop: "8px" }}>Add accounts and run your first report.</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* Cache preview step */}
+            {runStep === "preview" && (
+              <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>
+                    What will happen
+                  </p>
+                </div>
+                <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {cacheStatus.map((s) => {
+                    const col = cacheStatusColors[s.status];
+                    return (
+                      <div key={s.handle} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px", borderRadius: "10px", background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                        <span style={{ color: col.color }}>{col.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)" }}>@{s.handle}</span>
+                          <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{s.label}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
 
-                {/* Report meta */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderRadius: "12px", background: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div>
-                    <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                      {report.accounts_analyzed} account{report.accounts_analyzed !== 1 ? "s" : ""} analysed
-                      {reportAge !== null && ` · ${reportAge === 0 ? "today" : `${reportAge}d ago`}`}
+                  {/* Cost summary */}
+                  <div style={{ padding: "14px 16px", borderRadius: "10px", background: apiCallsNeeded > 0 ? "var(--yellow-dim)" : "var(--green-dim)", border: `1px solid ${apiCallsNeeded > 0 ? "var(--yellow-border)" : "var(--green-border)"}`, marginTop: "4px" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 500, color: apiCallsNeeded > 0 ? "var(--yellow)" : "var(--green)" }}>
+                      {apiCallsNeeded === 0
+                        ? "All accounts cached — this run is free"
+                        : `${apiCallsNeeded} X API call${apiCallsNeeded > 1 ? "s" : ""} needed — estimated $${estimatedCost.toFixed(2)}`}
                     </p>
-                    {report.dominant_tone && (
-                      <p style={{ fontSize: "13px", color: "var(--text)", marginTop: "4px" }}>
-                        Dominant tone: <span style={{ color: "var(--accent-light)", fontWeight: 500 }}>{report.dominant_tone}</span>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+                    <button
+                      onClick={() => confirmRun(false)}
+                      style={{ flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer" }}
+                    >
+                      {apiCallsNeeded === 0 ? "Run (use cache)" : `Run — spend $${estimatedCost.toFixed(2)}`}
+                    </button>
+                    {apiCallsNeeded > 0 && (
+                      <button
+                        onClick={() => confirmRun(true)}
+                        style={{ flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer" }}
+                        title="Force re-fetch all accounts not fetched today"
+                      >
+                        Force re-fetch all
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setRunStep("idle")}
+                      style={{ padding: "10px 16px", borderRadius: "10px", fontSize: "13px", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Running spinner */}
+            {runStep === "running" && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px", background: "var(--surface)", borderRadius: "14px", border: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+                  <Loader2 size={24} className="animate-spin" style={{ color: "var(--accent-light)" }} />
+                  <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>Scraping accounts and running analysis...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Report */}
+            {runStep === "idle" && (
+              loadingReport ? (
+                <div style={{ display: "flex", justifyContent: "center", padding: "48px" }}>
+                  <Loader2 size={20} className="animate-spin" style={{ color: "var(--text-muted)" }} />
+                </div>
+              ) : !report ? (
+                <div style={{ borderRadius: "14px", background: "var(--surface)", border: "1px solid var(--border)", padding: "48px 32px", textAlign: "center" }}>
+                  <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>No report yet.</p>
+                  <p style={{ fontSize: "13px", color: "var(--text-subtle)", marginTop: "8px" }}>Add accounts, then click "Run Report" to see the cost preview first.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+                  {/* Report meta */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderRadius: "12px", background: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <div>
+                      <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                        {report.accounts_analyzed} account{report.accounts_analyzed !== 1 ? "s" : ""} analysed
+                        {reportAge !== null && ` · ${reportAge === 0 ? "today" : `${reportAge}d ago`}`}
                       </p>
+                      {report.dominant_tone && (
+                        <p style={{ fontSize: "13px", color: "var(--text)", marginTop: "4px" }}>
+                          Dominant tone: <span style={{ color: "var(--accent-light)", fontWeight: 500 }}>{report.dominant_tone}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Top insights */}
+                  {report.top_insights?.length > 0 && (
+                    <div style={{ borderRadius: "14px", background: "var(--surface)", border: "1px solid var(--border)", overflow: "hidden" }}>
+                      <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Zap size={13} style={{ color: "var(--yellow)" }} />
+                        <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>Key Takeaways</p>
+                      </div>
+                      <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {report.top_insights.map((insight, i) => (
+                          <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                            <span style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--text-subtle)", minWidth: "16px", paddingTop: "2px" }}>{i + 1}</span>
+                            <p style={{ fontSize: "13px", lineHeight: 1.6, color: "var(--text)" }}>{insight}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tabs */}
+                  <div style={{ borderRadius: "14px", background: "var(--surface)", border: "1px solid var(--border)", overflow: "hidden" }}>
+                    <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+                      {([
+                        { key: "hooks", label: "Hook Patterns", icon: <BarChart2 size={12} /> },
+                        { key: "formats", label: "Post Formats", icon: <BarChart2 size={12} /> },
+                        { key: "swipe", label: "Swipe File", icon: <BookOpen size={12} /> },
+                      ] as const).map(tab => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setActiveTab(tab.key)}
+                          style={{
+                            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                            padding: "12px", fontSize: "12px", fontWeight: 500, background: "none", border: "none",
+                            borderBottom: activeTab === tab.key ? "2px solid var(--accent)" : "2px solid transparent",
+                            color: activeTab === tab.key ? "var(--accent-light)" : "var(--text-muted)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {tab.icon}{tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {activeTab === "hooks" && (
+                      <div>
+                        {!report.hook_patterns?.length ? (
+                          <p style={{ padding: "24px", fontSize: "13px", color: "var(--text-muted)", textAlign: "center" }}>No hook data.</p>
+                        ) : (
+                          report.hook_patterns.map((h, i) => (
+                            <div key={i} style={{ padding: "16px 20px", borderBottom: i < report.hook_patterns.length - 1 ? "1px solid var(--border)" : "none" }}>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", textTransform: "capitalize" }}>{h.type?.replace(/_/g, " ")}</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                  <span style={{ fontSize: "11px", color: "var(--text-subtle)" }}>×{h.frequency}</span>
+                                  <span style={{
+                                    fontSize: "10px", padding: "2px 8px", borderRadius: "5px", fontWeight: 500,
+                                    background: h.effectiveness === "high" ? "var(--green-dim)" : h.effectiveness === "medium" ? "var(--yellow-dim)" : "var(--surface-3)",
+                                    border: `1px solid ${h.effectiveness === "high" ? "var(--green-border)" : h.effectiveness === "medium" ? "var(--yellow-border)" : "var(--border-2)"}`,
+                                    color: h.effectiveness === "high" ? "var(--green)" : h.effectiveness === "medium" ? "var(--yellow)" : "var(--text-muted)",
+                                  }}>{h.effectiveness}</span>
+                                </div>
+                              </div>
+                              {h.example && (
+                                <p style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.5, borderLeft: "2px solid var(--border-2)", paddingLeft: "10px" }}>
+                                  "{h.example}"
+                                </p>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === "formats" && (
+                      <div>
+                        {!report.post_formats?.length ? (
+                          <p style={{ padding: "24px", fontSize: "13px", color: "var(--text-muted)", textAlign: "center" }}>No format data.</p>
+                        ) : (
+                          report.post_formats.map((f, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: i < report.post_formats.length - 1 ? "1px solid var(--border)" : "none" }}>
+                              <div>
+                                <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", textTransform: "capitalize", marginBottom: "2px" }}>{f.format?.replace(/_/g, " ")}</p>
+                                <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>{f.best_for}</p>
+                              </div>
+                              <span style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--text-subtle)" }}>×{f.frequency}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === "swipe" && (
+                      <div>
+                        {!report.swipe_file?.length ? (
+                          <p style={{ padding: "24px", fontSize: "13px", color: "var(--text-muted)", textAlign: "center" }}>No examples yet.</p>
+                        ) : (
+                          report.swipe_file.map((ex, i) => (
+                            <div key={i} style={{ padding: "18px 20px", borderBottom: i < report.swipe_file.length - 1 ? "1px solid var(--border)" : "none" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                                <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--accent-light)" }}>@{ex.handle}</span>
+                                {ex.hook_type && (
+                                  <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "5px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-muted)", textTransform: "capitalize" }}>
+                                    {ex.hook_type.replace(/_/g, " ")}
+                                  </span>
+                                )}
+                              </div>
+                              <p style={{ fontSize: "13px", lineHeight: 1.6, color: "var(--text)", marginBottom: "8px" }}>{ex.text}</p>
+                              {ex.why && <p style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic" }}>{ex.why}</p>}
+                            </div>
+                          ))
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
-
-                {/* Top insights */}
-                {report.top_insights?.length > 0 && (
-                  <div style={{ borderRadius: "14px", background: "var(--surface)", border: "1px solid var(--border)", overflow: "hidden" }}>
-                    <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Zap size={13} style={{ color: "var(--yellow)" }} />
-                      <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>Key Takeaways</p>
-                    </div>
-                    <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                      {report.top_insights.map((insight, i) => (
-                        <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                          <span style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--text-subtle)", minWidth: "16px", paddingTop: "2px" }}>{i + 1}</span>
-                          <p style={{ fontSize: "13px", lineHeight: 1.6, color: "var(--text)" }}>{insight}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tabs: Hooks / Formats / Swipe File */}
-                <div style={{ borderRadius: "14px", background: "var(--surface)", border: "1px solid var(--border)", overflow: "hidden" }}>
-                  <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-                    {([
-                      { key: "hooks", label: "Hook Patterns", icon: <BarChart2 size={12} /> },
-                      { key: "formats", label: "Post Formats", icon: <BarChart2 size={12} /> },
-                      { key: "swipe", label: "Swipe File", icon: <BookOpen size={12} /> },
-                    ] as const).map(tab => (
-                      <button
-                        key={tab.key}
-                        onClick={() => setActiveTab(tab.key)}
-                        style={{
-                          flex: 1,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "6px",
-                          padding: "12px",
-                          fontSize: "12px",
-                          fontWeight: 500,
-                          background: "none",
-                          border: "none",
-                          borderBottom: activeTab === tab.key ? "2px solid var(--accent)" : "2px solid transparent",
-                          color: activeTab === tab.key ? "var(--accent-light)" : "var(--text-muted)",
-                          cursor: "pointer",
-                          transition: "color 0.15s",
-                        }}
-                      >
-                        {tab.icon}
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Hooks */}
-                  {activeTab === "hooks" && (
-                    <div>
-                      {!report.hook_patterns?.length ? (
-                        <p style={{ padding: "24px", fontSize: "13px", color: "var(--text-muted)", textAlign: "center" }}>No hook data.</p>
-                      ) : (
-                        report.hook_patterns.map((h, i) => (
-                          <div key={i} style={{ padding: "16px 20px", borderBottom: i < report.hook_patterns.length - 1 ? "1px solid var(--border)" : "none" }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                              <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", textTransform: "capitalize" }}>{h.type?.replace(/_/g, " ")}</span>
-                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span style={{ fontSize: "11px", color: "var(--text-subtle)" }}>×{h.frequency}</span>
-                                <span style={{
-                                  fontSize: "10px", padding: "2px 8px", borderRadius: "5px", fontWeight: 500,
-                                  background: h.effectiveness === "high" ? "var(--green-dim)" : h.effectiveness === "medium" ? "var(--yellow-dim)" : "var(--surface-3)",
-                                  border: `1px solid ${h.effectiveness === "high" ? "var(--green-border)" : h.effectiveness === "medium" ? "var(--yellow-border)" : "var(--border-2)"}`,
-                                  color: h.effectiveness === "high" ? "var(--green)" : h.effectiveness === "medium" ? "var(--yellow)" : "var(--text-muted)",
-                                }}>{h.effectiveness}</span>
-                              </div>
-                            </div>
-                            {h.example && (
-                              <p style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.5, borderLeft: "2px solid var(--border-2)", paddingLeft: "10px" }}>
-                                "{h.example}"
-                              </p>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-
-                  {/* Formats */}
-                  {activeTab === "formats" && (
-                    <div>
-                      {!report.post_formats?.length ? (
-                        <p style={{ padding: "24px", fontSize: "13px", color: "var(--text-muted)", textAlign: "center" }}>No format data.</p>
-                      ) : (
-                        report.post_formats.map((f, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: i < report.post_formats.length - 1 ? "1px solid var(--border)" : "none" }}>
-                            <div>
-                              <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", textTransform: "capitalize", marginBottom: "2px" }}>{f.format?.replace(/_/g, " ")}</p>
-                              <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>{f.best_for}</p>
-                            </div>
-                            <span style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--text-subtle)" }}>×{f.frequency}</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-
-                  {/* Swipe file */}
-                  {activeTab === "swipe" && (
-                    <div>
-                      {!report.swipe_file?.length ? (
-                        <p style={{ padding: "24px", fontSize: "13px", color: "var(--text-muted)", textAlign: "center" }}>No examples yet.</p>
-                      ) : (
-                        report.swipe_file.map((ex, i) => (
-                          <div key={i} style={{ padding: "18px 20px", borderBottom: i < report.swipe_file.length - 1 ? "1px solid var(--border)" : "none" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                              <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--accent-light)" }}>@{ex.handle}</span>
-                              {ex.hook_type && (
-                                <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "5px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-muted)", textTransform: "capitalize" }}>
-                                  {ex.hook_type.replace(/_/g, " ")}
-                                </span>
-                              )}
-                            </div>
-                            <p style={{ fontSize: "13px", lineHeight: 1.6, color: "var(--text)", marginBottom: "8px" }}>{ex.text}</p>
-                            {ex.why && (
-                              <p style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic" }}>{ex.why}</p>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
+              )
             )}
           </div>
         </div>

@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.content import WatchedAccount, NicheReport, Project
-from app.scrapers.niche_scraper import scrape_watched_accounts
+from app.scrapers.niche_scraper import scrape_watched_accounts, get_cache_status
 from app.services.niche_intelligence import analyze_niche
 from app.services.usage_tracker import record_usage
 
@@ -33,10 +33,11 @@ def list_accounts(project_id: int, db: Session = Depends(get_db)):
     return {
         "accounts": [
             {
-                "id": a.id,
-                "x_handle": a.x_handle,
-                "category": a.category,
-                "added_at": a.added_at.isoformat(),
+                "id":         a.id,
+                "x_handle":   a.x_handle,
+                "category":   a.category,
+                "added_at":   a.added_at.isoformat(),
+                "fetched_at": a.fetched_at.isoformat() if a.fetched_at else None,
             }
             for a in accounts
         ]
@@ -80,11 +81,36 @@ def remove_account(account_id: int, db: Session = Depends(get_db)):
     return {"status": "removed"}
 
 
+# ── Cache status preview ──────────────────────────────────────────────────────
+
+@router.get("/cache-status")
+def cache_status(project_id: int, db: Session = Depends(get_db)):
+    """
+    Returns per-account cache status before running a report.
+    Frontend shows this to the user so they know what will cost money.
+    """
+    accounts = (
+        db.query(WatchedAccount)
+        .filter(WatchedAccount.project_id == project_id)
+        .all()
+    )
+    statuses = [get_cache_status(a) for a in accounts]
+    api_calls_needed = sum(1 for s in statuses if s["status"] in ("never_fetched", "stale"))
+    return {
+        "accounts": statuses,
+        "api_calls_needed": api_calls_needed,
+        "estimated_cost_usd": round(api_calls_needed * 0.01, 2),
+    }
+
+
 # ── Niche report ──────────────────────────────────────────────────────────────
 
 @router.post("/report")
-def run_niche_report(project_id: int, db: Session = Depends(get_db)):
-    """Scrape watched accounts, analyse with Claude, save report. Returns the report."""
+def run_niche_report(
+    project_id: int,
+    force: bool = Query(False, description="Re-fetch accounts even if cached (same-day block still applies)"),
+    db: Session = Depends(get_db),
+):
     accounts = (
         db.query(WatchedAccount)
         .filter(WatchedAccount.project_id == project_id)
@@ -95,21 +121,34 @@ def run_niche_report(project_id: int, db: Session = Depends(get_db)):
 
     project = db.query(Project).filter(Project.id == project_id).first()
     proj_ctx = None
+    bearer = None
     if project:
-        proj_ctx = {
-            "tone": project.tone,
-            "target_audience": project.target_audience,
-        }
+        proj_ctx = {"tone": project.tone, "target_audience": project.target_audience}
+        bearer = project.x_bearer_token or None
 
-    # Scrape — costs Grok credits (1 call per account)
-    account_dicts = [{"x_handle": a.x_handle, "category": a.category} for a in accounts]
-    scraped = scrape_watched_accounts(account_dicts)
-    for _ in account_dicts:
-        record_usage(db, "grok_calls", project_id=project_id)
+    # Scrape — passes WatchedAccount ORM objects directly (niche_scraper manages its own session)
+    scraped = scrape_watched_accounts(accounts, auto=False, force=force, bearer_token=bearer)
+
+    # Count actual API calls made
+    api_calls_made = sum(1 for s in scraped if not s.get("used_cache"))
+    for _ in range(api_calls_made):
+        record_usage(db, "x_reads", project_id=project_id)
 
     # Analyse with Claude
     report_data = analyze_niche(scraped, proj_ctx)
     record_usage(db, "claude_calls", project_id=project_id)
+
+    # Build per-account fetch summary to return to frontend
+    fetch_summary = [
+        {
+            "handle":     s["handle"],
+            "used_cache": s.get("used_cache", True),
+            "fetched_at": s.get("fetched_at"),
+            "posts_count": len(s.get("posts", [])),
+            "error":      s.get("error"),
+        }
+        for s in scraped
+    ]
 
     # Save report
     report = NicheReport(
@@ -119,8 +158,8 @@ def run_niche_report(project_id: int, db: Session = Depends(get_db)):
         patterns={
             "hook_patterns": report_data.get("hook_patterns", []),
             "dominant_tone": report_data.get("dominant_tone", ""),
-            "post_formats": report_data.get("post_formats", []),
-            "top_insights": report_data.get("top_insights", []),
+            "post_formats":  report_data.get("post_formats", []),
+            "top_insights":  report_data.get("top_insights", []),
         },
         swipe_file=report_data.get("swipe_file", []),
     )
@@ -128,12 +167,14 @@ def run_niche_report(project_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(report)
 
-    return _serialize_report(report)
+    result = _serialize_report(report)
+    result["fetch_summary"] = fetch_summary
+    result["api_calls_made"] = api_calls_made
+    return result
 
 
 @router.get("/report/latest")
 def get_latest_report(project_id: int, db: Session = Depends(get_db)):
-    """Get the most recent report for a project, or null if none exists."""
     report = (
         db.query(NicheReport)
         .filter(NicheReport.project_id == project_id)
@@ -148,14 +189,14 @@ def get_latest_report(project_id: int, db: Session = Depends(get_db)):
 def _serialize_report(r: NicheReport) -> dict:
     patterns = r.patterns or {}
     return {
-        "id": r.id,
-        "project_id": r.project_id,
-        "report_date": r.report_date.isoformat(),
+        "id":               r.id,
+        "project_id":       r.project_id,
+        "report_date":      r.report_date.isoformat(),
         "accounts_analyzed": r.accounts_analyzed,
-        "hook_patterns": patterns.get("hook_patterns", []),
-        "dominant_tone": patterns.get("dominant_tone", ""),
-        "post_formats": patterns.get("post_formats", []),
-        "top_insights": patterns.get("top_insights", []),
-        "swipe_file": r.swipe_file or [],
-        "created_at": r.created_at.isoformat(),
+        "hook_patterns":    patterns.get("hook_patterns", []),
+        "dominant_tone":    patterns.get("dominant_tone", ""),
+        "post_formats":     patterns.get("post_formats", []),
+        "top_insights":     patterns.get("top_insights", []),
+        "swipe_file":       r.swipe_file or [],
+        "created_at":       r.created_at.isoformat(),
     }

@@ -1,56 +1,220 @@
 """
-Niche scraper — uses Grok to pull recent top posts from watched X accounts.
-For each handle, asks Grok for the top 10 posts in the last 7 days with
-engagement signals, hook type, and post format.
+Niche scraper — X API v2, strict cost controls.
+
+Cost rules enforced here:
+1. User ID lookup costs $0.01/handle — cached permanently in watched_accounts.x_user_id.
+   Once set, never called again for the same handle.
+2. Timeline fetch costs per call — cached in watched_accounts.cached_tweets + fetched_at.
+   - Same calendar day: HARD BLOCK. Returns cache regardless of trigger.
+   - Auto run (auto=True): skip if fetched_at < 7 days ago, return cache.
+   - Manual re-fetch (auto=False, force=True): allowed if not same day.
+3. Fetch max_results=100 in a single call. No pagination ever.
+4. Engagement filtering (likes threshold) done in Python after fetch, not via API params.
+5. Only original posts: exclude=retweets,replies.
 """
-import re
-import json
 import logging
-from app.scrapers.grok_scraper import _call_grok, _parse
+from datetime import datetime, date
+
+import tweepy
+
+from app.core.config import settings
+from app.core.database import SessionLocal
+from app.models.content import WatchedAccount
 
 log = logging.getLogger(__name__)
 
+MIN_LIKES = 5  # filter threshold applied post-fetch in Python
 
-def scrape_account(handle: str, category: str = "competitor") -> dict:
+
+def _get_client(bearer_token: str | None = None) -> tweepy.Client:
+    token = bearer_token or settings.x_bearer_token
+    if not token:
+        raise ValueError("No X bearer token configured")
+    return tweepy.Client(bearer_token=token, wait_on_rate_limit=False)
+
+
+def _lookup_user_id(client: tweepy.Client, handle: str) -> str:
+    """Call GET /2/users/by/username/:handle. Costs $0.01 — only called when x_user_id is null."""
+    resp = client.get_user(username=handle)
+    if not resp.data:
+        raise ValueError(f"User @{handle} not found")
+    return str(resp.data.id)
+
+
+def _fetch_timeline(client: tweepy.Client, user_id: str) -> list[dict]:
     """
-    Pull the top 10 posts from a watched account in the last 7 days.
-    Returns a dict with handle, category, and posts list.
-    Each post: text, hook_type, post_format, engagement_level, why_it_worked.
+    Call GET /2/users/:id/tweets once — max 100 original posts, sorted by relevancy.
+    Returns list of dicts with id, text, likes, replies, retweets, impressions.
     """
+    resp = client.get_users_tweets(
+        id=user_id,
+        exclude=["retweets", "replies"],
+        tweet_fields=["public_metrics"],
+        max_results=100,
+    )
+    if not resp.data:
+        return []
+
+    tweets = []
+    for t in resp.data:
+        m = t.public_metrics or {}
+        tweets.append({
+            "id":          str(t.id),
+            "text":        t.text,
+            "likes":       m.get("like_count", 0),
+            "replies":     m.get("reply_count", 0),
+            "retweets":    m.get("retweet_count", 0),
+            "impressions": m.get("impression_count", 0),
+        })
+
+    # Filter engagement post-hoc — never paginate to find more
+    return [t for t in tweets if t["likes"] >= MIN_LIKES]
+
+
+def get_cache_status(account: WatchedAccount) -> dict:
+    """
+    Return cache status for a single watched account.
+    Used by the API to show the user what will happen before they run.
+    """
+    if account.fetched_at is None:
+        return {
+            "handle":      account.x_handle,
+            "status":      "never_fetched",
+            "label":       "Never fetched — will call X API",
+            "days_ago":    None,
+            "can_refetch": True,
+        }
+
+    days_ago = (datetime.utcnow() - account.fetched_at).days
+    fetched_today = account.fetched_at.date() == date.today()
+
+    if fetched_today:
+        return {
+            "handle":      account.x_handle,
+            "status":      "fetched_today",
+            "label":       "Fetched today — using saved data (cannot re-fetch)",
+            "days_ago":    0,
+            "can_refetch": False,
+        }
+    elif days_ago < 7:
+        return {
+            "handle":      account.x_handle,
+            "status":      "cached",
+            "label":       f"Last fetched {days_ago}d ago — using saved data (free)",
+            "days_ago":    days_ago,
+            "can_refetch": True,
+        }
+    else:
+        return {
+            "handle":      account.x_handle,
+            "status":      "stale",
+            "label":       f"Last fetched {days_ago}d ago — cache stale, will call X API",
+            "days_ago":    days_ago,
+            "can_refetch": True,
+        }
+
+
+def scrape_account(
+    account: WatchedAccount,
+    auto: bool = False,
+    force: bool = False,
+    bearer_token: str | None = None,
+) -> dict:
+    """
+    Fetch or return cached tweets for one watched account.
+
+    auto=True  → 7-day cache window (weekly cron path)
+    force=True → re-fetch even if within 7 days (manual trigger, user chose re-fetch)
+    Same-day hard block always applies regardless of auto/force.
+
+    Returns { handle, category, posts, used_cache, fetched_at }
+    """
+    db = SessionLocal()
     try:
-        raw = _call_grok(
-            system=(
-                "You have real-time access to X (Twitter). "
-                "Return only valid JSON, no markdown, no explanation."
-            ),
-            user=f"""Look at the X account @{handle} and find their top 10 posts from the last 7 days.
+        # Re-query inside this session to get a live row
+        acc = db.query(WatchedAccount).filter(WatchedAccount.id == account.id).first()
+        if not acc:
+            return {"handle": account.x_handle, "category": account.category, "posts": [], "used_cache": False}
 
-Return a JSON object with:
-- "handle": "{handle}"
-- "category": "{category}"
-- "posts": array of up to 10 posts, each with:
-  - "text": the post content (verbatim or close paraphrase)
-  - "hook_type": opening hook style — one of: question, bold_claim, stat, story, list, contrarian, how_to, personal
-  - "post_format": one of: plain_text, thread, list_post, single_insight, story_arc, engagement_bait
-  - "engagement_level": high / medium / low
-  - "why_it_worked": 1-sentence reason this post performed well
+        fetched_today = acc.fetched_at and acc.fetched_at.date() == date.today()
+        within_7_days = acc.fetched_at and (datetime.utcnow() - acc.fetched_at).days < 7
+        has_cache = bool(acc.cached_tweets)
 
-Focus only on original posts (not replies). Return ONLY valid JSON.""",
-            max_tokens=2000,
-        )
-        return _parse(raw)
-    except Exception as e:
-        log.warning("niche_scraper: failed to scrape @%s: %s", handle, e)
-        return {"handle": handle, "category": category, "posts": [], "error": str(e)}
+        # Determine whether to use cache
+        use_cache = False
+        if fetched_today and has_cache:
+            use_cache = True  # hard block — same day, always use cache
+        elif auto and within_7_days and has_cache:
+            use_cache = True  # auto run within window
+        elif not force and within_7_days and has_cache:
+            use_cache = True  # manual run but user didn't choose re-fetch
+
+        if use_cache:
+            log.info("niche_scraper: using cache for @%s (fetched_at=%s)", acc.x_handle, acc.fetched_at)
+            return {
+                "handle":     acc.x_handle,
+                "category":   acc.category,
+                "posts":      acc.cached_tweets or [],
+                "used_cache": True,
+                "fetched_at": acc.fetched_at.isoformat() if acc.fetched_at else None,
+            }
+
+        # Need to call API
+        client = _get_client(bearer_token)
+
+        # Resolve user ID (cached permanently)
+        if not acc.x_user_id:
+            log.info("niche_scraper: looking up user ID for @%s ($0.01)", acc.x_handle)
+            try:
+                user_id = _lookup_user_id(client, acc.x_handle)
+                acc.x_user_id = user_id
+                db.commit()
+            except Exception as e:
+                log.warning("niche_scraper: user ID lookup failed for @%s: %s", acc.x_handle, e)
+                return {"handle": acc.x_handle, "category": acc.category, "posts": [], "used_cache": False, "error": str(e)}
+        else:
+            user_id = acc.x_user_id
+
+        # Fetch timeline
+        log.info("niche_scraper: fetching timeline for @%s (user_id=%s)", acc.x_handle, user_id)
+        try:
+            posts = _fetch_timeline(client, user_id)
+        except tweepy.TooManyRequests:
+            log.warning("niche_scraper: rate limited for @%s — returning cache if available", acc.x_handle)
+            return {
+                "handle":     acc.x_handle,
+                "category":   acc.category,
+                "posts":      acc.cached_tweets or [],
+                "used_cache": True,
+                "error":      "rate_limited",
+                "fetched_at": acc.fetched_at.isoformat() if acc.fetched_at else None,
+            }
+        except Exception as e:
+            log.warning("niche_scraper: timeline fetch failed for @%s: %s", acc.x_handle, e)
+            return {"handle": acc.x_handle, "category": acc.category, "posts": acc.cached_tweets or [], "used_cache": bool(acc.cached_tweets), "error": str(e)}
+
+        # Save cache
+        now = datetime.utcnow()
+        acc.cached_tweets = posts
+        acc.fetched_at = now
+        db.commit()
+
+        return {
+            "handle":     acc.x_handle,
+            "category":   acc.category,
+            "posts":      posts,
+            "used_cache": False,
+            "fetched_at": now.isoformat(),
+        }
+    finally:
+        db.close()
 
 
-def scrape_watched_accounts(accounts: list[dict]) -> list[dict]:
-    """
-    Scrape all watched accounts. accounts is a list of dicts with x_handle + category.
-    Returns list of scrape results.
-    """
-    results = []
-    for acc in accounts:
-        result = scrape_account(acc["x_handle"], acc.get("category", "competitor"))
-        results.append(result)
-    return results
+def scrape_watched_accounts(
+    accounts: list[WatchedAccount],
+    auto: bool = False,
+    force: bool = False,
+    bearer_token: str | None = None,
+) -> list[dict]:
+    """Scrape all watched accounts with cost controls applied."""
+    return [scrape_account(a, auto=auto, force=force, bearer_token=bearer_token) for a in accounts]
