@@ -194,12 +194,12 @@ export default function ResearchPage() {
                           <div>
                             <p style={{ marginBottom: "6px", color: "var(--text)" }}>{String(item.text ?? "")}</p>
                             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                              {item.angle && (
+                              {item.angle != null && (
                                 <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "5px", background: "var(--accent-dim)", border: "1px solid var(--accent-border)", color: "var(--accent-light)" }}>
                                   → {String(item.angle)}
                                 </span>
                               )}
-                              {item.sentiment && (
+                              {item.sentiment != null && (
                                 <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "5px", fontFamily: "monospace", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-muted)" }}>
                                   {String(item.sentiment)}
                                 </span>
