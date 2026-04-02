@@ -84,6 +84,17 @@ export const api = {
       request(`/api/scheduler/${job_id}`, { method: "DELETE" }),
   },
 
+  analytics: {
+    posts: (project_id?: number | null) =>
+      request<{ analytics: AnalyticsRow[] }>(
+        `/api/analytics/posts${project_id != null ? `?project_id=${project_id}` : ""}`
+      ),
+    top: (project_id?: number | null, limit = 5) =>
+      request<{ top_posts: TopPost[] }>(
+        `/api/analytics/top?limit=${limit}${project_id != null ? `&project_id=${project_id}` : ""}`
+      ),
+  },
+
   niche: {
     listAccounts: (project_id: number) =>
       request<{ accounts: { id: number; x_handle: string; category: string; added_at: string }[] }>(
@@ -102,6 +113,28 @@ export const api = {
       request<{ report: NicheReportData | null }>(`/api/niche/report/latest?project_id=${project_id}`),
   },
 };
+
+export interface AnalyticsRow {
+  tweet_id: string;
+  draft_id: number | null;
+  text: string | null;
+  posted_at: string | null;
+  impressions: number;
+  likes: number;
+  replies: number;
+  retweets: number;
+  pulled_at: string;
+}
+
+export interface TopPost {
+  tweet_id: string;
+  text: string | null;
+  posted_at: string | null;
+  impressions: number;
+  likes: number;
+  replies: number;
+  retweets: number;
+}
 
 export interface NicheReportData {
   id: number;

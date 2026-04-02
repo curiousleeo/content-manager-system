@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import research, insights, content, review, scheduler, projects, notifications, niche
+from app.api import research, insights, content, review, scheduler, projects, notifications, niche, analytics
 from app.core.database import init_db
 
 
@@ -35,6 +35,7 @@ app.include_router(review.router, prefix="/api/review", tags=["review"])
 app.include_router(scheduler.router, prefix="/api/scheduler", tags=["scheduler"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(niche.router, prefix="/api/niche", tags=["niche"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 
 
 @app.get("/health")

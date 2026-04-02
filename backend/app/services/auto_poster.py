@@ -250,5 +250,20 @@ def register_all_projects() -> None:
             log.info("Scheduled weekly niche report: project=%s every Monday 06:00 UTC", p.name)
 
         log.info("Auto-poster: registered %d cron jobs across %d projects", total, len(projects))
+
+        # Daily analytics pull — 06:00 UTC (single job covers all projects)
+        try:
+            scheduler.remove_job("daily_analytics_pull")
+        except Exception:
+            pass
+        from app.services.analytics_puller import pull_all_projects
+        scheduler.add_job(
+            pull_all_projects,
+            "cron",
+            hour=6,
+            minute=0,
+            id="daily_analytics_pull",
+        )
+        log.info("Scheduled daily analytics pull at 06:00 UTC")
     finally:
         db.close()

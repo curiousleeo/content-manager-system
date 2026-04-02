@@ -92,6 +92,19 @@ class WatchedAccount(Base):
     added_at = Column(DateTime, default=datetime.utcnow)
 
 
+class PostAnalytics(Base):
+    __tablename__ = "post_analytics"
+
+    id = Column(Integer, primary_key=True)
+    draft_id = Column(Integer, ForeignKey("content_drafts.id"), nullable=True)
+    tweet_id = Column(String(50), nullable=False, unique=True)
+    impressions = Column(Integer, default=0)
+    likes = Column(Integer, default=0)
+    replies = Column(Integer, default=0)
+    retweets = Column(Integer, default=0)
+    pulled_at = Column(DateTime, default=datetime.utcnow)
+
+
 class NicheReport(Base):
     __tablename__ = "niche_reports"
 

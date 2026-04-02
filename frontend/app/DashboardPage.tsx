@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, TopPost } from "@/lib/api";
 import { store } from "@/lib/store";
 import {
   Search, Lightbulb, PenLine, CheckCircle,
-  CalendarClock, Check, ArrowRight,
+  CalendarClock, Check, ArrowRight, TrendingUp, Eye, Heart,
 } from "lucide-react";
 
 const steps = [
@@ -43,6 +43,7 @@ function getState(i: number, doneStates: boolean[]): StepState {
 
 export default function DashboardPage({ firstName }: { firstName: string }) {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
+  const [topPosts, setTopPosts] = useState<TopPost[]>([]);
   const [pipeline, setPipeline] = useState({ hasResearch: false, hasInsights: false, hasContent: false });
 
   useEffect(() => {
@@ -51,8 +52,12 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
       hasInsights: !!store.getInsights(),
       hasContent:  !!store.getContent(),
     });
+    const project = store.getProject();
     api.scheduler.list()
       .then((r) => setPosts((r as { posts: ScheduledPost[] }).posts))
+      .catch(() => {});
+    api.analytics.top(project?.id, 5)
+      .then((r) => setTopPosts(r.top_posts))
       .catch(() => {});
   }, []);
 
@@ -274,6 +279,48 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
                 </Link>
               ))}
             </div>
+          </div>
+
+          {/* Top performing posts */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+            <div style={{ padding: "var(--space-4) var(--space-6)", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <TrendingUp size={13} style={{ color: "var(--green)" }} />
+              <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.09em", textTransform: "uppercase" }}>
+                Top posts this month
+              </p>
+            </div>
+            {topPosts.length === 0 ? (
+              <p style={{ padding: "var(--space-6)", fontSize: "var(--text-sm)", color: "var(--text-subtle)", textAlign: "center" }}>
+                No analytics yet — data pulls daily at 06:00 UTC.
+              </p>
+            ) : (
+              <div>
+                {topPosts.map((post, i) => (
+                  <div
+                    key={post.tweet_id}
+                    style={{
+                      padding: "var(--space-4) var(--space-5)",
+                      borderBottom: i < topPosts.length - 1 ? "1px solid var(--border)" : "none",
+                      display: "flex", flexDirection: "column", gap: "var(--space-2)",
+                    }}
+                  >
+                    <p style={{ fontSize: "var(--text-sm)", color: "var(--text)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      {post.text}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
+                        <Eye size={11} style={{ color: "var(--text-subtle)" }} />
+                        {post.impressions.toLocaleString()}
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
+                        <Heart size={11} style={{ color: "var(--text-subtle)" }} />
+                        {post.likes.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Getting started */}

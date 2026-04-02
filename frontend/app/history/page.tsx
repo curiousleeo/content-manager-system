@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { api, AnalyticsRow } from "@/lib/api";
 import { store } from "@/lib/store";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, Heart } from "lucide-react";
 
 interface Post {
   id: string;
@@ -12,6 +12,7 @@ interface Post {
   scheduled_at: string | null;
   posted_at: string | null;
   status: string;
+  tweet_id?: string | null;
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -24,14 +25,23 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; b
 
 export default function HistoryPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [analyticsMap, setAnalyticsMap] = useState<Record<string, AnalyticsRow>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
         const project = store.getProject();
-        const res = await api.scheduler.list(project?.id) as { posts: Post[] };
-        setPosts(res.posts);
+        const [postsRes, analyticsRes] = await Promise.all([
+          api.scheduler.list(project?.id) as Promise<{ posts: Post[] }>,
+          api.analytics.posts(project?.id).catch(() => ({ analytics: [] })),
+        ]);
+        setPosts(postsRes.posts);
+        const map: Record<string, AnalyticsRow> = {};
+        for (const row of analyticsRes.analytics) {
+          if (row.tweet_id) map[row.tweet_id] = row;
+        }
+        setAnalyticsMap(map);
       } catch { /* backend not running */ }
       finally { setLoading(false); }
     }
@@ -39,7 +49,7 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div style={{ padding: "52px 64px", maxWidth: "1000px" }}>
+    <div style={{ padding: "52px 64px", maxWidth: "1100px" }}>
 
       {/* Page header */}
       <div style={{ marginBottom: "36px" }}>
@@ -51,12 +61,12 @@ export default function HistoryPage() {
         {/* Table header */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 120px 120px 180px",
+          gridTemplateColumns: "1fr 100px 110px 160px 130px",
           padding: "14px 24px",
           borderBottom: "1px solid var(--border)",
           background: "var(--surface-2)",
         }}>
-          {["Post", "Platform", "Status", "Date"].map((col) => (
+          {["Post", "Platform", "Status", "Date", "Analytics"].map((col) => (
             <span key={col} style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
               {col}
             </span>
@@ -76,12 +86,14 @@ export default function HistoryPage() {
             {posts.map((post, idx) => {
               const s = statusConfig[post.status] ?? statusConfig.draft;
               const date = post.posted_at ?? post.scheduled_at;
+              const analytics = post.tweet_id ? analyticsMap[post.tweet_id] : null;
+
               return (
                 <div
                   key={post.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 120px 120px 180px",
+                    gridTemplateColumns: "1fr 100px 110px 160px 130px",
                     alignItems: "center",
                     padding: "18px 24px",
                     borderBottom: idx < posts.length - 1 ? "1px solid var(--border)" : "none",
@@ -101,6 +113,23 @@ export default function HistoryPage() {
                   <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-muted)" }}>
                     {date ? new Date(date).toLocaleString() : "—"}
                   </span>
+                  {/* Analytics column */}
+                  {analytics ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "var(--text-muted)" }}>
+                        <Eye size={11} style={{ color: "var(--text-subtle)" }} />
+                        {analytics.impressions.toLocaleString()}
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "var(--text-muted)" }}>
+                        <Heart size={11} style={{ color: "var(--text-subtle)" }} />
+                        {analytics.likes.toLocaleString()}
+                      </span>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: "12px", color: "var(--text-subtle)" }}>
+                      {post.status === "posted" ? "—" : ""}
+                    </span>
+                  )}
                 </div>
               );
             })}
