@@ -1,108 +1,77 @@
 """
 Grok scraper — uses xAI's Grok API to pull real-time X conversation data.
-Grok has live X access, so this replaces the paid X read API for research.
-
-Rate limits enforced here:
-  - Max 5 calls per research run (enforced by caller)
-  - Daily cap tracked via api_usage table (service: grok_calls)
-  - Monthly soft limit: 200 calls (~$0.10-0.30 at current pricing)
+Uses httpx (no extra dependencies) to call xAI's OpenAI-compatible REST API.
 """
-from openai import OpenAI
+import re
+import json
+import httpx
 from app.core.config import settings
 
-# xAI uses OpenAI-compatible API
-_client = None
+XAI_BASE = "https://api.x.ai/v1/chat/completions"
 
 
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        _client = OpenAI(
-            api_key=settings.xai_api_key,
-            base_url="https://api.x.ai/v1",
-        )
-    return _client
+def _call_grok(system: str, user: str, max_tokens: int = 1500) -> str:
+    """Make a raw HTTP call to xAI API. Returns response text."""
+    if not settings.xai_api_key:
+        raise ValueError("XAI_API_KEY not configured")
+
+    resp = httpx.post(
+        XAI_BASE,
+        headers={
+            "Authorization": f"Bearer {settings.xai_api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": "grok-3",
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "max_tokens": max_tokens,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"].strip()
+
+
+def _parse(text: str):
+    text = re.sub(r'^```(?:json)?\s*', '', text)
+    text = re.sub(r'\s*```$', '', text)
+    return json.loads(text.strip())
 
 
 def search_x_conversations(query: str, limit: int = 10) -> list[dict]:
-    """
-    Ask Grok what people on X are saying about a topic right now.
-    Returns structured list of conversation insights.
-    """
-    if not settings.xai_api_key:
-        return [{"error": "XAI_API_KEY not configured"}]
-
-    prompt = f"""You have real-time access to X (Twitter). Search for recent conversations about: "{query}"
-
-Return a JSON array of the {limit} most relevant/recent posts or discussion points. Each item must have:
-- "text": the tweet text or key point being discussed
-- "sentiment": positive/neutral/negative
-- "engagement": estimated engagement level (high/medium/low)
-- "angle": what content angle this suggests
-
-Focus on:
-- What traders, builders, and DeFi users are actually saying
-- Genuine opinions, not promotional content
-- Emerging narratives or debates
-- Pain points being discussed
-
-Return ONLY a valid JSON array, no explanation, no markdown."""
-
+    """Ask Grok what people on X are saying about a topic right now."""
     try:
-        client = _get_client()
-        response = client.chat.completions.create(
-            model="grok-3",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a research assistant with real-time X access. Return only valid JSON arrays as instructed."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1500,
+        text = _call_grok(
+            system="You are a research assistant with real-time X access. Return only valid JSON arrays.",
+            user=f"""Search recent X (Twitter) conversations about: "{query}"
+
+Return a JSON array of {limit} items. Each item must have:
+- "text": the key point or tweet being discussed
+- "sentiment": positive/neutral/negative
+- "engagement": high/medium/low
+- "angle": content angle this suggests
+
+Focus on traders, builders, DeFi users. No promotional content.
+Return ONLY a valid JSON array, no explanation, no markdown.""",
         )
-        import json, re
-        text = response.choices[0].message.content.strip()
-        # Strip markdown fences if present
-        text = re.sub(r'^```(?:json)?\s*', '', text)
-        text = re.sub(r'\s*```$', '', text)
-        return json.loads(text.strip())
+        return _parse(text)
     except Exception as e:
         return [{"error": str(e)}]
 
 
 def get_trending_topics(niche: str = "crypto trading") -> list[str]:
-    """
-    Ask Grok what's trending on X right now in a given niche.
-    Returns a list of trending topic strings.
-    """
-    if not settings.xai_api_key:
-        return []
-
-    prompt = f"""What are the top 10 trending topics on X (Twitter) right now in the {niche} space?
-
-Return ONLY a JSON array of strings — topic names or short phrases.
-Example: ["Hyperliquid volume ATH", "Bitcoin ETF flows", "DeFi TVL recovery"]
-
-No explanation, no markdown, just the JSON array."""
-
+    """Ask Grok what's trending on X right now in a given niche."""
     try:
-        client = _get_client()
-        response = client.chat.completions.create(
-            model="grok-3",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You have real-time X access. Return only valid JSON arrays."
-                },
-                {"role": "user", "content": prompt}
-            ],
+        text = _call_grok(
+            system="You have real-time X access. Return only valid JSON arrays.",
+            user=f"""Top 10 trending topics on X right now in the {niche} space.
+Return ONLY a JSON array of strings. Example: ["Hyperliquid volume ATH", "BTC ETF flows"]
+No explanation, no markdown.""",
             max_tokens=400,
         )
-        import json, re
-        text = response.choices[0].message.content.strip()
-        text = re.sub(r'^```(?:json)?\s*', '', text)
-        text = re.sub(r'\s*```$', '', text)
-        return json.loads(text.strip())
+        return _parse(text)
     except Exception as e:
         return []
