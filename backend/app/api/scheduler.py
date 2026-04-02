@@ -70,14 +70,13 @@ def schedule_post(req: ScheduleRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/list")
-def list_scheduled(db: Session = Depends(get_db)):
-    drafts = (
-        db.query(ContentDraft)
-        .filter(ContentDraft.status.in_([ContentStatus.scheduled, ContentStatus.posted, ContentStatus.failed]))
-        .order_by(ContentDraft.scheduled_at.desc())
-        .limit(50)
-        .all()
+def list_scheduled(project_id: int | None = None, db: Session = Depends(get_db)):
+    query = db.query(ContentDraft).filter(
+        ContentDraft.status.in_([ContentStatus.scheduled, ContentStatus.posted, ContentStatus.failed])
     )
+    if project_id is not None:
+        query = query.filter(ContentDraft.project_id == project_id)
+    drafts = query.order_by(ContentDraft.scheduled_at.desc()).limit(50).all()
     return {
         "posts": [
             {

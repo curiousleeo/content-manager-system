@@ -7,6 +7,7 @@ import {
   CheckCircle, CalendarClock, FolderOpen, History, LogOut,
 } from "lucide-react";
 import UsageStatus from "./UsageStatus";
+import ProjectSwitcher from "./ProjectSwitcher";
 
 const manage = [
   { href: "/",         label: "Dashboard", icon: LayoutDashboard },
@@ -82,8 +83,13 @@ export default function Sidebar({ user, signOutAction }: Props) {
         </span>
       </div>
 
+      {/* Project switcher */}
+      <div style={{ padding: "10px 0 0", position: "relative" }}>
+        <ProjectSwitcher />
+      </div>
+
       {/* Nav */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-6" style={{ padding: "20px 10px" }}>
+      <div className="flex-1 overflow-y-auto flex flex-col gap-6" style={{ padding: "8px 10px" }}>
         <nav className="flex flex-col gap-1">
           <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0 12px", marginBottom: "6px" }}>
             Overview

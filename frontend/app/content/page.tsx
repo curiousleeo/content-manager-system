@@ -26,7 +26,8 @@ export default function ContentPage() {
     setError("");
     try {
       const insights = store.getInsights() ?? {};
-      const result = await api.content.generate(topic, insights, "x") as { text: string };
+      const project = store.getProject();
+      const result = await api.content.generate(topic, insights, "x", project?.id) as { text: string };
       setText(result.text);
       store.setContent(result.text);
     } catch (e) {
@@ -41,7 +42,8 @@ export default function ContentPage() {
     setPosting(true);
     setError("");
     try {
-      const result = await api.content.postNow(text, "x") as { result: { tweet_id: string } };
+      const project = store.getProject();
+      const result = await api.content.postNow(text, "x", project?.id) as { result: { tweet_id: string } };
       setPosted(result.result);
     } catch (e) {
       setError((e as Error).message);

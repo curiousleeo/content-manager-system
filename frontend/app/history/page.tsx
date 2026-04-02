@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { store } from "@/lib/store";
 import { Loader2 } from "lucide-react";
 
 interface Post {
@@ -28,7 +29,8 @@ export default function HistoryPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.scheduler.list() as { posts: Post[] };
+        const project = store.getProject();
+        const res = await api.scheduler.list(project?.id) as { posts: Post[] };
         setPosts(res.posts);
       } catch { /* backend not running */ }
       finally { setLoading(false); }

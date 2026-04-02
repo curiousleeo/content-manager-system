@@ -48,7 +48,8 @@ export default function SchedulePage() {
     if (!text.trim() || !scheduledAt) return;
     setLoading(true); setError(""); setSuccess("");
     try {
-      await api.scheduler.schedule(text, new Date(scheduledAt).toISOString(), "x");
+      const project = store.getProject();
+      await api.scheduler.schedule(text, new Date(scheduledAt).toISOString(), "x", project?.id);
       setSuccess("Scheduled."); setScheduledAt("");
       await loadPosts();
     } catch (e) { setError((e as Error).message); }
@@ -59,7 +60,8 @@ export default function SchedulePage() {
     if (!text.trim()) return;
     setPosting(true); setError(""); setSuccess("");
     try {
-      await api.content.postNow(text, "x");
+      const project = store.getProject();
+      await api.content.postNow(text, "x", project?.id);
       setSuccess("Posted.");
     } catch (e) { setError((e as Error).message); }
     finally { setPosting(false); }
