@@ -46,7 +46,7 @@ export default function ReviewPage() {
       const project = store.getProject();
       const draftId = store.getDraftId();
       const res = await api.review.check(text, "x", project?.id ?? null, draftId);
-      setResult(res.review as ReviewResult);
+      setResult(res.review as unknown as ReviewResult);
       // Persist the draft_id so schedule/post steps can reference the reviewed draft
       if (res.draft_id) store.setDraftId(res.draft_id);
     } catch (e) {
