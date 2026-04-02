@@ -6,15 +6,15 @@ import { api } from "@/lib/api";
 import { store } from "@/lib/store";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
 
-const SOURCES = ["x", "reddit", "youtube", "google_trends"];
+const SOURCES = ["grok", "reddit", "youtube", "google_trends"];
 const SOURCE_LABELS: Record<string, string> = {
-  x: "X (Twitter)", reddit: "Reddit", youtube: "YouTube", google_trends: "Google Trends",
+  grok: "Grok (X data)", reddit: "Reddit", youtube: "YouTube", google_trends: "Google Trends",
 };
 
 export default function ResearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [sources, setSources] = useState<string[]>(["x", "youtube"]);
+  const [sources, setSources] = useState<string[]>(["grok", "google_trends"]);
   const [subreddits, setSubreddits] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Record<string, unknown> | null>(null);
@@ -190,6 +190,23 @@ export default function ResearchPage() {
                   <div>
                     {(items as Record<string, unknown>[]).slice(0, 5).map((item, i) => (
                       <div key={i} style={{ padding: "14px 20px", fontSize: "14px", color: "var(--text-dim)", borderBottom: i < 4 ? "1px solid var(--border)" : "none" }}>
+                        {source === "grok" && (
+                          <div>
+                            <p style={{ marginBottom: "6px", color: "var(--text)" }}>{String(item.text ?? "")}</p>
+                            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                              {item.angle && (
+                                <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "5px", background: "var(--accent-dim)", border: "1px solid var(--accent-border)", color: "var(--accent-light)" }}>
+                                  → {String(item.angle)}
+                                </span>
+                              )}
+                              {item.sentiment && (
+                                <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "5px", fontFamily: "monospace", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-muted)" }}>
+                                  {String(item.sentiment)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         {source === "x" && <p>{String(item.text ?? "")}</p>}
                         {source === "reddit" && (
                           <div>

@@ -30,7 +30,7 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ query, sources, subreddits: subreddits ?? [] }),
       }),
-    trending: () => request("/api/research/trending/x"),
+    trending: () => request("/api/research/trending"),
   },
 
   insights: {

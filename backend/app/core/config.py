@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # Claude
     anthropic_api_key: str = ""
 
+    # xAI / Grok
+    xai_api_key: str = ""
+
     class Config:
         env_file = ".env"
 

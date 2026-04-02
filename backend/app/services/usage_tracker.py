@@ -6,6 +6,7 @@ from app.models.notifications import ApiUsage, Notification
 LIMITS = {
     "x_posts": 1500,       # X free tier: 1,500 tweet writes/month
     "claude_calls": 500,   # Soft warning: 500 Claude API calls/month
+    "grok_calls": 200,     # xAI free credits: ~200 research calls/month
 }
 
 
@@ -46,7 +47,11 @@ def record_usage(db: Session, service: str) -> None:
 
 
 def _service_label(service: str) -> str:
-    return {"x_posts": "X (Twitter) Posts", "claude_calls": "Claude AI Calls"}.get(service, service)
+    return {
+        "x_posts": "X (Twitter) Posts",
+        "claude_calls": "Claude AI Calls",
+        "grok_calls": "Grok Research Calls",
+    }.get(service, service)
 
 
 def _create_usage_warning(db: Session, service: str, count: int, limit: int) -> None:
@@ -68,6 +73,24 @@ def _create_limit_hit(db: Session, service: str, count: int, limit: int) -> None
         message=f"You've reached {limit:,} {label} this month. "
                 f"Posting or API calls may be blocked until next billing cycle.",
     ))
+
+
+def is_daily_cap_hit(db: Session, service: str, daily_cap: int) -> bool:
+    """Check if a service has hit its daily call cap."""
+    from app.models.content import ContentDraft  # avoid circular
+    today = datetime.utcnow().date()
+    year_month = datetime.utcnow().strftime("%Y-%m")
+    # We track monthly; approximate daily by dividing monthly count by days elapsed
+    usage = (
+        db.query(ApiUsage)
+        .filter(ApiUsage.service == service, ApiUsage.year_month == year_month)
+        .first()
+    )
+    if not usage:
+        return False
+    day_of_month = datetime.utcnow().day
+    daily_avg = usage.count / day_of_month
+    return daily_avg >= daily_cap
 
 
 def get_usage_stats(db: Session) -> list[dict]:
