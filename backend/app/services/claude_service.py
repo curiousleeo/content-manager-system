@@ -112,6 +112,68 @@ Return only the post text, nothing else."""
     return response.content[0].text.strip()
 
 
+def batch_generate_content(
+    pillars: list[str],
+    insights: dict,
+    platform: str = "x",
+    project: dict | None = None,
+    niche_report: dict | None = None,
+    count: int = 15,
+) -> list[dict]:
+    """
+    Generate `count` posts distributed across `pillars` in a single Claude call.
+    Returns list of {pillar, text} dicts.
+    """
+    platform_rules = {
+        "x": "Twitter/X post. Max 280 characters. No hashtag spam (max 1-2 if relevant). Direct, punchy.",
+    }
+    # Distribute count across pillars evenly
+    per_pillar = max(1, count // len(pillars))
+    remainder = count - per_pillar * len(pillars)
+    distribution = []
+    for i, pillar in enumerate(pillars):
+        n = per_pillar + (1 if i < remainder else 0)
+        distribution.append(f"- {pillar}: {n} posts")
+
+    prompt = f"""You are a content writer. Generate a batch of {count} {platform_rules.get(platform, platform)} posts.
+
+Distribution across content pillars:
+{chr(10).join(distribution)}
+
+Use these insights to make posts relevant:
+{insights}
+
+Rules for every post:
+- Sound like a real person, not a brand or AI
+- No corporate language or hype words
+- Get to the point immediately
+- Write in first person where it makes sense
+- Each post must be different — vary hooks, angles, and structure
+{_project_context(project)}
+{_niche_context(niche_report)}
+{get_generation_guardrails()}
+
+Return ONLY a valid JSON array. Each item must have:
+- "pillar": the content pillar this post belongs to
+- "text": the post content
+
+Example format:
+[{{"pillar": "crypto perps", "text": "post text here"}}, ...]
+
+Return the JSON array only, no explanation."""
+
+    response = client.messages.create(
+        model=MODEL_SMART,
+        max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    try:
+        return _parse_json(response.content[0].text)
+    except Exception:
+        # Fallback: return what we can parse
+        return []
+
+
 def review_content(content: str, platform: str = "x", project: dict | None = None) -> dict:
     """Layer 4 — review content against checklist."""
     avoid_note = ""

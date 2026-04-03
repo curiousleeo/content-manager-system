@@ -42,6 +42,7 @@ export default function ReviewPage() {
   // Auto-queue toggle state
   const [autoQueue, setAutoQueue] = useState(false);
   const [togglingQueue, setTogglingQueue] = useState(false);
+  const [fromDB, setFromDB] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [project, setProject] = useState<any>(null);
@@ -56,6 +57,7 @@ export default function ReviewPage() {
       // Standalone mode: open picker automatically
       setPickerOpen(true);
       loadDrafts(proj?.id);
+      setFromDB(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -124,6 +126,12 @@ export default function ReviewPage() {
           Check before it goes out. Catches weak angles and AI-sounding language.
         </p>
       </div>
+
+      {fromDB && (
+        <div style={{ borderRadius: "10px", padding: "10px 16px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", background: "var(--blue-dim)", border: "1px solid var(--blue-border)" }}>
+          <span style={{ fontSize: "13px", color: "var(--blue)" }}>Loaded from DB — pick a draft below. Start pipeline from Research to use fresh data.</span>
+        </div>
+      )}
 
       {/* Draft picker */}
       <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)", marginBottom: "20px" }}>

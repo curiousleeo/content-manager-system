@@ -62,6 +62,25 @@ def run_research(req: ResearchRequest, db: Session = Depends(get_db)):
     return {"query": req.query, "data": results, "research_id": topic.id}
 
 
+@router.get("/latest")
+def latest_research(project_id: int | None = None, db: Session = Depends(get_db)):
+    """Return the most recent ResearchTopic for a project (for standalone fallback)."""
+    query = db.query(ResearchTopic)
+    if project_id is not None:
+        query = query.filter(ResearchTopic.project_id == project_id)
+    topic = query.order_by(ResearchTopic.created_at.desc()).first()
+    if not topic:
+        return {"research": None}
+    return {
+        "research": {
+            "research_id": topic.id,
+            "query": topic.query,
+            "data": topic.sources if isinstance(topic.sources, dict) else {"sources": topic.sources},
+            "created_at": topic.created_at.isoformat(),
+        }
+    }
+
+
 @router.post("/paste")
 def paste_research(req: PasteRequest, db: Session = Depends(get_db)):
     """

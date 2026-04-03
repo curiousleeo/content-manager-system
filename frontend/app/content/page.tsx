@@ -31,13 +31,25 @@ export default function ContentPage() {
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const [batchCount, setBatchCount] = useState(15);
 
+  const [insightsFromDB, setInsightsFromDB] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [project, setProject] = useState<any>(null);
 
   useEffect(() => {
     const saved = store.getContent();
     if (saved) setText(saved);
-    setProject(store.getProject());
+    const proj = store.getProject();
+    setProject(proj);
+    // DB fallback: load latest insights if store is empty
+    if (!store.getInsights()) {
+      api.insights.latest(proj?.id).then((res) => {
+        if (res.insights) {
+          store.setInsights(res.insights);
+          if (res.research_id) store.setResearchId(res.research_id);
+          setInsightsFromDB(true);
+        }
+      }).catch(() => {/* silently ignore */});
+    }
   }, []);
 
   // ── Single post handlers ─────────────────────────────────────────────────
@@ -160,6 +172,12 @@ export default function ContentPage() {
           Generate a post or a full week of drafts.
         </p>
       </div>
+
+      {insightsFromDB && (
+        <div style={{ borderRadius: "10px", padding: "10px 16px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px", background: "var(--blue-dim)", border: "1px solid var(--blue-border)" }}>
+          <span style={{ fontSize: "13px", color: "var(--blue)" }}>Loaded from DB — using last saved insights. Run pipeline from Research to use fresh data.</span>
+        </div>
+      )}
 
       {/* Tab switcher */}
       <div style={{ display: "flex", gap: "4px", marginBottom: "28px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "4px", width: "fit-content" }}>

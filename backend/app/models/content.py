@@ -69,6 +69,7 @@ class ContentDraft(Base):
     review_notes = Column(Text, nullable=True)
     insight_data = Column(JSON, nullable=True)
     tweet_id = Column(String(50), nullable=True)
+    auto_queue = Column(JSON, nullable=True, default=False)  # boolean — in auto-poster reservoir
     scheduled_at = Column(DateTime, nullable=True)
     posted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -122,4 +123,5 @@ class NicheReport(Base):
     accounts_analyzed = Column(Integer, default=0)
     patterns = Column(JSON, nullable=True)   # hook_patterns, dominant_tone, post_formats
     swipe_file = Column(JSON, nullable=True) # list of best example posts
+    status = Column(String(20), nullable=False, default="pending")  # pending | injected | discarded
     created_at = Column(DateTime, default=datetime.utcnow)

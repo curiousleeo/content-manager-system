@@ -162,6 +162,7 @@ def run_niche_report(
             "top_insights":  report_data.get("top_insights", []),
         },
         swipe_file=report_data.get("swipe_file", []),
+        status="pending",  # user must inject before generation uses it
     )
     db.add(report)
     db.commit()
@@ -171,6 +172,56 @@ def run_niche_report(
     result["fetch_summary"] = fetch_summary
     result["api_calls_made"] = api_calls_made
     return result
+
+
+@router.get("/report/pending")
+def get_pending_reports(project_id: int, db: Session = Depends(get_db)):
+    """Return all reports with status=pending for a project."""
+    reports = (
+        db.query(NicheReport)
+        .filter(NicheReport.project_id == project_id, NicheReport.status == "pending")
+        .order_by(NicheReport.report_date.desc())
+        .all()
+    )
+    return {"reports": [_serialize_report(r) for r in reports]}
+
+
+@router.get("/report/all")
+def get_all_reports(project_id: int, db: Session = Depends(get_db)):
+    """Return all reports for a project (all statuses), for the auto-mode history list."""
+    reports = (
+        db.query(NicheReport)
+        .filter(NicheReport.project_id == project_id)
+        .order_by(NicheReport.report_date.desc())
+        .limit(20)
+        .all()
+    )
+    return {"reports": [_serialize_report(r) for r in reports]}
+
+
+@router.post("/report/{report_id}/inject")
+def inject_report(report_id: int, db: Session = Depends(get_db)):
+    report = db.query(NicheReport).filter(NicheReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    # Discard any previously injected report for this project first
+    db.query(NicheReport).filter(
+        NicheReport.project_id == report.project_id,
+        NicheReport.status == "injected",
+    ).update({"status": "discarded"})
+    report.status = "injected"
+    db.commit()
+    return {"status": "injected", "report_id": report_id}
+
+
+@router.post("/report/{report_id}/discard")
+def discard_report(report_id: int, db: Session = Depends(get_db)):
+    report = db.query(NicheReport).filter(NicheReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    report.status = "discarded"
+    db.commit()
+    return {"status": "discarded", "report_id": report_id}
 
 
 @router.get("/report/latest")
@@ -189,14 +240,15 @@ def get_latest_report(project_id: int, db: Session = Depends(get_db)):
 def _serialize_report(r: NicheReport) -> dict:
     patterns = r.patterns or {}
     return {
-        "id":               r.id,
-        "project_id":       r.project_id,
-        "report_date":      r.report_date.isoformat(),
+        "id":                r.id,
+        "project_id":        r.project_id,
+        "report_date":       r.report_date.isoformat(),
         "accounts_analyzed": r.accounts_analyzed,
-        "hook_patterns":    patterns.get("hook_patterns", []),
-        "dominant_tone":    patterns.get("dominant_tone", ""),
-        "post_formats":     patterns.get("post_formats", []),
-        "top_insights":     patterns.get("top_insights", []),
-        "swipe_file":       r.swipe_file or [],
-        "created_at":       r.created_at.isoformat(),
+        "hook_patterns":     patterns.get("hook_patterns", []),
+        "dominant_tone":     patterns.get("dominant_tone", ""),
+        "post_formats":      patterns.get("post_formats", []),
+        "top_insights":      patterns.get("top_insights", []),
+        "swipe_file":        r.swipe_file or [],
+        "status":            r.status,
+        "created_at":        r.created_at.isoformat(),
     }
