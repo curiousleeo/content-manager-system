@@ -30,6 +30,7 @@ function ContentPageInner() {
   const [batchDrafts, setBatchDrafts] = useState<Draft[]>([]);
   const [batchError, setBatchError] = useState("");
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+  const [confirmDeleteIds, setConfirmDeleteIds] = useState<Set<number>>(new Set());
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const [batchCount, setBatchCount] = useState(15);
 
@@ -142,6 +143,11 @@ function ContentPageInner() {
   }
 
   async function deleteDraft(id: number) {
+    if (!confirmDeleteIds.has(id)) {
+      setConfirmDeleteIds((s) => new Set(s).add(id));
+      return;
+    }
+    setConfirmDeleteIds((s) => { const n = new Set(s); n.delete(id); return n; });
     setDeletingIds((s) => new Set(s).add(id));
     try {
       await api.content.deleteDraft(id);
@@ -414,10 +420,20 @@ function ContentPageInner() {
                       <button
                         onClick={() => deleteDraft(draft.id)}
                         disabled={deletingIds.has(draft.id)}
-                        title="Delete draft"
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: "var(--text-muted)", opacity: deletingIds.has(draft.id) ? 0.4 : 1 }}
+                        title={confirmDeleteIds.has(draft.id) ? "Click again to confirm delete" : "Delete draft"}
+                        style={{
+                          background: confirmDeleteIds.has(draft.id) ? "var(--red-dim)" : "none",
+                          border: confirmDeleteIds.has(draft.id) ? "1px solid var(--red-border)" : "none",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          padding: confirmDeleteIds.has(draft.id) ? "2px 8px" : "2px",
+                          color: confirmDeleteIds.has(draft.id) ? "var(--red)" : "var(--text-muted)",
+                          fontSize: "11px", fontWeight: 500,
+                          opacity: deletingIds.has(draft.id) ? 0.4 : 1,
+                          whiteSpace: "nowrap",
+                        }}
                       >
-                        <Trash2 size={16} />
+                        {confirmDeleteIds.has(draft.id) ? "Delete?" : <Trash2 size={16} />}
                       </button>
                     </div>
                   </div>

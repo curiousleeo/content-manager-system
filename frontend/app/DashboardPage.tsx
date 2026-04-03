@@ -6,7 +6,7 @@ import { api, TopPost } from "@/lib/api";
 import { store } from "@/lib/store";
 import {
   Search, Lightbulb, PenLine, CheckCircle,
-  CalendarClock, Check, ArrowRight, TrendingUp, Eye, Heart,
+  CalendarClock, Check, ArrowRight, TrendingUp, Eye, Heart, Zap,
 } from "lucide-react";
 
 const steps = [
@@ -41,10 +41,14 @@ function getState(i: number, doneStates: boolean[]): StepState {
   return "locked";
 }
 
+type TriggerState = "idle" | "loading" | "done" | "error";
+
 export default function DashboardPage({ firstName }: { firstName: string }) {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [topPosts, setTopPosts] = useState<TopPost[]>([]);
   const [pipeline, setPipeline] = useState({ hasResearch: false, hasInsights: false, hasContent: false });
+  const [triggerState, setTriggerState] = useState<TriggerState>("idle");
+  const [triggerError, setTriggerError] = useState("");
 
   useEffect(() => {
     setPipeline({
@@ -60,6 +64,26 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
       .then((r) => setTopPosts(r.top_posts))
       .catch(() => {});
   }, []);
+
+  async function triggerAutoPoster() {
+    const project = store.getProject();
+    if (!project?.id) {
+      setTriggerError("No active project selected.");
+      setTriggerState("error");
+      return;
+    }
+    setTriggerState("loading");
+    setTriggerError("");
+    try {
+      await api.scheduler.trigger(project.id);
+      setTriggerState("done");
+      setTimeout(() => setTriggerState("idle"), 3000);
+    } catch (e) {
+      setTriggerError((e as Error).message);
+      setTriggerState("error");
+      setTimeout(() => setTriggerState("idle"), 4000);
+    }
+  }
 
   const scheduled      = posts.filter((p) => p.status === "scheduled").length;
   const published      = posts.filter((p) => p.status === "posted").length;
@@ -278,6 +302,35 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
                   <ArrowRight size={14} style={{ color: "var(--text-subtle)", flexShrink: 0 }} />
                 </Link>
               ))}
+
+              {/* Trigger auto-poster */}
+              <button
+                onClick={triggerAutoPoster}
+                disabled={triggerState === "loading"}
+                style={{
+                  display: "flex", alignItems: "center", gap: "var(--space-4)",
+                  padding: "var(--space-3) var(--space-4)",
+                  borderRadius: "var(--radius-md)", textDecoration: "none",
+                  background: triggerState === "done" ? "var(--teal-dim)" : triggerState === "error" ? "var(--red-dim)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${triggerState === "done" ? "var(--teal-border)" : triggerState === "error" ? "var(--red-border)" : "var(--border)"}`,
+                  cursor: triggerState === "loading" ? "not-allowed" : "pointer",
+                  opacity: triggerState === "loading" ? 0.6 : 1,
+                  transition: "background 0.15s, border-color 0.15s",
+                  width: "100%", textAlign: "left",
+                }}
+              >
+                <div style={{ width: "var(--space-7)", height: "var(--space-7)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: triggerState === "done" ? "var(--teal-dim)" : "var(--green-dim)" }}>
+                  <Zap size={16} style={{ color: triggerState === "done" ? "var(--teal-text)" : "var(--green)" }} strokeWidth={1.75} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: "var(--text-base)", fontWeight: 500, color: triggerState === "done" ? "var(--teal-text)" : triggerState === "error" ? "var(--red)" : "rgba(255,255,255,0.85)", marginBottom: "var(--space-1)" }}>
+                    {triggerState === "loading" ? "Posting…" : triggerState === "done" ? "Posted!" : "Trigger auto-poster"}
+                  </p>
+                  <p style={{ fontSize: "var(--text-sm)", color: "var(--text-subtle)" }}>
+                    {triggerState === "error" ? triggerError : "Post now for active project"}
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
 

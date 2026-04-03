@@ -2,7 +2,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import research, insights, content, review, scheduler, projects, notifications, niche, analytics, calendar
+from app.core.config import settings
 from app.core.database import init_db
+
+
+def _parse_allowed_origins() -> list[str]:
+    origins = [o.strip() for o in settings.allowed_origins.split(",") if o.strip()]
+    # Never fall back to wildcard — if parsing yields nothing, use localhost only
+    return origins if origins else ["http://localhost:3000"]
 
 
 @asynccontextmanager
@@ -17,11 +24,7 @@ app = FastAPI(title="Content Manager System", version="0.1.0", lifespan=lifespan
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://content-manager-system.vercel.app",
-        "https://*.vercel.app",
-    ],
+    allow_origins=_parse_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

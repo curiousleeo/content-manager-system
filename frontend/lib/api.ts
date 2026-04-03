@@ -120,6 +120,8 @@ export const api = {
       request(`/api/scheduler/list${project_id ? `?project_id=${project_id}` : ""}`),
     cancel: (job_id: string) =>
       request(`/api/scheduler/${job_id}`, { method: "DELETE" }),
+    trigger: (project_id: number) =>
+      request<{ status: string; project_id: number }>(`/api/scheduler/trigger?project_id=${project_id}`, { method: "POST" }),
   },
 
   analytics: {

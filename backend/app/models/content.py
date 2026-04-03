@@ -8,6 +8,7 @@ Base = declarative_base()
 
 class ContentStatus(str, enum.Enum):
     draft = "draft"
+    processing = "processing"  # claimed by auto-poster; in-flight
     reviewed = "reviewed"
     scheduled = "scheduled"
     posted = "posted"
@@ -38,7 +39,8 @@ class Project(Base):
 
     # Posting schedule
     posting_days = Column(JSON, nullable=True)   # ["mon", "wed", "fri"]
-    posting_times = Column(JSON, nullable=True)  # ["09:00", "17:00"]
+    posting_times = Column(JSON, nullable=True)  # ["09:00", "17:00"] — in project's local timezone
+    timezone = Column(String(100), nullable=False, server_default="UTC")  # IANA timezone name
 
     # Optional data sources
     coingecko_enabled = Column(JSON, nullable=True, default=False)   # boolean, stored as JSON for flexibility

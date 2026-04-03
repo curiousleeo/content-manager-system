@@ -23,6 +23,7 @@ export interface Project {
   posting_times?: string[];
   coingecko_enabled?: boolean;
   telegram_channels?: string[];
+  timezone?: string;
 }
 
 const ls = {

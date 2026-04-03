@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # xAI / Grok
     xai_api_key: str = ""
 
+    # CORS — comma-separated list of allowed origins
+    allowed_origins: str = "http://localhost:3000"
+
     class Config:
         env_file = ".env"
 

@@ -3,9 +3,10 @@ Auto-poster: runs at each project's scheduled posting times,
 picks a rotating content pillar, generates + posts to X automatically.
 """
 import logging
+import pytz
 from datetime import datetime, timedelta
 from app.core.database import SessionLocal
-from app.models.content import ContentDraft, ContentStatus, Platform, Project, NicheReport
+from app.models.content import ContentDraft, ContentStatus, Platform, Project, NicheReport, ResearchTopic
 from app.models.notifications import Notification
 from app.services.claude_service import generate_content
 from app.services.x_poster import post_tweet
@@ -75,37 +76,87 @@ def auto_post_for_project(project_id: int) -> None:
                 "swipe_file": niche_report_row.swipe_file or [],
             }
 
-        # ── Draft reservoir: use approved draft if ≥2 remain ─────────────────
-        queued_drafts = (
+        # ── Draft reservoir: claim oldest queued draft atomically ────────────
+        # Phase 1: count available drafts (threshold check)
+        queued_count = (
             db.query(ContentDraft)
             .filter(
                 ContentDraft.project_id == project_id,
                 ContentDraft.status == ContentStatus.draft,
                 ContentDraft.auto_queue == True,  # noqa: E712
             )
-            .order_by(ContentDraft.created_at.asc())
-            .all()
+            .count()
         )
 
-        if len(queued_drafts) >= 2:
-            # Consume the oldest approved draft
-            draft = queued_drafts[0]
-            text = draft.body
-            pillar = draft.topic
-            draft.status = ContentStatus.posted
-            draft.posted_at = datetime.utcnow()
-            log.info("Auto-posting queued draft #%d for %s", draft.id, project.name)
-            use_draft = True
+        claimed_draft = None
+        if queued_count >= 2:
+            # Attempt to claim one draft atomically with a row-level lock.
+            # FOR UPDATE SKIP LOCKED prevents two concurrent cron fires from
+            # claiming the same row (e.g. on a manual trigger + scheduled fire overlap).
+            try:
+                candidate = (
+                    db.query(ContentDraft)
+                    .filter(
+                        ContentDraft.project_id == project_id,
+                        ContentDraft.status == ContentStatus.draft,
+                        ContentDraft.auto_queue == True,  # noqa: E712
+                    )
+                    .order_by(ContentDraft.created_at.asc())
+                    .with_for_update(skip_locked=True)
+                    .first()
+                )
+            except Exception:
+                # SQLite does not support FOR UPDATE — fall back to plain select
+                candidate = (
+                    db.query(ContentDraft)
+                    .filter(
+                        ContentDraft.project_id == project_id,
+                        ContentDraft.status == ContentStatus.draft,
+                        ContentDraft.auto_queue == True,  # noqa: E712
+                    )
+                    .order_by(ContentDraft.created_at.asc())
+                    .first()
+                )
+
+            if candidate and candidate.status == ContentStatus.draft:
+                # Mark as processing and commit before any external calls
+                candidate.status = ContentStatus.processing
+                db.commit()
+                claimed_draft = candidate
+                log.info("Claimed draft #%d for %s", claimed_draft.id, project.name)
+
+        use_draft = claimed_draft is not None
+
+        if use_draft:
+            text = claimed_draft.body
+            pillar = claimed_draft.topic or pillar
         else:
-            # Fall back to live generation
-            log.info("Auto-generating for %s — pillar: %s (queue=%d)", project.name, pillar, len(queued_drafts))
-            text = generate_content(pillar, {}, "x", project=proj_ctx, niche_report=niche_ctx)
+            # Fall back to live generation — pull latest research insights from DB
+            latest_research = (
+                db.query(ResearchTopic)
+                .filter(
+                    ResearchTopic.project_id == project_id,
+                    ResearchTopic.insights.isnot(None),
+                )
+                .order_by(ResearchTopic.created_at.desc())
+                .first()
+            )
+            research_insights = latest_research.insights if latest_research else {}
+            log.info(
+                "Auto-generating for %s — pillar: %s (queue=%d, research=%s)",
+                project.name, pillar, queued_count,
+                "loaded" if research_insights else "none",
+            )
+            text = generate_content(pillar, research_insights, "x", project=proj_ctx, niche_report=niche_ctx)
             record_usage(db, "claude_calls")
-            use_draft = False
 
         # Compliance check
         block = hard_block_check(text)
         if block:
+            if use_draft:
+                # Return the draft to the queue so it isn't silently lost
+                claimed_draft.status = ContentStatus.draft
+                db.commit()
             db.add(Notification(
                 type="error",
                 title=f"Auto-post blocked — {project.name}",
@@ -116,15 +167,23 @@ def auto_post_for_project(project_id: int) -> None:
             return
 
         # Post to X
-        post_result = post_tweet(text, project=proj_ctx)
+        try:
+            post_result = post_tweet(text, project=proj_ctx)
+        except Exception as post_err:
+            if use_draft:
+                # Reset draft to 'draft' so it re-enters the queue on next fire
+                claimed_draft.status = ContentStatus.draft
+                db.commit()
+            raise post_err
+
         tweet_id = post_result.get("tweet_id")
         record_usage(db, "x_posts", project_id=project_id)
 
         if use_draft:
-            # Update the existing draft record (already modified above)
-            draft.tweet_id = tweet_id
+            claimed_draft.status = ContentStatus.posted
+            claimed_draft.tweet_id = tweet_id
+            claimed_draft.posted_at = datetime.utcnow()
         else:
-            # Save a new record for live-generated content
             db.add(ContentDraft(
                 project_id=project_id,
                 topic=pillar,
@@ -152,9 +211,36 @@ def auto_post_for_project(project_id: int) -> None:
         db.close()
 
 
+def _local_time_to_utc(hour: int, minute: int, tz_name: str) -> tuple[int, int]:
+    """
+    Convert a local HH:MM in the given IANA timezone to UTC HH:MM.
+    Uses today's date to account for DST. Returns (utc_hour, utc_minute).
+    Falls back to the original values if the timezone string is invalid.
+    """
+    try:
+        local_tz = pytz.timezone(tz_name)
+    except pytz.exceptions.UnknownTimeZoneError:
+        log.warning("Unknown timezone '%s' — treating posting times as UTC", tz_name)
+        return hour, minute
+
+    today = datetime.utcnow().date()
+    naive_local = datetime(today.year, today.month, today.day, hour, minute)
+    try:
+        local_dt = local_tz.localize(naive_local, is_dst=None)
+    except pytz.exceptions.AmbiguousTimeError:
+        local_dt = local_tz.localize(naive_local, is_dst=False)
+    except pytz.exceptions.NonExistentTimeError:
+        # Time doesn't exist (e.g. spring-forward gap) — shift forward 1 hour
+        local_dt = local_tz.localize(naive_local + timedelta(hours=1), is_dst=True)
+
+    utc_dt = local_dt.astimezone(pytz.utc)
+    return utc_dt.hour, utc_dt.minute
+
+
 def register_project_jobs(project: Project) -> int:
     """
     Register APScheduler cron jobs for one project.
+    posting_times are stored in the project's local timezone and converted to UTC here.
     Returns the number of jobs registered.
     """
     from app.scheduler import scheduler
@@ -168,14 +254,18 @@ def register_project_jobs(project: Project) -> int:
     if not dow:
         return 0
 
+    project_tz = getattr(project, "timezone", None) or "UTC"
+
     count = 0
     for t in times:
         try:
-            hour, minute = map(int, t.split(":"))
+            local_hour, local_minute = map(int, t.split(":"))
         except ValueError:
             continue
+
+        utc_hour, utc_minute = _local_time_to_utc(local_hour, local_minute, project_tz)
+
         job_id = f"auto_post_{project.id}_{t.replace(':', '')}"
-        # Remove existing job if any (handles re-registration on restart)
         try:
             scheduler.remove_job(job_id)
         except Exception:
@@ -184,12 +274,15 @@ def register_project_jobs(project: Project) -> int:
             auto_post_for_project,
             "cron",
             day_of_week=dow,
-            hour=hour,
-            minute=minute,
+            hour=utc_hour,
+            minute=utc_minute,
             args=[project.id],
             id=job_id,
         )
-        log.info("Scheduled auto-post: project=%s day_of_week=%s at %s UTC", project.name, dow, t)
+        log.info(
+            "Scheduled auto-post: project=%s day_of_week=%s at %s %s (= %02d:%02d UTC)",
+            project.name, dow, t, project_tz, utc_hour, utc_minute,
+        )
         count += 1
 
     return count
@@ -263,12 +356,35 @@ def run_niche_report_for_project(project_id: int) -> None:
         db.close()
 
 
+def _recover_stale_processing_drafts(db) -> None:
+    """
+    Reset any drafts stuck in 'processing' for more than 5 minutes back to 'draft'.
+    These are drafts that were claimed by a previous process that crashed before posting.
+    Called once at startup.
+    """
+    stale_cutoff = datetime.utcnow() - timedelta(minutes=5)
+    stale = (
+        db.query(ContentDraft)
+        .filter(
+            ContentDraft.status == ContentStatus.processing,
+            ContentDraft.updated_at <= stale_cutoff,
+        )
+        .all()
+    )
+    if stale:
+        for d in stale:
+            d.status = ContentStatus.draft
+        db.commit()
+        log.info("Recovered %d stale processing draft(s) back to draft status", len(stale))
+
+
 def register_all_projects() -> None:
     """Called at app startup — registers cron jobs for all projects that have a schedule."""
     from app.scheduler import scheduler
 
     db = SessionLocal()
     try:
+        _recover_stale_processing_drafts(db)
         projects = db.query(Project).all()
         total = 0
         for p in projects:

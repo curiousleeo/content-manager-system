@@ -95,6 +95,14 @@ def list_scheduled(project_id: int | None = None, db: Session = Depends(get_db))
     }
 
 
+@router.post("/trigger")
+def trigger_auto_post(project_id: int):
+    """Immediately run the auto-poster for a project, outside of its normal cron schedule."""
+    from app.services.auto_poster import auto_post_for_project
+    auto_post_for_project(project_id)
+    return {"status": "triggered", "project_id": project_id}
+
+
 @router.delete("/{job_id}")
 def cancel_scheduled(job_id: str, db: Session = Depends(get_db)):
     try:

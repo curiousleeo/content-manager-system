@@ -18,6 +18,7 @@ const empty = (): Partial<Project> => ({
   posting_times: [],
   coingecko_enabled: false,
   telegram_channels: [],
+  timezone: "UTC",
 });
 
 export default function ProjectsPage() {
@@ -304,6 +305,17 @@ export default function ProjectsPage() {
                 }
                 placeholder="e.g. 09:00, 17:00"
               />
+            </Field>
+
+            <Field label="Timezone" hint="IANA name — posting times and calendar display use this">
+              <input
+                value={editing.timezone ?? "UTC"}
+                onChange={(e) => setEditing({ ...editing, timezone: e.target.value.trim() || "UTC" })}
+                placeholder="e.g. Asia/Manila, America/New_York, Europe/London"
+              />
+              <p style={{ fontSize: "12px", color: "var(--text-subtle)", marginTop: "6px" }}>
+                Full list: <span style={{ fontFamily: "monospace" }}>en.wikipedia.org/wiki/List_of_tz_database_time_zones</span>
+              </p>
             </Field>
           </div>
 

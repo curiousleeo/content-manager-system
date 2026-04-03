@@ -18,10 +18,31 @@ const STATUS_STYLE: Record<string, { color: string; bg: string; border: string; 
   reviewed:  { color: "var(--amber-text)", bg: "var(--amber-dim)",   border: "var(--amber-border)",  label: "Reviewed"   },
 };
 
-function getDateKey(post: CalendarPost): string | null {
+/** Format a UTC ISO string as "YYYY-MM-DD" in the given IANA timezone. */
+function toTzDateKey(isoUtc: string, tz: string): string {
+  return new Intl.DateTimeFormat("en-CA", { // en-CA produces YYYY-MM-DD
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(isoUtc));
+}
+
+/** Format a UTC ISO string for human display in the given timezone. */
+function toTzLocaleString(isoUtc: string, tz: string): string {
+  return new Date(isoUtc).toLocaleString(undefined, {
+    timeZone: tz,
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function getDateKey(post: CalendarPost, tz: string): string | null {
   const raw = post.status === "posted" ? (post.posted_at ?? post.scheduled_at) : post.scheduled_at;
   if (!raw) return null;
-  return raw.slice(0, 10);
+  try {
+    return toTzDateKey(raw, tz);
+  } catch {
+    return raw.slice(0, 10); // fallback: treat as-is if tz is invalid
+  }
 }
 
 export default function CalendarPage() {
@@ -79,10 +100,12 @@ export default function CalendarPage() {
   // Pad to full weeks
   while (cells.length % 7 !== 0) cells.push(null);
 
-  // Group posts by date key
+  const projectTz: string = project?.timezone || "UTC";
+
+  // Group posts by date key in the project's timezone
   const byDate: Record<string, CalendarPost[]> = {};
   for (const p of posts) {
-    const k = getDateKey(p);
+    const k = getDateKey(p, projectTz);
     if (k) {
       if (!byDate[k]) byDate[k] = [];
       byDate[k].push(p);
@@ -348,13 +371,19 @@ export default function CalendarPage() {
               {expanded.scheduled_at && (
                 <div>
                   <p style={{ fontSize: "11px", color: "var(--text-subtle)", marginBottom: "2px" }}>Scheduled</p>
-                  <p style={{ fontSize: "13px", color: "var(--text-dim)" }}>{new Date(expanded.scheduled_at).toLocaleString()}</p>
+                  <p style={{ fontSize: "13px", color: "var(--text-dim)" }}>{toTzLocaleString(expanded.scheduled_at, projectTz)}</p>
                 </div>
               )}
               {expanded.posted_at && (
                 <div>
                   <p style={{ fontSize: "11px", color: "var(--text-subtle)", marginBottom: "2px" }}>Posted</p>
-                  <p style={{ fontSize: "13px", color: "var(--text-dim)" }}>{new Date(expanded.posted_at).toLocaleString()}</p>
+                  <p style={{ fontSize: "13px", color: "var(--text-dim)" }}>{toTzLocaleString(expanded.posted_at, projectTz)}</p>
+                </div>
+              )}
+              {projectTz !== "UTC" && (
+                <div>
+                  <p style={{ fontSize: "11px", color: "var(--text-subtle)", marginBottom: "2px" }}>Timezone</p>
+                  <p style={{ fontSize: "13px", color: "var(--text-dim)", fontFamily: "monospace" }}>{projectTz}</p>
                 </div>
               )}
             </div>

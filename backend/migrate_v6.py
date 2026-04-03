@@ -8,10 +8,9 @@ Run once:
 import os
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://postgres:uUPcjTofnBfVbDtPmzTrykCdxCKFuvCu@interchange.proxy.rlwy.net:13204/railway",
-)
+# Set DATABASE_URL in your environment before running this script.
+# Example: DATABASE_URL=postgresql://user:password@host:port/dbname python migrate_v6.py
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 engine = create_engine(DATABASE_URL)
 
