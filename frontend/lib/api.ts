@@ -35,21 +35,55 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ text, query, project_id }),
       }),
+    latest: (project_id?: number | null) =>
+      request<{ research_id: number | null; query: string | null; data: Record<string, unknown> | null; created_at: string | null }>(
+        `/api/research/latest${project_id != null ? `?project_id=${project_id}` : ""}`
+      ),
   },
 
   insights: {
     analyze: (research_data: object, project_id?: number | null, research_id?: number | null) =>
-      request("/api/insights/analyze", {
+      request<{ insights: Record<string, unknown> }>("/api/insights/analyze", {
         method: "POST",
         body: JSON.stringify({ research_data, project_id, research_id }),
       }),
+    latest: (project_id?: number | null) =>
+      request<{ insights: Record<string, unknown> | null; research_id: number | null; query: string | null; created_at: string | null }>(
+        `/api/insights/latest${project_id != null ? `?project_id=${project_id}` : ""}`
+      ),
   },
 
   content: {
     generate: (topic: string, insights: object, platform = "x", project_id?: number | null) =>
-      request("/api/content/generate", {
+      request<{ platform: string; text: string }>("/api/content/generate", {
         method: "POST",
         body: JSON.stringify({ topic, insights, platform, project_id }),
+      }),
+    batchGenerate: (insights: object, platform = "x", project_id?: number | null, count = 15, pillars?: string[]) =>
+      request<{ drafts: Draft[] }>("/api/content/batch-generate", {
+        method: "POST",
+        body: JSON.stringify({ insights, platform, project_id, count, pillars }),
+      }),
+    drafts: (project_id?: number | null) =>
+      request<{ drafts: Draft[] }>(
+        `/api/content/drafts${project_id != null ? `?project_id=${project_id}` : ""}`
+      ),
+    setAutoQueue: (draft_id: number, enabled: boolean) =>
+      request<{ id: number; auto_queue: boolean }>(`/api/content/${draft_id}/auto-queue`, {
+        method: "PATCH",
+        body: JSON.stringify({ enabled }),
+      }),
+    saveDraft: (text: string, topic: string, platform = "x", project_id?: number | null, auto_queue = false) =>
+      request<Draft>("/api/content/save-draft", {
+        method: "POST",
+        body: JSON.stringify({ text, topic, platform, project_id, auto_queue }),
+      }),
+    deleteDraft: (draft_id: number) =>
+      request(`/api/content/${draft_id}`, { method: "DELETE" }),
+    bulkDelete: (ids: number[]) =>
+      request("/api/content/bulk", {
+        method: "DELETE",
+        body: JSON.stringify(ids),
       }),
     postNow: (text: string, platform = "x", project_id?: number | null) =>
       request("/api/content/post-now", {
@@ -116,11 +150,34 @@ export const api = {
         `/api/niche/cache-status?project_id=${project_id}`
       ),
     runReport: (project_id: number, force = false) =>
-      request(`/api/niche/report?project_id=${project_id}&force=${force}`, { method: "POST" }),
+      request<NicheReportData & { fetch_summary: unknown[]; api_calls_made: number }>(
+        `/api/niche/report?project_id=${project_id}&force=${force}`, { method: "POST" }
+      ),
     latestReport: (project_id: number) =>
       request<{ report: NicheReportData | null }>(`/api/niche/report/latest?project_id=${project_id}`),
+    pendingReports: (project_id: number) =>
+      request<{ reports: NicheReportData[] }>(`/api/niche/report/pending?project_id=${project_id}`),
+    allReports: (project_id: number) =>
+      request<{ reports: NicheReportData[] }>(`/api/niche/report/all?project_id=${project_id}`),
+    inject: (report_id: number) =>
+      request<{ status: string; report_id: number }>(`/api/niche/report/${report_id}/inject`, { method: "POST" }),
+    discard: (report_id: number) =>
+      request<{ status: string; report_id: number }>(`/api/niche/report/${report_id}/discard`, { method: "POST" }),
   },
 };
+
+export interface Draft {
+  id: number;
+  topic: string;
+  platform: string;
+  text: string;
+  status: string;
+  auto_queue: boolean;
+  tweet_id: string | null;
+  scheduled_at: string | null;
+  posted_at: string | null;
+  created_at: string | null;
+}
 
 export interface AnalyticsRow {
   tweet_id: string;
@@ -162,5 +219,6 @@ export interface NicheReportData {
   post_formats: { format: string; frequency: number; best_for: string }[];
   top_insights: string[];
   swipe_file: { handle: string; text: string; hook_type: string; why: string }[];
+  status: "pending" | "injected" | "discarded";
   created_at: string;
 }

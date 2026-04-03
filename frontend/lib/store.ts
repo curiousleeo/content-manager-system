@@ -54,6 +54,7 @@ export const store = {
     const v = ls.get(KEYS.research_id);
     return v ? parseInt(v) : null;
   },
+  setResearchId: (id: number) => ls.set(KEYS.research_id, String(id)),
 
   // Insights
   setInsights: (data: object) => ls.set(KEYS.insights, JSON.stringify(data)),

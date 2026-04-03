@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.models.content import ContentDraft, ContentStatus, Platform, Project, NicheReport
-from app.services.claude_service import generate_content
+from app.services.claude_service import generate_content, batch_generate_content
 from app.services.x_poster import post_tweet
 from app.services.platform_compliance import hard_block_check
 from app.services.usage_tracker import record_usage
-from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -28,27 +28,18 @@ def _get_project(project_id: int | None, db: Session) -> dict | None:
     }
 
 
-class GenerateRequest(BaseModel):
-    topic: str
-    insights: dict
-    platform: str = "x"
-    project_id: Optional[int] = None
-
-
-class PostRequest(BaseModel):
-    text: str
-    platform: str = "x"
-    project_id: Optional[int] = None
-
-
 def _get_latest_niche_report(project_id: int | None, db: Session) -> dict | None:
-    """Return the latest niche report for a project if it's less than 7 days old."""
+    """Return the latest injected niche report within 7 days."""
     if not project_id:
         return None
     cutoff = datetime.utcnow() - timedelta(days=7)
     report = (
         db.query(NicheReport)
-        .filter(NicheReport.project_id == project_id, NicheReport.report_date >= cutoff)
+        .filter(
+            NicheReport.project_id == project_id,
+            NicheReport.report_date >= cutoff,
+            NicheReport.status == "injected",
+        )
         .order_by(NicheReport.report_date.desc())
         .first()
     )
@@ -62,6 +53,56 @@ def _get_latest_niche_report(project_id: int | None, db: Session) -> dict | None
     }
 
 
+def _serialize_draft(d: ContentDraft) -> dict:
+    return {
+        "id": d.id,
+        "topic": d.topic,
+        "platform": d.platform,
+        "text": d.body,
+        "status": d.status,
+        "auto_queue": bool(d.auto_queue),
+        "tweet_id": d.tweet_id,
+        "scheduled_at": d.scheduled_at.isoformat() if d.scheduled_at else None,
+        "posted_at": d.posted_at.isoformat() if d.posted_at else None,
+        "created_at": d.created_at.isoformat() if d.created_at else None,
+    }
+
+
+class GenerateRequest(BaseModel):
+    topic: str
+    insights: dict
+    platform: str = "x"
+    project_id: Optional[int] = None
+
+
+class BatchGenerateRequest(BaseModel):
+    insights: dict = {}
+    platform: str = "x"
+    project_id: Optional[int] = None
+    count: int = 15
+    pillars: Optional[list[str]] = None  # override project pillars if provided
+
+
+class SaveDraftRequest(BaseModel):
+    text: str
+    topic: str = "manual"
+    platform: str = "x"
+    project_id: Optional[int] = None
+    auto_queue: bool = False
+
+
+class PostRequest(BaseModel):
+    text: str
+    platform: str = "x"
+    project_id: Optional[int] = None
+
+
+class AutoQueueRequest(BaseModel):
+    enabled: bool
+
+
+# ── Single generate ───────────────────────────────────────────────────────────
+
 @router.post("/generate")
 def generate(req: GenerateRequest, db: Session = Depends(get_db)):
     project = _get_project(req.project_id, db)
@@ -70,6 +111,110 @@ def generate(req: GenerateRequest, db: Session = Depends(get_db)):
     record_usage(db, "claude_calls", project_id=req.project_id)
     return {"platform": req.platform, "text": text}
 
+
+# ── Batch generate ────────────────────────────────────────────────────────────
+
+@router.post("/batch-generate")
+def batch_generate(req: BatchGenerateRequest, db: Session = Depends(get_db)):
+    """Generate req.count posts across all project pillars in one Claude call. Saves all as drafts."""
+    project_row = db.query(Project).filter(Project.id == req.project_id).first() if req.project_id else None
+    pillars = req.pillars or (project_row.content_pillars if project_row else []) or []
+    if not pillars:
+        raise HTTPException(status_code=400, detail="No content pillars configured for this project")
+
+    project = _get_project(req.project_id, db)
+    niche_report = _get_latest_niche_report(req.project_id, db)
+
+    posts = batch_generate_content(
+        pillars=pillars,
+        insights=req.insights,
+        platform=req.platform,
+        project=project,
+        niche_report=niche_report,
+        count=req.count,
+    )
+    record_usage(db, "claude_calls", project_id=req.project_id)
+
+    drafts = []
+    for post in posts:
+        d = ContentDraft(
+            project_id=req.project_id,
+            topic=post.get("pillar", "batch"),
+            platform=Platform(req.platform),
+            body=post.get("text", ""),
+            status=ContentStatus.draft,
+        )
+        db.add(d)
+        db.flush()  # get id before commit
+        drafts.append(d)
+
+    db.commit()
+    return {"drafts": [_serialize_draft(d) for d in drafts]}
+
+
+# ── Save single draft ─────────────────────────────────────────────────────────
+
+@router.post("/save-draft")
+def save_draft(req: SaveDraftRequest, db: Session = Depends(get_db)):
+    """Save a single post text as a draft (optionally auto-queued)."""
+    d = ContentDraft(
+        project_id=req.project_id,
+        topic=req.topic,
+        platform=Platform(req.platform),
+        body=req.text,
+        status=ContentStatus.draft,
+        auto_queue=req.auto_queue,
+    )
+    db.add(d)
+    db.commit()
+    db.refresh(d)
+    return _serialize_draft(d)
+
+
+# ── Draft list (for picker UI) ────────────────────────────────────────────────
+
+@router.get("/drafts")
+def list_drafts(project_id: int | None = None, db: Session = Depends(get_db)):
+    """Return all status=draft records for a project. Used by review/schedule pickers."""
+    query = db.query(ContentDraft).filter(ContentDraft.status == ContentStatus.draft)
+    if project_id is not None:
+        query = query.filter(ContentDraft.project_id == project_id)
+    drafts = query.order_by(ContentDraft.created_at.desc()).limit(50).all()
+    return {"drafts": [_serialize_draft(d) for d in drafts]}
+
+
+# ── Auto-queue toggle ─────────────────────────────────────────────────────────
+
+@router.patch("/{draft_id}/auto-queue")
+def set_auto_queue(draft_id: int, req: AutoQueueRequest, db: Session = Depends(get_db)):
+    draft = db.query(ContentDraft).filter(ContentDraft.id == draft_id).first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    draft.auto_queue = req.enabled
+    db.commit()
+    return {"id": draft_id, "auto_queue": req.enabled}
+
+
+# ── Delete draft ──────────────────────────────────────────────────────────────
+
+@router.delete("/{draft_id}")
+def delete_draft(draft_id: int, db: Session = Depends(get_db)):
+    draft = db.query(ContentDraft).filter(ContentDraft.id == draft_id).first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    db.delete(draft)
+    db.commit()
+    return {"status": "deleted"}
+
+
+@router.delete("/bulk")
+def bulk_delete_drafts(ids: list[int], db: Session = Depends(get_db)):
+    db.query(ContentDraft).filter(ContentDraft.id.in_(ids)).delete(synchronize_session=False)
+    db.commit()
+    return {"status": "deleted", "count": len(ids)}
+
+
+# ── Post now ──────────────────────────────────────────────────────────────────
 
 @router.post("/post-now")
 def post_now(req: PostRequest, db: Session = Depends(get_db)):
@@ -89,7 +234,7 @@ def post_now(req: PostRequest, db: Session = Depends(get_db)):
             body=req.text,
             status=ContentStatus.posted,
             tweet_id=tweet_id,
-            posted_at=__import__("datetime").datetime.utcnow(),
+            posted_at=datetime.utcnow(),
         )
         db.add(draft)
         record_usage(db, "x_posts", project_id=req.project_id)

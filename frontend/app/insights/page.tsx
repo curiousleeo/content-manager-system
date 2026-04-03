@@ -35,14 +35,32 @@ export default function InsightsPage() {
   const [insights, setInsights] = useState<Insights | null>(null);
   const [error, setError] = useState("");
   const [hasResearch, setHasResearch] = useState(false);
+  const [fromDB, setFromDB] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [project, setProject] = useState<any>(null);
 
   useEffect(() => {
-    setHasResearch(!!store.getResearch());
+    const proj = store.getProject();
+    setProject(proj);
+
     const saved = store.getInsights();
     if (saved) setInsights(saved as Insights);
-    setProject(store.getProject());
+
+    if (store.getResearch()) {
+      setHasResearch(true);
+    } else {
+      // DB fallback: load latest insights from API
+      api.insights.latest(proj?.id).then((res) => {
+        if (res.insights) {
+          setInsights(res.insights as Insights);
+          setHasResearch(true);
+          setFromDB(true);
+          // Hydrate store so downstream pages can use it
+          store.setInsights(res.insights);
+          if (res.research_id) store.setResearchId(res.research_id);
+        }
+      }).catch(() => {/* silently ignore */});
+    }
   }, []);
 
   async function analyze() {
@@ -50,10 +68,11 @@ export default function InsightsPage() {
     if (!research) return;
     setLoading(true);
     setError("");
+    setFromDB(false);
     try {
       const researchId = store.getResearchId();
-      const result = await api.insights.analyze(research, project?.id, researchId) as { insights: Insights };
-      setInsights(result.insights);
+      const result = await api.insights.analyze(research, project?.id, researchId);
+      setInsights(result.insights as Insights);
       store.setInsights(result.insights);
     } catch (e) {
       setError((e as Error).message);
@@ -82,6 +101,12 @@ export default function InsightsPage() {
           <button onClick={() => router.push("/research")} style={{ fontSize: "14px", textDecoration: "underline", textUnderlineOffset: "2px", color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>
             Run research first →
           </button>
+        </div>
+      )}
+
+      {fromDB && (
+        <div style={{ borderRadius: "10px", padding: "10px 16px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px", background: "var(--blue-dim)", border: "1px solid var(--blue-border)" }}>
+          <span style={{ fontSize: "13px", color: "var(--blue)" }}>Loaded from DB — showing last saved insights. Run research to refresh.</span>
         </div>
       )}
 

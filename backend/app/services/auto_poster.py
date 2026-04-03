@@ -54,11 +54,15 @@ def auto_post_for_project(project_id: int) -> None:
             "x_bearer_token": project.x_bearer_token,
         }
 
-        # Load latest niche report if within 7 days
+        # Load latest injected niche report if within 7 days
         cutoff = datetime.utcnow() - timedelta(days=7)
         niche_report_row = (
             db.query(NicheReport)
-            .filter(NicheReport.project_id == project_id, NicheReport.report_date >= cutoff)
+            .filter(
+                NicheReport.project_id == project_id,
+                NicheReport.report_date >= cutoff,
+                NicheReport.status == "injected",
+            )
             .order_by(NicheReport.report_date.desc())
             .first()
         )
@@ -71,10 +75,33 @@ def auto_post_for_project(project_id: int) -> None:
                 "swipe_file": niche_report_row.swipe_file or [],
             }
 
-        # Generate content
-        log.info("Auto-posting for %s — pillar: %s", project.name, pillar)
-        text = generate_content(pillar, {}, "x", project=proj_ctx, niche_report=niche_ctx)
-        record_usage(db, "claude_calls")
+        # ── Draft reservoir: use approved draft if ≥2 remain ─────────────────
+        queued_drafts = (
+            db.query(ContentDraft)
+            .filter(
+                ContentDraft.project_id == project_id,
+                ContentDraft.status == ContentStatus.draft,
+                ContentDraft.auto_queue == True,  # noqa: E712
+            )
+            .order_by(ContentDraft.created_at.asc())
+            .all()
+        )
+
+        if len(queued_drafts) >= 2:
+            # Consume the oldest approved draft
+            draft = queued_drafts[0]
+            text = draft.body
+            pillar = draft.topic
+            draft.status = ContentStatus.posted
+            draft.posted_at = datetime.utcnow()
+            log.info("Auto-posting queued draft #%d for %s", draft.id, project.name)
+            use_draft = True
+        else:
+            # Fall back to live generation
+            log.info("Auto-generating for %s — pillar: %s (queue=%d)", project.name, pillar, len(queued_drafts))
+            text = generate_content(pillar, {}, "x", project=proj_ctx, niche_report=niche_ctx)
+            record_usage(db, "claude_calls")
+            use_draft = False
 
         # Compliance check
         block = hard_block_check(text)
@@ -93,16 +120,20 @@ def auto_post_for_project(project_id: int) -> None:
         tweet_id = post_result.get("tweet_id")
         record_usage(db, "x_posts", project_id=project_id)
 
-        # Save record
-        db.add(ContentDraft(
-            project_id=project_id,
-            topic=pillar,
-            platform=Platform.x,
-            body=text,
-            status=ContentStatus.posted,
-            tweet_id=tweet_id,
-            posted_at=datetime.utcnow(),
-        ))
+        if use_draft:
+            # Update the existing draft record (already modified above)
+            draft.tweet_id = tweet_id
+        else:
+            # Save a new record for live-generated content
+            db.add(ContentDraft(
+                project_id=project_id,
+                topic=pillar,
+                platform=Platform.x,
+                body=text,
+                status=ContentStatus.posted,
+                tweet_id=tweet_id,
+                posted_at=datetime.utcnow(),
+            ))
         db.commit()
         log.info("Auto-posted for %s: %s", project.name, text[:60])
 
@@ -182,10 +213,13 @@ def run_niche_report_for_project(project_id: int) -> None:
         if project:
             proj_ctx = {"tone": project.tone, "target_audience": project.target_audience}
 
-        account_dicts = [{"x_handle": a.x_handle, "category": a.category} for a in accounts]
-        scraped = scrape_watched_accounts(account_dicts)
-        for _ in account_dicts:
-            record_usage(db, "grok_calls", project_id=project_id)
+        bearer = project.x_bearer_token if project else None
+        # Pass ORM objects directly; scraper manages its own session for cache writes
+        scraped = scrape_watched_accounts(accounts, auto=True, force=False, bearer_token=bearer)
+
+        api_calls_made = sum(1 for s in scraped if not s.get("used_cache"))
+        for _ in range(api_calls_made):
+            record_usage(db, "x_reads", project_id=project_id)
 
         report_data = analyze_niche(scraped, proj_ctx)
         record_usage(db, "claude_calls", project_id=project_id)
@@ -201,8 +235,17 @@ def run_niche_report_for_project(project_id: int) -> None:
                 "top_insights": report_data.get("top_insights", []),
             },
             swipe_file=report_data.get("swipe_file", []),
+            status="pending",
         )
         db.add(report)
+
+        # Notify user to review the new report
+        db.add(Notification(
+            type="info",
+            title=f"New niche report ready — {project.name if project else f'project #{project_id}'}",
+            message="A weekly niche intelligence report is ready. Go to Niche Intel to inject or discard it.",
+        ))
+
         db.commit()
         log.info("Niche report generated for project %d — %d accounts", project_id, len(accounts))
     except Exception as e:

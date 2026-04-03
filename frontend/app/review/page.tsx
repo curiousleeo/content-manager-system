@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, Draft } from "@/lib/api";
 import { store } from "@/lib/store";
-import { Loader2, ArrowRight, X, ChevronRight } from "lucide-react";
+import { Loader2, ArrowRight, X, ChevronRight, ToggleLeft, ToggleRight, ChevronDown } from "lucide-react";
 
 interface ReviewResult {
   passed: boolean;
@@ -33,26 +33,81 @@ export default function ReviewPage() {
   const [result, setResult] = useState<ReviewResult | null>(null);
   const [error, setError] = useState("");
 
+  // Draft picker state
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [draftsLoading, setDraftsLoading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedDraftId, setSelectedDraftId] = useState<number | null>(null);
+
+  // Auto-queue toggle state
+  const [autoQueue, setAutoQueue] = useState(false);
+  const [togglingQueue, setTogglingQueue] = useState(false);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [project, setProject] = useState<any>(null);
+
   useEffect(() => {
+    const proj = store.getProject();
+    setProject(proj);
     const saved = store.getContent();
-    if (saved) setText(saved);
+    if (saved) {
+      setText(saved);
+    } else {
+      // Standalone mode: open picker automatically
+      setPickerOpen(true);
+      loadDrafts(proj?.id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadDrafts(projectId?: number) {
+    setDraftsLoading(true);
+    try {
+      const res = await api.content.drafts(projectId);
+      setDrafts(res.drafts);
+    } catch {
+      /* silently ignore */
+    } finally {
+      setDraftsLoading(false);
+    }
+  }
+
+  function selectDraft(draft: Draft) {
+    setText(draft.text);
+    store.setContent(draft.text);
+    setSelectedDraftId(draft.id);
+    setAutoQueue(draft.auto_queue);
+    setResult(null);
+    setPickerOpen(false);
+  }
 
   async function check() {
     if (!text.trim()) return;
     setLoading(true);
     setError("");
     try {
-      const project = store.getProject();
-      const draftId = store.getDraftId();
+      const draftId = store.getDraftId() ?? selectedDraftId ?? null;
       const res = await api.review.check(text, "x", project?.id ?? null, draftId);
       setResult(res.review as unknown as ReviewResult);
-      // Persist the draft_id so schedule/post steps can reference the reviewed draft
       if (res.draft_id) store.setDraftId(res.draft_id);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function toggleAutoQueue() {
+    if (!selectedDraftId) return;
+    setTogglingQueue(true);
+    try {
+      const updated = await api.content.setAutoQueue(selectedDraftId, !autoQueue);
+      setAutoQueue(updated.auto_queue);
+      setDrafts((prev) => prev.map((d) => d.id === selectedDraftId ? { ...d, auto_queue: updated.auto_queue } : d));
+    } catch {
+      /* ignore */
+    } finally {
+      setTogglingQueue(false);
     }
   }
 
@@ -70,18 +125,85 @@ export default function ReviewPage() {
         </p>
       </div>
 
+      {/* Draft picker */}
+      <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)", marginBottom: "20px" }}>
+        <button
+          onClick={() => {
+            if (!pickerOpen && drafts.length === 0) loadDrafts(project?.id);
+            setPickerOpen(!pickerOpen);
+          }}
+          style={{ width: "100%", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", color: "var(--text-dim)", fontSize: "13px" }}
+        >
+          <span style={{ fontWeight: 500 }}>
+            {selectedDraftId ? `Draft selected #${selectedDraftId}` : "Pick from drafts"}
+          </span>
+          <ChevronDown size={14} style={{ transform: pickerOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+        </button>
+
+        {pickerOpen && (
+          <div style={{ borderTop: "1px solid var(--border)", maxHeight: "320px", overflowY: "auto" }}>
+            {draftsLoading ? (
+              <div style={{ padding: "20px", display: "flex", justifyContent: "center" }}>
+                <Loader2 size={16} className="animate-spin" style={{ color: "var(--text-muted)" }} />
+              </div>
+            ) : drafts.length === 0 ? (
+              <div style={{ padding: "16px 20px" }}>
+                <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>No drafts found. Generate some in the Generate page.</p>
+              </div>
+            ) : (
+              drafts.map((draft) => (
+                <button
+                  key={draft.id}
+                  onClick={() => selectDraft(draft)}
+                  style={{
+                    width: "100%", textAlign: "left", padding: "14px 20px", display: "flex", flexDirection: "column", gap: "4px",
+                    background: selectedDraftId === draft.id ? "var(--surface-2)" : "transparent",
+                    border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-subtle)" }}>{draft.topic}</span>
+                    {draft.auto_queue && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "var(--blue-dim)", color: "var(--blue)", border: "1px solid var(--blue-border)" }}>queued</span>}
+                  </div>
+                  <p style={{ fontSize: "13px", color: "var(--text-dim)", margin: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", maxWidth: "600px" }}>
+                    {draft.text}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Editor + run review */}
       <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div style={{ padding: "28px" }}>
-          <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
+        <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
             Post to review
           </label>
           <textarea
             value={text}
             onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }}
             rows={6}
-            placeholder="Paste or edit your post here."
+            placeholder="Paste or edit your post here, or pick a draft above."
             style={{ width: "100%", padding: "14px 16px", borderRadius: "10px", resize: "none", fontSize: "14px", lineHeight: 1.7 }}
           />
+
+          {/* Auto-queue toggle — only shown when a draft is selected */}
+          {selectedDraftId && (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <button
+                onClick={toggleAutoQueue}
+                disabled={togglingQueue}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: autoQueue ? "var(--accent)" : "var(--text-muted)", opacity: togglingQueue ? 0.4 : 1, display: "flex", alignItems: "center" }}
+              >
+                {autoQueue ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+              </button>
+              <span style={{ fontSize: "13px", color: "var(--text-dim)" }}>
+                {autoQueue ? "In auto-queue" : "Add to auto-queue"}
+              </span>
+            </div>
+          )}
         </div>
         <div style={{ padding: "16px 28px", display: "flex", gap: "10px", borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
           <button
