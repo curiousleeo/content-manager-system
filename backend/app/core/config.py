@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     xai_api_key: str = ""
 
     # CORS — comma-separated list of allowed origins
-    allowed_origins: str = "http://localhost:3000"
+    allowed_origins: str = "http://localhost:3000,https://content-manager-system.vercel.app"
 
     class Config:
         env_file = ".env"
