@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, Draft } from "@/lib/api";
 import { store } from "@/lib/store";
 import { Loader2, ArrowRight, Send, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 
 type Tab = "single" | "batch";
 
-export default function ContentPage() {
+function ContentPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>("single");
 
   // ── Single post state ────────────────────────────────────────────────────
   const [topic, setTopic] = useState("");
   const [text, setText] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
   const [loading, setLoading] = useState(false);
   const [posting, setPosting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,6 +42,9 @@ export default function ContentPage() {
     if (saved) setText(saved);
     const proj = store.getProject();
     setProject(proj);
+    // Pre-fill scheduled date from calendar click (?date=YYYY-MM-DD)
+    const dateParam = searchParams.get("date");
+    if (dateParam) setScheduledAt(`${dateParam}T09:00`);
     // DB fallback: load latest insights if store is empty
     if (!store.getInsights()) {
       api.insights.latest(proj?.id).then((res) => {
@@ -248,6 +253,19 @@ export default function ContentPage() {
                 </div>
               </div>
 
+              {/* Scheduled date (pre-filled from calendar click) */}
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
+                  Schedule for (optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  style={{ width: "auto", padding: "10px 14px", borderRadius: "10px", fontSize: "13px" }}
+                />
+              </div>
+
               {/* Auto-queue toggle */}
               {text.trim() && (
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -420,5 +438,13 @@ export default function ContentPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function ContentPage() {
+  return (
+    <Suspense>
+      <ContentPageInner />
+    </Suspense>
   );
 }

@@ -127,10 +127,36 @@ export const api = {
       request<{ analytics: AnalyticsRow[] }>(
         `/api/analytics/posts${project_id != null ? `?project_id=${project_id}` : ""}`
       ),
-    top: (project_id?: number | null, limit = 5) =>
+    top: (project_id?: number | null, limit = 10) =>
       request<{ top_posts: TopPost[] }>(
         `/api/analytics/top?limit=${limit}${project_id != null ? `&project_id=${project_id}` : ""}`
       ),
+    timeline: (project_id?: number | null, days = 30) =>
+      request<{ timeline: TimelinePoint[] }>(
+        `/api/analytics/timeline?days=${days}${project_id != null ? `&project_id=${project_id}` : ""}`
+      ),
+    frequency: (project_id?: number | null) =>
+      request<{ frequency: { day: string; count: number }[] }>(
+        `/api/analytics/frequency${project_id != null ? `?project_id=${project_id}` : ""}`
+      ),
+    pillars: (project_id?: number | null) =>
+      request<{ pillars: PillarStat[] }>(
+        `/api/analytics/pillars${project_id != null ? `?project_id=${project_id}` : ""}`
+      ),
+    benchmark: (project_id: number) =>
+      request<BenchmarkData>(`/api/analytics/benchmark?project_id=${project_id}`),
+  },
+
+  calendar: {
+    list: (project_id: number | null | undefined, year: number, month: number) =>
+      request<{ posts: CalendarPost[] }>(
+        `/api/calendar/posts?year=${year}&month=${month}${project_id != null ? `&project_id=${project_id}` : ""}`
+      ),
+    reschedule: (draft_id: number, scheduled_at: string) =>
+      request<CalendarPost>(`/api/calendar/${draft_id}/reschedule`, {
+        method: "PATCH",
+        body: JSON.stringify({ scheduled_at }),
+      }),
   },
 
   niche: {
@@ -194,11 +220,50 @@ export interface AnalyticsRow {
 export interface TopPost {
   tweet_id: string;
   text: string | null;
+  topic: string | null;
   posted_at: string | null;
   impressions: number;
   likes: number;
   replies: number;
   retweets: number;
+}
+
+export interface TimelinePoint {
+  date: string;
+  impressions: number;
+  likes: number;
+  replies: number;
+  retweets: number;
+  count: number;
+}
+
+export interface PillarStat {
+  pillar: string;
+  avg_impressions: number;
+  post_count: number;
+}
+
+export interface BenchmarkEntry {
+  handle: string;
+  avg_likes: number | null;
+  avg_impressions: number | null;
+  post_count: number;
+}
+
+export interface BenchmarkData {
+  your_avg: BenchmarkEntry;
+  competitors: BenchmarkEntry[];
+  report_date: string | null;
+}
+
+export interface CalendarPost {
+  id: number;
+  status: string;
+  text: string;
+  topic: string | null;
+  scheduled_at: string | null;
+  posted_at: string | null;
+  created_at: string | null;
 }
 
 export interface CacheStatusItem {

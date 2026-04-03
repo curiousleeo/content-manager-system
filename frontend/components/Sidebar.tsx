@@ -5,14 +5,17 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Search, Lightbulb, PenLine,
   CheckCircle, CalendarClock, FolderOpen, History, LogOut, Telescope,
+  CalendarDays, BarChart2,
 } from "lucide-react";
 import UsageStatus from "./UsageStatus";
 import ProjectSwitcher from "./ProjectSwitcher";
 
 const manage = [
-  { href: "/",         label: "Dashboard", icon: LayoutDashboard },
-  { href: "/projects", label: "Projects",  icon: FolderOpen      },
-  { href: "/history",  label: "History",   icon: History         },
+  { href: "/",          label: "Dashboard", icon: LayoutDashboard },
+  { href: "/projects",  label: "Projects",  icon: FolderOpen      },
+  { href: "/history",   label: "History",   icon: History         },
+  { href: "/calendar",  label: "Calendar",  icon: CalendarDays    },
+  { href: "/analytics", label: "Analytics", icon: BarChart2       },
 ];
 
 const pipeline = [
