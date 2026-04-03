@@ -72,7 +72,7 @@ export default function InsightsPage() {
     try {
       const researchId = store.getResearchId();
       const result = await api.insights.analyze(research, project?.id, researchId);
-      setInsights(result.insights as Insights);
+      setInsights(result.insights as unknown as Insights);
       store.setInsights(result.insights);
     } catch (e) {
       setError((e as Error).message);
