@@ -52,7 +52,7 @@ export default function InsightsPage() {
       // DB fallback: load latest insights from API
       api.insights.latest(proj?.id).then((res) => {
         if (res.insights) {
-          setInsights(res.insights as Insights);
+          setInsights(res.insights as unknown as Insights);
           setHasResearch(true);
           setFromDB(true);
           // Hydrate store so downstream pages can use it
