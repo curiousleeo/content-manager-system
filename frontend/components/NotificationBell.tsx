@@ -197,7 +197,7 @@ export default function NotificationBell() {
                   style={{
                     display: "flex", gap: "10px", padding: "12px 16px",
                     borderBottom: idx < notifs.length - 1 ? "1px solid var(--border)" : "none",
-                    background: n.read ? "transparent" : "rgba(127,119,221,0.04)",
+                    background: n.read ? "transparent" : "rgba(255,184,0,0.04)",
                     transition: "background 0.15s",
                   }}
                 >

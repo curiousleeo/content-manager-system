@@ -11,7 +11,7 @@ import { BarChart2 } from "lucide-react";
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const T = {
-  accent:  "#7f77dd",
+  accent:  "var(--gold)",
   green:   "#86efac",
   blue:    "#93c5fd",
   amber:   "#f5b84a",

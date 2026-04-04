@@ -11,6 +11,10 @@ const LABELS: Record<string, string> = {
   "/schedule":  "Schedule",
   "/projects":  "Projects",
   "/history":   "History",
+  "/calendar":  "Calendar",
+  "/analytics": "Analytics",
+  "/niche":     "Niche Intel",
+  "/settings":  "Settings",
 };
 
 export default function Breadcrumb() {
@@ -22,9 +26,9 @@ export default function Breadcrumb() {
 
   return (
     <div className="flex items-center gap-1.5 text-[13px]">
-      <span style={{ color: "var(--text-muted)" }}>CMS</span>
-      <span style={{ color: "var(--text-subtle)" }}>›</span>
-      <span style={{ color: "var(--text)", fontWeight: 500 }}>{label}</span>
+      <span style={{ color: "var(--t3)" }}>CMS</span>
+      <span style={{ color: "var(--t3)" }}>›</span>
+      <span style={{ color: "var(--t1)", fontWeight: 500 }}>{label}</span>
     </div>
   );
 }

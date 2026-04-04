@@ -3,32 +3,44 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Search, Lightbulb, PenLine,
-  CheckCircle, CalendarClock, FolderOpen, History, LogOut, Telescope,
-  CalendarDays, BarChart2,
+  LayoutGrid, Search, Lightbulb, PenLine,
+  CheckCircle, Calendar, Folder, History, LogOut, Target,
+  CalendarDays, BarChart2, Settings, HelpCircle, Plus,
 } from "lucide-react";
 import UsageStatus from "./UsageStatus";
 import ProjectSwitcher from "./ProjectSwitcher";
 
 const manage = [
-  { href: "/",          label: "Dashboard", icon: LayoutDashboard },
-  { href: "/projects",  label: "Projects",  icon: FolderOpen      },
-  { href: "/history",   label: "History",   icon: History         },
-  { href: "/calendar",  label: "Calendar",  icon: CalendarDays    },
-  { href: "/analytics", label: "Analytics", icon: BarChart2       },
+  { href: "/",          label: "Dashboard", icon: LayoutGrid   },
+  { href: "/projects",  label: "Projects",  icon: Folder       },
+  { href: "/history",   label: "History",   icon: History      },
+  { href: "/calendar",  label: "Calendar",  icon: CalendarDays },
+  { href: "/analytics", label: "Analytics", icon: BarChart2    },
 ];
 
 const pipeline = [
-  { href: "/research", label: "Research",  icon: Search        },
-  { href: "/insights", label: "Insights",  icon: Lightbulb     },
-  { href: "/content",  label: "Generate",  icon: PenLine       },
-  { href: "/review",   label: "Review",    icon: CheckCircle   },
-  { href: "/schedule", label: "Schedule",  icon: CalendarClock },
-  { href: "/niche",    label: "Niche Intel", icon: Telescope   },
+  { href: "/research", label: "Research",    icon: Search      },
+  { href: "/insights", label: "Insights",    icon: Lightbulb   },
+  { href: "/content",  label: "Generate",    icon: PenLine     },
+  { href: "/review",   label: "Review",      icon: CheckCircle },
+  { href: "/schedule", label: "Schedule",    icon: Calendar    },
+  { href: "/niche",    label: "Niche Intel", icon: Target      },
 ];
 
 interface User { name: string; initials: string; }
 interface Props { user?: User | null; signOutAction?: () => Promise<void>; }
+
+const NI_STYLE: React.CSSProperties = {
+  fontSize: "12.5px",
+  fontWeight: 500,
+  padding: "9px 10px",
+  borderRadius: "8px",
+  display: "flex",
+  alignItems: "center",
+  gap: "9px",
+  textDecoration: "none",
+  transition: "color 0.1s, background 0.1s",
+};
 
 function NavItem({ href, label, icon: Icon, active }: {
   href: string; label: string; icon: React.ElementType; active: boolean;
@@ -36,20 +48,15 @@ function NavItem({ href, label, icon: Icon, active }: {
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 rounded-lg transition-all duration-100"
       style={{
-        padding: "9px 12px",
-        background: active ? "var(--accent-dim)" : "transparent",
-        color: active ? "var(--accent-light)" : "rgba(255,255,255,0.5)",
-        fontWeight: active ? 500 : 400,
-        fontSize: "13.5px",
+        ...NI_STYLE,
+        color:       active ? "var(--gold)"             : "var(--ti)",
+        background:  active ? "rgba(255,184,0,0.07)"    : "transparent",
+        borderRight: active ? "2px solid var(--gold)"   : "2px solid transparent",
+        fontWeight:  active ? 600                       : 500,
       }}
     >
-      <Icon
-        size={17}
-        strokeWidth={active ? 2 : 1.75}
-        style={{ flexShrink: 0, opacity: active ? 1 : 0.75 }}
-      />
+      <Icon size={15} strokeWidth={1.75} style={{ flexShrink: 0 }} />
       {label}
     </Link>
   );
@@ -65,37 +72,69 @@ export default function Sidebar({ user, signOutAction }: Props) {
   return (
     <aside
       className="flex flex-col h-full select-none"
-      style={{ width: "240px", minWidth: "240px", borderRight: "1px solid var(--border)", background: "var(--sidebar)" }}
+      style={{
+        width: "220px", minWidth: "220px",
+        borderRight: "1px solid var(--border)",
+        background: "var(--bg-base)",
+        boxShadow: "8px 0 32px rgba(0,0,0,0.45)",
+        zIndex: 100,
+      }}
     >
       {/* Logo */}
-      <div
-        className="flex items-center gap-3 shrink-0"
-        style={{ height: "60px", padding: "0 20px", borderBottom: "1px solid var(--border)" }}
-      >
-        <div
-          className="flex items-center justify-center rounded-lg shrink-0 text-[11px] font-bold tracking-wide"
-          style={{
-            width: "32px", height: "32px",
-            background: "linear-gradient(135deg, #7f77dd 0%, #534ab7 100%)",
-            color: "#fff",
-          }}
-        >
-          CMS
+      <div style={{ padding: "26px 13px 20px" }}>
+        <div style={{ marginBottom: "34px" }}>
+          <p style={{
+            fontFamily: "var(--font-manrope), sans-serif",
+            fontWeight: 800, fontSize: "20px",
+            color: "var(--gold)", letterSpacing: "-1px",
+            lineHeight: 1,
+          }}>
+            CMS
+          </p>
+          <p style={{
+            fontSize: "9px", letterSpacing: "2.5px",
+            textTransform: "uppercase", color: "var(--t3)",
+            marginTop: "4px",
+          }}>
+            SOVEREIGN ADMIN
+          </p>
         </div>
-        <span style={{ fontSize: "15px", fontWeight: 500, color: "var(--text)" }}>
-          Content Manager
-        </span>
+
+        {/* Create New Post */}
+        <Link
+          href="/content"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "6px", width: "100%",
+            background: "var(--gold)", color: "#1a1000",
+            fontFamily: "var(--font-manrope), sans-serif",
+            fontWeight: 700, fontSize: "11.5px",
+            padding: "10px 16px", borderRadius: "8px",
+            textDecoration: "none", letterSpacing: "0.3px",
+            transition: "box-shadow 0.15s",
+            marginBottom: "8px",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 18px rgba(255,184,0,0.25)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
+        >
+          <Plus size={12} strokeWidth={2.5} style={{ color: "#1a1000" }} />
+          Create New Post
+        </Link>
       </div>
 
       {/* Project switcher */}
-      <div style={{ padding: "10px 0 0", position: "relative" }}>
+      <div style={{ padding: "0 13px 4px", borderBottom: "1px solid var(--border)" }}>
         <ProjectSwitcher />
       </div>
 
       {/* Nav */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-6" style={{ padding: "8px 10px" }}>
-        <nav className="flex flex-col gap-1">
-          <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0 12px", marginBottom: "6px" }}>
+      <div className="flex-1 overflow-y-auto" style={{ padding: "12px 13px" }}>
+        <nav className="flex flex-col" style={{ marginBottom: "4px" }}>
+          <p style={{
+            fontSize: "9px", fontWeight: 600, color: "var(--t3)",
+            letterSpacing: "1.5px", textTransform: "uppercase",
+            padding: "0 10px", marginBottom: "6px",
+          }}>
             Overview
           </p>
           {manage.map(({ href, label, icon }) => (
@@ -103,34 +142,64 @@ export default function Sidebar({ user, signOutAction }: Props) {
           ))}
         </nav>
 
-        <nav className="flex flex-col gap-1">
-          <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0 12px", marginBottom: "6px" }}>
+        <div style={{ height: "1px", background: "var(--border)", margin: "10px 0" }} />
+
+        <nav className="flex flex-col">
+          <p style={{
+            fontSize: "9px", fontWeight: 600, color: "var(--t3)",
+            letterSpacing: "1.5px", textTransform: "uppercase",
+            padding: "0 10px", marginBottom: "6px",
+          }}>
             Pipeline
           </p>
           {pipeline.map(({ href, label, icon }) => (
             <NavItem key={href} href={href} label={label} icon={icon} active={isActive(href)} />
           ))}
         </nav>
+
+        <div style={{ height: "1px", background: "var(--border)", margin: "10px 0" }} />
+
+        <nav className="flex flex-col gap-0.5">
+          {[
+            { href: "/settings", label: "Settings", icon: Settings },
+            { href: "/support",  label: "Support",  icon: HelpCircle },
+          ].map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              style={{ ...NI_STYLE, color: "var(--ti)" }}
+            >
+              <Icon size={15} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
 
-      {/* API Usage — always visible mini bars */}
+      {/* API Usage */}
       <UsageStatus />
 
       {/* User */}
       {user && (
-        <div className="shrink-0" style={{ borderTop: "1px solid var(--border)", padding: "12px 10px" }}>
-          <div className="flex items-center gap-3" style={{ padding: "8px 12px", borderRadius: "10px" }}>
+        <div style={{ borderTop: "1px solid var(--border)", padding: "12px 13px" }}>
+          <div className="flex items-center gap-3" style={{ padding: "8px 10px", borderRadius: "8px" }}>
             <div
-              className="flex items-center justify-center rounded-full shrink-0 text-[13px] font-semibold"
-              style={{ width: "34px", height: "34px", background: "linear-gradient(135deg, #7f77dd, #3c3489)", color: "#fff" }}
+              className="flex items-center justify-center rounded-lg shrink-0"
+              style={{
+                width: "28px", height: "28px", borderRadius: "7px",
+                background: "linear-gradient(135deg, var(--gold), var(--purple))",
+                color: "#1a1000", fontSize: "10px", fontWeight: 700,
+              }}
             >
               {user.initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="truncate" style={{ fontSize: "13.5px", fontWeight: 500, color: "rgba(255,255,255,0.85)" }}>
+              <p className="truncate" style={{ fontSize: "11px", fontWeight: 600, color: "var(--t1)" }}>
                 {user.name}
               </p>
-              <p style={{ fontSize: "11.5px", color: "var(--text-subtle)", marginTop: "1px" }}>Admin · GTR</p>
+              <p style={{ fontSize: "9px", fontWeight: 600, color: "var(--gold)", letterSpacing: "0.8px", textTransform: "uppercase", marginTop: "1px" }}>
+                Admin
+              </p>
             </div>
             {signOutAction && (
               <form action={signOutAction}>
@@ -138,9 +207,9 @@ export default function Sidebar({ user, signOutAction }: Props) {
                   type="submit"
                   title="Sign out"
                   className="flex items-center justify-center rounded-md transition-colors hover:bg-white/[0.08]"
-                  style={{ width: "28px", height: "28px", color: "var(--text-subtle)" }}
+                  style={{ width: "26px", height: "26px", color: "var(--t3)", cursor: "pointer", background: "none", border: "none" }}
                 >
-                  <LogOut size={14} />
+                  <LogOut size={13} strokeWidth={1.75} />
                 </button>
               </form>
             )}

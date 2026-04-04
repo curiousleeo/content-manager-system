@@ -8,6 +8,7 @@ import {
   Search, Lightbulb, PenLine, CheckCircle,
   CalendarClock, Check, ArrowRight, TrendingUp, Eye, Heart, Zap,
 } from "lucide-react";
+import StatusBar from "@/components/StatusBar";
 
 const steps = [
   { href: "/research", label: "Research",  icon: Search,        desc: "Find topics and conversations your audience is already engaged in" },
@@ -95,6 +96,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
   const greeting = firstName ? `${tod}, ${firstName}.` : `${tod}.`;
 
   return (
+    <>
     <div style={{ padding: "var(--space-9) var(--space-9)", display: "flex", flexDirection: "column", minHeight: "100%" }}>
 
       {/* ── Greeting ── */}
@@ -174,16 +176,16 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
                         display: "flex", alignItems: "center", gap: "var(--space-4)",
                         padding: "var(--space-4) var(--space-5)",
                         borderRadius: "var(--radius-md)", textDecoration: "none",
-                        background: isActive ? "rgba(127,119,221,0.08)" : "var(--surface)",
+                        background: isActive ? "rgba(255,184,0,0.08)" : "var(--surface)",
                         border: `1px solid ${isActive ? "var(--accent-border)" : "var(--border)"}`,
                         transition: "background 0.15s, border-color 0.15s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = isActive ? "rgba(127,119,221,0.14)" : "var(--surface-2)";
+                        e.currentTarget.style.background = isActive ? "rgba(255,184,0,0.12)" : "var(--surface-2)";
                         if (!isActive) e.currentTarget.style.borderColor = "var(--border-2)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = isActive ? "rgba(127,119,221,0.08)" : "var(--surface)";
+                        e.currentTarget.style.background = isActive ? "rgba(255,184,0,0.08)" : "var(--surface)";
                         e.currentTarget.style.borderColor = isActive ? "var(--accent-border)" : "var(--border)";
                       }}
                     >
@@ -404,5 +406,7 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
         </div>
       </div>
     </div>
+      <StatusBar />
+    </>
   );
 }

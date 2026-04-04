@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { api, Draft } from "@/lib/api";
 import { store } from "@/lib/store";
 import { Send, Clock, RefreshCw, X as XIcon, Loader2, CalendarClock, ChevronDown, ToggleLeft, ToggleRight } from "lucide-react";
+import StatusBar from "@/components/StatusBar";
 
 interface ScheduledPost {
   id: string;
@@ -122,6 +123,7 @@ export default function SchedulePage() {
   const minDatetime = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
 
   return (
+    <>
     <div style={{ padding: "52px 64px", maxWidth: "760px" }}>
 
       {/* Page header */}
@@ -307,5 +309,7 @@ export default function SchedulePage() {
         )}
       </div>
     </div>
+      <StatusBar />
+    </>
   );
 }
