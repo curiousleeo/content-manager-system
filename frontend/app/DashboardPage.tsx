@@ -6,90 +6,71 @@ import { api, TopPost } from "@/lib/api";
 import { store } from "@/lib/store";
 import {
   Search, Lightbulb, PenLine, CheckCircle,
-  CalendarClock, Check, ArrowRight, TrendingUp, Eye, Heart, Zap,
+  Calendar, Check, TrendingUp, Eye, Heart, Zap,
+  LayoutGrid, BarChart2, Target,
 } from "lucide-react";
 import StatusBar from "@/components/StatusBar";
 
-const steps = [
-  { href: "/research", label: "Research",  icon: Search,        desc: "Find topics and conversations your audience is already engaged in" },
-  { href: "/insights", label: "Insights",  icon: Lightbulb,     desc: "Analyze trends and surface the best angle to take" },
-  { href: "/content",  label: "Generate",  icon: PenLine,       desc: "Write content tuned for your voice and platform" },
-  { href: "/review",   label: "Review",    icon: CheckCircle,   desc: "Catch weak hooks and thin angles before posting" },
-  { href: "/schedule", label: "Schedule",  icon: CalendarClock, desc: "Post immediately or queue for your best time slots" },
+const STEPS = [
+  { href: "/research", label: "Research",  icon: Search,        desc: "Find topics your audience cares about" },
+  { href: "/insights", label: "Insights",  icon: Lightbulb,     desc: "Analyze trends and find the best angle" },
+  { href: "/content",  label: "Generate",  icon: PenLine,       desc: "Write content tuned for your voice" },
+  { href: "/review",   label: "Review",    icon: CheckCircle,   desc: "Catch weak hooks before posting" },
+  { href: "/schedule", label: "Schedule",  icon: Calendar,      desc: "Queue for your best time slots" },
 ];
 
-const quickActions = [
-  { href: "/research", label: "Research a topic",   sub: "Find trending angles",     iconBg: "var(--accent-dim)",  iconColor: "var(--accent-light)", icon: Search        },
-  { href: "/content",  label: "Generate from idea", sub: "Skip straight to writing", iconBg: "var(--teal-dim)",    iconColor: "var(--teal-text)",    icon: PenLine       },
-  { href: "/schedule", label: "Schedule a slot",    sub: "Block time to post",       iconBg: "var(--amber-dim)",   iconColor: "var(--amber-text)",   icon: CalendarClock },
+const QUICK_ACTIONS = [
+  { href: "/research",  label: "Research a topic",   desc: "Find trending angles",    icon: Search,    bg: "rgba(255,184,0,0.08)",    color: "var(--gold)"     },
+  { href: "/content",   label: "Generate from idea", desc: "Skip straight to writing", icon: PenLine,   bg: "rgba(34,197,94,0.08)",    color: "var(--green)"    },
+  { href: "/schedule",  label: "Schedule a slot",    desc: "Block time to post",       icon: Calendar,  bg: "rgba(245,158,11,0.08)",   color: "var(--amber)"    },
+  { href: "/analytics", label: "View analytics",     desc: "Check performance",        icon: BarChart2, bg: "rgba(107,47,217,0.08)",   color: "var(--purple-l)" },
 ];
 
-const tips = [
-  { dot: "var(--accent)", bold: "Research first.",              rest: "Strong posts start with what your audience is already curious about — not what you want to say." },
-  { dot: "var(--teal)",   bold: "Find your angle in Insights.", rest: "Don't just report a trend — take a point of view on it." },
-  { dot: "var(--amber)",  bold: "Review before scheduling.",    rest: "One weak hook kills reach. Catch it at step 4, not after publishing." },
-  { dot: "var(--pink)",   bold: "Queue 3–5 posts ahead.",       rest: "Consistency compounds. Batch your pipeline once a week." },
-];
+type TriggerState = "idle" | "loading" | "done" | "error";
+type StepState    = "done" | "active" | "locked";
 
-interface ScheduledPost { status: string; }
-type StepState = "done" | "active" | "locked";
-
-function getState(i: number, doneStates: boolean[]): StepState {
-  const first = doneStates.findIndex((d) => !d);
+function getState(i: number, done: boolean[]): StepState {
+  const first = done.findIndex((d) => !d);
   if (first === -1) return "done";
-  if (i < first) return "done";
+  if (i < first)  return "done";
   if (i === first) return "active";
   return "locked";
 }
 
-type TriggerState = "idle" | "loading" | "done" | "error";
+interface ScheduledPost { status: string; }
 
 export default function DashboardPage({ firstName }: { firstName: string }) {
-  const [posts, setPosts] = useState<ScheduledPost[]>([]);
+  const [posts, setPosts]       = useState<ScheduledPost[]>([]);
   const [topPosts, setTopPosts] = useState<TopPost[]>([]);
   const [pipeline, setPipeline] = useState({ hasResearch: false, hasInsights: false, hasContent: false });
   const [triggerState, setTriggerState] = useState<TriggerState>("idle");
   const [triggerError, setTriggerError] = useState("");
 
   useEffect(() => {
-    setPipeline({
-      hasResearch: !!store.getResearch(),
-      hasInsights: !!store.getInsights(),
-      hasContent:  !!store.getContent(),
-    });
+    setPipeline({ hasResearch: !!store.getResearch(), hasInsights: !!store.getInsights(), hasContent: !!store.getContent() });
     const project = store.getProject();
-    api.scheduler.list()
-      .then((r) => setPosts((r as { posts: ScheduledPost[] }).posts))
-      .catch(() => {});
-    api.analytics.top(project?.id, 5)
-      .then((r) => setTopPosts(r.top_posts))
-      .catch(() => {});
+    api.scheduler.list().then((r) => setPosts((r as { posts: ScheduledPost[] }).posts)).catch(() => {});
+    api.analytics.top(project?.id, 5).then((r) => setTopPosts(r.top_posts)).catch(() => {});
   }, []);
 
   async function triggerAutoPoster() {
     const project = store.getProject();
-    if (!project?.id) {
-      setTriggerError("No active project selected.");
-      setTriggerState("error");
-      return;
-    }
-    setTriggerState("loading");
-    setTriggerError("");
+    if (!project?.id) { setTriggerError("No active project selected."); setTriggerState("error"); return; }
+    setTriggerState("loading"); setTriggerError("");
     try {
       await api.scheduler.trigger(project.id);
-      setTriggerState("done");
-      setTimeout(() => setTriggerState("idle"), 3000);
+      setTriggerState("done"); setTimeout(() => setTriggerState("idle"), 3000);
     } catch (e) {
-      setTriggerError((e as Error).message);
-      setTriggerState("error");
+      setTriggerError((e as Error).message); setTriggerState("error");
       setTimeout(() => setTriggerState("idle"), 4000);
     }
   }
 
-  const scheduled      = posts.filter((p) => p.status === "scheduled").length;
-  const published      = posts.filter((p) => p.status === "posted").length;
-  const doneStates     = [pipeline.hasResearch, pipeline.hasInsights, pipeline.hasContent, false, false];
+  const scheduled    = posts.filter((p) => p.status === "scheduled").length;
+  const published    = posts.filter((p) => p.status === "posted").length;
+  const doneStates   = [pipeline.hasResearch, pipeline.hasInsights, pipeline.hasContent, false, false];
   const stepsCompleted = doneStates.filter(Boolean).length;
+  const activeStep   = STEPS[stepsCompleted] ?? STEPS[0];
 
   const hour     = new Date().getHours();
   const tod      = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -97,316 +78,181 @@ export default function DashboardPage({ firstName }: { firstName: string }) {
 
   return (
     <>
-    <div style={{ padding: "var(--space-9) var(--space-9)", display: "flex", flexDirection: "column", minHeight: "100%" }}>
+    <div style={{ padding: "32px 36px 80px" }}>
 
       {/* ── Greeting ── */}
-      <div style={{ marginBottom: "var(--space-7)" }}>
-        <h1 style={{ fontSize: "var(--text-2xl)", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "var(--space-2)", lineHeight: 1.2 }}>
+      <div style={{ marginBottom: "28px" }}>
+        <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1.1 }}>
           {greeting}
         </h1>
-        <p style={{ fontSize: "var(--text-md)", color: "var(--text-muted)", lineHeight: 1.6 }}>
+        <p style={{ fontSize: "14px", color: "var(--t2)", marginTop: "8px" }}>
           {stepsCompleted === 0
-            ? "Your pipeline is empty — pick a step below to start creating."
-            : `${stepsCompleted} of 5 pipeline steps complete.`}
+            ? "Pipeline empty — start with Research."
+            : `${stepsCompleted} of 5 pipeline steps complete. Next: ${activeStep.label}.`}
         </p>
       </div>
 
-      {/* ── Stats ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-4)", marginBottom: "var(--space-8)" }}>
-        {[
-          { label: "Pipeline",  labelColor: "var(--accent-light)", topColor: "var(--accent)", progColor: "var(--accent)",
-            value: stepsCompleted, denom: "/ 5 steps", sub: stepsCompleted === 0 ? "No active post in progress" : `${stepsCompleted} steps done`, progress: (stepsCompleted / 5) * 100 },
-          { label: "Scheduled", labelColor: "var(--teal-text)",    topColor: "var(--teal)",   progColor: "var(--teal)",
-            value: scheduled, denom: "posts", sub: scheduled === 0 ? "Nothing queued yet" : `${scheduled} in queue`, progress: Math.min(scheduled * 20, 100) },
-          { label: "Published", labelColor: "var(--amber-text)",   topColor: "var(--amber)",  progColor: "var(--amber)",
-            value: published, denom: "all time", sub: published === 0 ? "Start publishing to see stats" : `${published} published`, progress: Math.min(published * 10, 100) },
-        ].map(({ label, labelColor, topColor, progColor, value, denom, sub, progress }) => (
-          <div
-            key={label}
-            style={{
-              background: "var(--surface)", border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)", padding: "var(--space-6) var(--space-6) var(--space-5)",
-              position: "relative", overflow: "hidden",
-            }}
-          >
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: topColor }} />
-            <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: labelColor, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "var(--space-5)" }}>
-              {label}
-            </p>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
-              <span style={{ fontSize: "var(--text-stat)", fontWeight: 700, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text)" }}>
-                {value}
-              </span>
-              <span style={{ fontSize: "var(--text-md)", color: "var(--text-muted)" }}>{denom}</span>
+      {/* ── Pipeline stepper ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: "5px", marginBottom: "28px" }}>
+        {STEPS.map(({ label }, i) => {
+          const state = getState(i, doneStates);
+          return (
+            <div key={label}>
+              <div style={{
+                height: "3px", borderRadius: "2px", marginBottom: "6px",
+                background: state === "done" ? "var(--gold-soft)" : state === "active" ? "var(--gold)" : "rgba(255,255,255,0.08)",
+                boxShadow: state === "active" ? "0 0 8px rgba(255,184,0,0.35)" : "none",
+              }} />
+              <p style={{ fontSize: "9px", letterSpacing: "1px", textTransform: "uppercase", color: state === "active" ? "var(--gold)" : "var(--t3)", fontWeight: state === "active" ? 600 : 500 }}>{i + 1}</p>
+              <p style={{ fontSize: "12px", fontWeight: 600, color: state === "active" ? "var(--t1)" : "var(--t2)", marginTop: "2px" }}>{label}</p>
             </div>
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", marginBottom: "var(--space-5)" }}>{sub}</p>
-            <div style={{ height: "3px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)" }}>
-              <div style={{ height: "100%", borderRadius: "9999px", width: `${progress}%`, background: progColor, transition: "width 0.5s ease" }} />
+          );
+        })}
+      </div>
+
+      {/* ── Stat cards row ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1.4fr", gap: "14px", marginBottom: "24px" }}>
+        {[
+          { label: "Pipeline",  value: stepsCompleted, denom: "/ 5",  sub: "steps done",    topColor: "var(--gold)",     prog: (stepsCompleted / 5) * 100    },
+          { label: "Scheduled", value: scheduled,       denom: "",     sub: "in queue",      topColor: "var(--teal)",     prog: Math.min(scheduled * 20, 100)  },
+          { label: "Published", value: published,       denom: "",     sub: "all time",      topColor: "var(--amber)",    prog: Math.min(published * 10, 100)  },
+          { label: "Drafts",    value: topPosts.length, denom: "",     sub: "tracked",       topColor: "var(--purple-l)", prog: Math.min(topPosts.length * 10, 100) },
+        ].map(({ label, value, denom, sub, topColor, prog }) => (
+          <div key={label} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: topColor }} />
+            <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.8px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>{label}</p>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "5px", marginBottom: "4px" }}>
+              <span style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "28px", letterSpacing: "-1px", color: "var(--t1)", lineHeight: 1 }}>{value}</span>
+              {denom && <span style={{ fontSize: "13px", color: "var(--t3)" }}>{denom}</span>}
+            </div>
+            <p style={{ fontSize: "10px", color: "var(--t3)", marginBottom: "10px" }}>{sub}</p>
+            <div style={{ height: "3px", borderRadius: "2px", background: "rgba(255,255,255,0.07)" }}>
+              <div style={{ height: "100%", borderRadius: "2px", width: `${prog}%`, background: topColor, transition: "width 0.5s ease" }} />
             </div>
           </div>
         ))}
-      </div>
-
-      {/* ── Two columns ── */}
-      <div style={{ display: "flex", gap: "var(--space-7)", flex: 1, minHeight: 0 }}>
-
-        {/* Left column */}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: "var(--space-7)" }}>
-
-          {/* Pipeline steps */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-4)" }}>
-              <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Content pipeline
-              </p>
-              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-subtle)" }}>{stepsCompleted} / 5 complete</span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {steps.map(({ href, label, desc }, i) => {
-                const state    = getState(i, doneStates);
-                const isActive = state === "active";
-                const isDone   = state === "done";
-
-                return (
-                  <div key={href}>
-                    <Link
-                      href={href}
-                      style={{
-                        display: "flex", alignItems: "center", gap: "var(--space-4)",
-                        padding: "var(--space-4) var(--space-5)",
-                        borderRadius: "var(--radius-md)", textDecoration: "none",
-                        background: isActive ? "rgba(255,184,0,0.08)" : "var(--surface)",
-                        border: `1px solid ${isActive ? "var(--accent-border)" : "var(--border)"}`,
-                        transition: "background 0.15s, border-color 0.15s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = isActive ? "rgba(255,184,0,0.12)" : "var(--surface-2)";
-                        if (!isActive) e.currentTarget.style.borderColor = "var(--border-2)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = isActive ? "rgba(255,184,0,0.08)" : "var(--surface)";
-                        e.currentTarget.style.borderColor = isActive ? "var(--accent-border)" : "var(--border)";
-                      }}
-                    >
-                      {/* Step badge */}
-                      <div style={{
-                        width: "var(--space-7)", height: "var(--space-7)",
-                        borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center",
-                        flexShrink: 0, fontSize: "var(--text-sm)", fontWeight: 600,
-                        background: isDone ? "var(--teal-dim)" : isActive ? "var(--accent-dim)" : "rgba(255,255,255,0.05)",
-                        color:      isDone ? "var(--teal-text)" : isActive ? "var(--accent-light)" : "var(--text-subtle)",
-                      }}>
-                        {isDone ? <Check size={15} strokeWidth={2.5} /> : i + 1}
-                      </div>
-
-                      {/* Text */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: "var(--text-base)", fontWeight: 500, marginBottom: "var(--space-1)",
-                          color: isActive ? "var(--accent-light)" : isDone ? "var(--text-muted)" : "rgba(255,255,255,0.88)" }}>
-                          {label}
-                        </p>
-                        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", lineHeight: 1.5 }}>{desc}</p>
-                      </div>
-
-                      {/* Badge */}
-                      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", flexShrink: 0 }}>
-                        {isDone ? (
-                          <span style={{ fontSize: "var(--text-xs)", fontWeight: 500, padding: "4px 12px", borderRadius: "var(--radius-sm)", background: "var(--teal-dim)", color: "var(--teal-text)", border: "1px solid var(--teal-border)" }}>Done</span>
-                        ) : isActive ? (
-                          <span style={{ fontSize: "var(--text-xs)", fontWeight: 500, padding: "4px 12px", borderRadius: "var(--radius-sm)", background: "var(--accent-dim)", color: "var(--accent-light)", border: "1px solid var(--accent-border)" }}>Start here →</span>
-                        ) : (
-                          <>
-                            <span style={{ fontSize: "var(--text-xs)", fontWeight: 500, padding: "4px 12px", borderRadius: "var(--radius-sm)", background: "rgba(255,255,255,0.05)", color: "var(--text-subtle)", border: "1px solid var(--border)" }}>Locked</span>
-                            <ArrowRight size={14} style={{ color: "var(--text-subtle)" }} />
-                          </>
-                        )}
-                      </div>
-                    </Link>
-
-                    {i < steps.length - 1 && (
-                      <div style={{ width: "1px", height: "10px", background: "var(--border)", marginLeft: "calc(var(--space-7) / 2 + var(--space-5))" }} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recent posts */}
-          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "var(--space-3)" }}>
-              Recent posts
-            </p>
-            <div style={{
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              flex: 1, borderRadius: "var(--radius-lg)", background: "var(--surface)",
-              border: "1px solid var(--border)", padding: "var(--space-8) var(--space-7)", textAlign: "center",
-            }}>
-              <div style={{ width: "var(--space-8)", height: "var(--space-8)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.05)", marginBottom: "var(--space-4)" }}>
-                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.4">
-                  <rect x="2" y="2" width="12" height="12" rx="2" /><path d="M5 6.5h6M5 9h4" />
-                </svg>
+        {/* API Resources card */}
+        <div style={{ background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px" }}>
+          <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.8px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>API Resources</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {[
+              { label: "Claude", pct: 35, color: "var(--gold)"     },
+              { label: "Twitter", pct: 60, color: "var(--blue)"    },
+            ].map(({ label, pct, color }) => (
+              <div key={label}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "11px", color: "var(--t2)" }}>{label}</span>
+                  <span style={{ fontSize: "10px", fontFamily: "var(--font-mono), monospace", color: "var(--t3)" }}>{pct}%</span>
+                </div>
+                <div style={{ height: "3px", borderRadius: "2px", background: "rgba(255,255,255,0.07)" }}>
+                  <div style={{ height: "100%", borderRadius: "2px", width: `${pct}%`, background: color, transition: "width 0.4s ease" }} />
+                </div>
               </div>
-              <p style={{ fontSize: "var(--text-base)", fontWeight: 500, color: "rgba(255,255,255,0.45)", marginBottom: "var(--space-2)" }}>
-                No posts yet
-              </p>
-              <p style={{ fontSize: "var(--text-sm)", color: "var(--text-subtle)", lineHeight: 1.7, maxWidth: "260px", marginBottom: "var(--space-5)" }}>
-                Once you move a post through the pipeline, it will appear here with status and publish date.
-              </p>
-              <Link
-                href="/research"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: "var(--space-2)",
-                  fontSize: "var(--text-sm)", fontWeight: 500,
-                  padding: "var(--space-2) var(--space-5)",
-                  borderRadius: "var(--radius-sm)", textDecoration: "none",
-                  background: "var(--accent-dim)", color: "var(--accent-light)", border: "1px solid var(--accent-border)",
-                  transition: "opacity 0.15s",
-                }}
-              >
-                <span>+</span> Create your first post
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Right column */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)", width: "clamp(280px, 28vw, 400px)", minWidth: "clamp(280px, 28vw, 400px)" }}>
-
-          {/* Quick actions */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "var(--space-6)" }}>
-            <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: "var(--space-5)" }}>
-              Quick actions
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-              {quickActions.map(({ href, label, sub, iconBg, iconColor, icon: QIcon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "var(--space-4)",
-                    padding: "var(--space-3) var(--space-4)",
-                    borderRadius: "var(--radius-md)", textDecoration: "none",
-                    background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)",
-                    transition: "background 0.15s, border-color 0.15s",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "var(--border-2)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-                >
-                  <div style={{ width: "var(--space-7)", height: "var(--space-7)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: iconBg }}>
-                    <QIcon size={16} style={{ color: iconColor }} strokeWidth={1.75} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "var(--text-base)", fontWeight: 500, color: "rgba(255,255,255,0.85)", marginBottom: "var(--space-1)" }}>{label}</p>
-                    <p style={{ fontSize: "var(--text-sm)", color: "var(--text-subtle)" }}>{sub}</p>
-                  </div>
-                  <ArrowRight size={14} style={{ color: "var(--text-subtle)", flexShrink: 0 }} />
-                </Link>
-              ))}
-
-              {/* Trigger auto-poster */}
-              <button
-                onClick={triggerAutoPoster}
-                disabled={triggerState === "loading"}
-                style={{
-                  display: "flex", alignItems: "center", gap: "var(--space-4)",
-                  padding: "var(--space-3) var(--space-4)",
-                  borderRadius: "var(--radius-md)", textDecoration: "none",
-                  background: triggerState === "done" ? "var(--teal-dim)" : triggerState === "error" ? "var(--red-dim)" : "rgba(255,255,255,0.03)",
-                  border: `1px solid ${triggerState === "done" ? "var(--teal-border)" : triggerState === "error" ? "var(--red-border)" : "var(--border)"}`,
-                  cursor: triggerState === "loading" ? "not-allowed" : "pointer",
-                  opacity: triggerState === "loading" ? 0.6 : 1,
-                  transition: "background 0.15s, border-color 0.15s",
-                  width: "100%", textAlign: "left",
-                }}
-              >
-                <div style={{ width: "var(--space-7)", height: "var(--space-7)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: triggerState === "done" ? "var(--teal-dim)" : "var(--green-dim)" }}>
-                  <Zap size={16} style={{ color: triggerState === "done" ? "var(--teal-text)" : "var(--green)" }} strokeWidth={1.75} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: "var(--text-base)", fontWeight: 500, color: triggerState === "done" ? "var(--teal-text)" : triggerState === "error" ? "var(--red)" : "rgba(255,255,255,0.85)", marginBottom: "var(--space-1)" }}>
-                    {triggerState === "loading" ? "Posting…" : triggerState === "done" ? "Posted!" : "Trigger auto-poster"}
-                  </p>
-                  <p style={{ fontSize: "var(--text-sm)", color: "var(--text-subtle)" }}>
-                    {triggerState === "error" ? triggerError : "Post now for active project"}
-                  </p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Top performing posts */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-            <div style={{ padding: "var(--space-4) var(--space-6)", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-              <TrendingUp size={13} style={{ color: "var(--green)" }} />
-              <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.09em", textTransform: "uppercase" }}>
-                Top posts this month
-              </p>
-            </div>
-            {topPosts.length === 0 ? (
-              <p style={{ padding: "var(--space-6)", fontSize: "var(--text-sm)", color: "var(--text-subtle)", textAlign: "center" }}>
-                No analytics yet — data pulls daily at 06:00 UTC.
-              </p>
-            ) : (
-              <div>
-                {topPosts.map((post, i) => (
-                  <div
-                    key={post.tweet_id}
-                    style={{
-                      padding: "var(--space-4) var(--space-5)",
-                      borderBottom: i < topPosts.length - 1 ? "1px solid var(--border)" : "none",
-                      display: "flex", flexDirection: "column", gap: "var(--space-2)",
-                    }}
-                  >
-                    <p style={{ fontSize: "var(--text-sm)", color: "var(--text)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                      {post.text}
-                    </p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
-                        <Eye size={11} style={{ color: "var(--text-subtle)" }} />
-                        {post.impressions.toLocaleString()}
-                      </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
-                        <Heart size={11} style={{ color: "var(--text-subtle)" }} />
-                        {post.likes.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+      {/* ── Quick Actions 4-col ── */}
+      <div style={{ marginBottom: "24px" }}>
+        <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>Quick Actions</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px" }}>
+          {QUICK_ACTIONS.map(({ href, label, desc, icon: Icon, bg, color }) => (
+            <Link
+              key={href}
+              href={href}
+              style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px", cursor: "pointer", textDecoration: "none", display: "block", transition: "border-color 0.12s, background 0.12s" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,184,0,0.22)"; (e.currentTarget as HTMLElement).style.background = "var(--bg-card2)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.background = "var(--bg-card)"; }}
+            >
+              <div style={{ width: "30px", height: "30px", borderRadius: "7px", background: bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "10px" }}>
+                <Icon size={14} strokeWidth={1.75} style={{ color }} />
               </div>
-            )}
-          </div>
+              <p style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--t1)", marginBottom: "3px" }}>{label}</p>
+              <p style={{ fontSize: "11px", color: "var(--t3)", lineHeight: 1.4 }}>{desc}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
 
-          {/* Getting started */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "var(--space-6)", display: "flex", flexDirection: "column", flex: 1 }}>
-            <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-subtle)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: "var(--space-5)" }}>
-              Getting started
-            </p>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {tips.map(({ dot, bold, rest }, i) => (
-                <div
-                  key={bold}
-                  style={{
-                    display: "flex", alignItems: "flex-start", gap: "var(--space-3)",
-                    padding: "var(--space-3) 0",
-                    borderBottom: i < tips.length - 1 ? "1px solid var(--border)" : "none",
-                  }}
-                >
-                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: dot, marginTop: "6px", flexShrink: 0 }} />
-                  <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", lineHeight: 1.75 }}>
-                    <strong style={{ color: "rgba(255,255,255,0.85)", fontWeight: 500 }}>{bold}</strong>{" "}
-                    {rest}
+      {/* ── Bottom row: Top Posts + Trigger ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "16px" }}>
+
+        {/* Top performing posts */}
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <TrendingUp size={13} strokeWidth={1.75} style={{ color: "var(--green)" }} />
+            <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Top Posts This Month</p>
+          </div>
+          {topPosts.length === 0 ? (
+            <div style={{ padding: "32px 20px", textAlign: "center" }}>
+              <LayoutGrid size={22} strokeWidth={1.5} style={{ color: "var(--t3)", margin: "0 auto 10px" }} />
+              <p style={{ fontSize: "13px", color: "var(--t2)", marginBottom: "4px" }}>No posts yet</p>
+              <p style={{ fontSize: "11px", color: "var(--t3)" }}>Analytics pull daily at 06:00 UTC</p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "0" }}>
+              {topPosts.slice(0, 3).map((post, i) => (
+                <div key={post.tweet_id} style={{ padding: "18px", position: "relative", borderRight: i < 2 ? "1px solid var(--border)" : "none", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,220,161,0.3), transparent)" }} />
+                  <span style={{ fontSize: "10px", padding: "3px 7px", borderRadius: "4px", background: "rgba(29,161,242,0.1)", color: "var(--blue)", fontWeight: 600, letterSpacing: "0.4px" }}>X</span>
+                  <p style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.70)", lineHeight: 1.65, fontStyle: "italic", marginTop: "10px", marginBottom: "12px", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    "{post.text}"
                   </p>
+                  <div style={{ display: "flex", gap: "12px", borderTop: "1px solid var(--border)", paddingTop: "10px" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--t2)" }}><Eye size={11} strokeWidth={1.75} />{post.impressions.toLocaleString()}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--gold)" }}><Heart size={11} strokeWidth={1.75} />{post.likes.toLocaleString()}</span>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
+        </div>
 
+        {/* Trigger + Niche */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Auto-poster trigger */}
+          <button
+            onClick={triggerAutoPoster}
+            disabled={triggerState === "loading"}
+            style={{
+              flex: 1, display: "flex", alignItems: "center", gap: "14px", padding: "20px",
+              borderRadius: "12px", textAlign: "left", cursor: triggerState === "loading" ? "not-allowed" : "pointer",
+              background: triggerState === "done" ? "rgba(34,197,94,0.08)" : triggerState === "error" ? "rgba(239,68,68,0.08)" : "var(--bg-card)",
+              border: `1px solid ${triggerState === "done" ? "rgba(34,197,94,0.22)" : triggerState === "error" ? "rgba(239,68,68,0.22)" : "var(--border)"}`,
+              opacity: triggerState === "loading" ? 0.6 : 1, transition: "all 0.15s",
+            }}
+          >
+            <div style={{ width: "30px", height: "30px", borderRadius: "7px", background: triggerState === "done" ? "rgba(34,197,94,0.12)" : "rgba(255,184,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {triggerState === "done" ? <Check size={14} strokeWidth={2} style={{ color: "var(--green)" }} /> : <Zap size={14} strokeWidth={1.75} style={{ color: "var(--gold)" }} />}
+            </div>
+            <div>
+              <p style={{ fontSize: "12.5px", fontWeight: 600, color: triggerState === "done" ? "var(--green)" : triggerState === "error" ? "var(--red)" : "var(--t1)", marginBottom: "2px" }}>
+                {triggerState === "loading" ? "Posting…" : triggerState === "done" ? "Posted!" : "Trigger Auto-poster"}
+              </p>
+              <p style={{ fontSize: "11px", color: "var(--t3)" }}>
+                {triggerState === "error" ? triggerError : "Post now from active project queue"}
+              </p>
+            </div>
+          </button>
+
+          {/* Niche intel shortcut */}
+          <Link href="/niche" style={{ display: "flex", alignItems: "center", gap: "14px", padding: "18px", borderRadius: "12px", background: "var(--bg-card)", border: "1px solid var(--border)", textDecoration: "none", transition: "border-color 0.12s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(107,47,217,0.3)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; }}
+          >
+            <div style={{ width: "30px", height: "30px", borderRadius: "7px", background: "rgba(107,47,217,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Target size={14} strokeWidth={1.75} style={{ color: "var(--purple-l)" }} />
+            </div>
+            <div>
+              <p style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--t1)", marginBottom: "2px" }}>Niche Intelligence</p>
+              <p style={{ fontSize: "11px", color: "var(--t3)" }}>Monitor competitors</p>
+            </div>
+          </Link>
         </div>
       </div>
     </div>
-      <StatusBar />
+    <StatusBar />
     </>
   );
 }

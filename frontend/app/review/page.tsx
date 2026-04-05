@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, Draft } from "@/lib/api";
 import { store } from "@/lib/store";
-import { Loader2, ArrowRight, X, ChevronRight, ToggleLeft, ToggleRight, ChevronDown } from "lucide-react";
+import { Loader2, ArrowRight, ChevronDown, ToggleLeft, ToggleRight, AlertTriangle, Ban, Lightbulb, TrendingUp, CheckCircle } from "lucide-react";
 
 interface ReviewResult {
   passed: boolean;
@@ -16,87 +16,58 @@ interface ReviewResult {
 
 function scoreColor(s: number) {
   if (s >= 8) return "var(--green)";
-  if (s >= 5) return "var(--yellow)";
+  if (s >= 5) return "var(--gold)";
   return "var(--red)";
 }
 
-const aiColors = {
-  low:    { color: "var(--green)",  bg: "var(--green-dim)",  border: "var(--green-border)"  },
-  medium: { color: "var(--yellow)", bg: "var(--yellow-dim)", border: "var(--yellow-border)" },
-  high:   { color: "var(--red)",    bg: "var(--red-dim)",    border: "var(--red-border)"    },
-};
-
 export default function ReviewPage() {
   const router = useRouter();
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ReviewResult | null>(null);
-  const [error, setError] = useState("");
-
-  // Draft picker state
-  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [text, setText]               = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [result, setResult]           = useState<ReviewResult | null>(null);
+  const [error, setError]             = useState("");
+  const [drafts, setDrafts]           = useState<Draft[]>([]);
   const [draftsLoading, setDraftsLoading] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen]   = useState(false);
   const [selectedDraftId, setSelectedDraftId] = useState<number | null>(null);
-
-  // Auto-queue toggle state
-  const [autoQueue, setAutoQueue] = useState(false);
+  const [autoQueue, setAutoQueue]     = useState(false);
   const [togglingQueue, setTogglingQueue] = useState(false);
-  const [fromDB, setFromDB] = useState(false);
-
+  const [fromDB, setFromDB]           = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject]         = useState<any>(null);
 
   useEffect(() => {
     const proj = store.getProject();
     setProject(proj);
     const saved = store.getContent();
-    if (saved) {
-      setText(saved);
-    } else {
-      // Standalone mode: open picker automatically
-      setPickerOpen(true);
-      loadDrafts(proj?.id);
-      setFromDB(true);
-    }
+    if (saved) { setText(saved); }
+    else { setPickerOpen(true); loadDrafts(proj?.id); setFromDB(true); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadDrafts(projectId?: number) {
     setDraftsLoading(true);
-    try {
-      const res = await api.content.drafts(projectId);
-      setDrafts(res.drafts);
-    } catch {
-      /* silently ignore */
-    } finally {
-      setDraftsLoading(false);
-    }
+    try { const res = await api.content.drafts(projectId); setDrafts(res.drafts); }
+    catch { /**/ }
+    finally { setDraftsLoading(false); }
   }
 
   function selectDraft(draft: Draft) {
-    setText(draft.text);
-    store.setContent(draft.text);
-    setSelectedDraftId(draft.id);
-    setAutoQueue(draft.auto_queue);
-    setResult(null);
-    setPickerOpen(false);
+    setText(draft.text); store.setContent(draft.text);
+    setSelectedDraftId(draft.id); setAutoQueue(draft.auto_queue);
+    setResult(null); setPickerOpen(false);
   }
 
   async function check() {
     if (!text.trim()) return;
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const draftId = store.getDraftId() ?? selectedDraftId ?? null;
       const res = await api.review.check(text, "x", project?.id ?? null, draftId);
       setResult(res.review as unknown as ReviewResult);
       if (res.draft_id) store.setDraftId(res.draft_id);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { setError((e as Error).message); }
+    finally { setLoading(false); }
   }
 
   async function toggleAutoQueue() {
@@ -105,218 +76,202 @@ export default function ReviewPage() {
     try {
       const updated = await api.content.setAutoQueue(selectedDraftId, !autoQueue);
       setAutoQueue(updated.auto_queue);
-      setDrafts((prev) => prev.map((d) => d.id === selectedDraftId ? { ...d, auto_queue: updated.auto_queue } : d));
-    } catch {
-      /* ignore */
-    } finally {
-      setTogglingQueue(false);
-    }
+    } catch { /**/ }
+    finally { setTogglingQueue(false); }
   }
 
-  return (
-    <div style={{ padding: "52px 64px", maxWidth: "760px" }}>
+  const aiColors = {
+    low:    { color: "var(--green)", bg: "rgba(34,197,94,0.10)",  border: "rgba(34,197,94,0.22)"  },
+    medium: { color: "var(--amber)", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.22)" },
+    high:   { color: "var(--red)",   bg: "rgba(239,68,68,0.09)",  border: "rgba(239,68,68,0.22)"  },
+  };
 
-      {/* Page header */}
-      <div style={{ marginBottom: "36px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-          <span style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-subtle)" }}>04</span>
-          <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)" }}>Review</h2>
-        </div>
-        <p style={{ fontSize: "15px", color: "var(--text-muted)", marginLeft: "22px", lineHeight: 1.5 }}>
-          Check before it goes out. Catches weak angles and AI-sounding language.
+  const violations = [
+    ...(result?.issues ?? []).map((t) => ({ type: "block" as const, title: t,      desc: "Issue flagged by review" })),
+    ...(result?.suggestions ?? []).map((t) => ({ type: "tip" as const, title: t, desc: "Suggested improvement" })),
+  ];
+
+  const violationIcon = { warn: AlertTriangle, block: Ban, tip: Lightbulb, up: TrendingUp };
+  const violationStyle = {
+    warn:  { bg: "rgba(245,158,11,0.12)", color: "var(--amber)"    },
+    block: { bg: "rgba(239,68,68,0.1)",   color: "var(--red)"      },
+    tip:   { bg: "rgba(255,184,0,0.1)",   color: "var(--gold)"     },
+    up:    { bg: "rgba(107,47,217,0.1)",  color: "var(--purple-l)" },
+  };
+
+  return (
+    <div style={{ padding: "32px 36px 80px" }}>
+
+      {/* ── Page header ── */}
+      <div style={{ marginBottom: "28px" }}>
+        <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: "var(--gold)", fontFamily: "var(--font-manrope), sans-serif", marginBottom: "8px" }}>
+          EDITORIAL GATE
         </p>
+        <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1 }}>
+          Review
+        </h1>
       </div>
 
       {fromDB && (
-        <div style={{ borderRadius: "10px", padding: "10px 16px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", background: "var(--blue-dim)", border: "1px solid var(--blue-border)" }}>
-          <span style={{ fontSize: "13px", color: "var(--blue)" }}>Loaded from DB — pick a draft below. Start pipeline from Research to use fresh data.</span>
+        <div style={{ padding: "10px 16px", marginBottom: "16px", borderRadius: "8px", background: "rgba(29,161,242,0.07)", border: "1px solid rgba(29,161,242,0.2)", fontSize: "12px", color: "var(--blue)" }}>
+          Loaded from DB — pick a draft below or start pipeline from Research.
         </div>
       )}
 
-      {/* Draft picker */}
-      <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)", marginBottom: "20px" }}>
-        <button
-          onClick={() => {
-            if (!pickerOpen && drafts.length === 0) loadDrafts(project?.id);
-            setPickerOpen(!pickerOpen);
-          }}
-          style={{ width: "100%", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", color: "var(--text-dim)", fontSize: "13px" }}
-        >
-          <span style={{ fontWeight: 500 }}>
-            {selectedDraftId ? `Draft selected #${selectedDraftId}` : "Pick from drafts"}
-          </span>
-          <ChevronDown size={14} style={{ transform: pickerOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
-        </button>
+      {/* ── Two-column layout ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "20px", alignItems: "start" }}>
 
-        {pickerOpen && (
-          <div style={{ borderTop: "1px solid var(--border)", maxHeight: "320px", overflowY: "auto" }}>
-            {draftsLoading ? (
-              <div style={{ padding: "20px", display: "flex", justifyContent: "center" }}>
-                <Loader2 size={16} className="animate-spin" style={{ color: "var(--text-muted)" }} />
-              </div>
-            ) : drafts.length === 0 ? (
-              <div style={{ padding: "16px 20px" }}>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>No drafts found. Generate some in the Generate page.</p>
-              </div>
-            ) : (
-              drafts.map((draft) => (
-                <button
-                  key={draft.id}
-                  onClick={() => selectDraft(draft)}
-                  style={{
-                    width: "100%", textAlign: "left", padding: "14px 20px", display: "flex", flexDirection: "column", gap: "4px",
-                    background: selectedDraftId === draft.id ? "var(--surface-2)" : "transparent",
-                    border: "none", borderBottom: "1px solid var(--border)", cursor: "pointer",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-subtle)" }}>{draft.topic}</span>
-                    {draft.auto_queue && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "var(--blue-dim)", color: "var(--blue)", border: "1px solid var(--blue-border)" }}>queued</span>}
+        {/* Left — post analysis */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+          {/* Draft picker */}
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+            <button onClick={() => { if (!pickerOpen && drafts.length === 0) loadDrafts(project?.id); setPickerOpen(!pickerOpen); }} style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}>
+              <span style={{ fontSize: "12.5px", fontWeight: 500, color: "var(--t2)" }}>
+                {selectedDraftId ? `Draft #${selectedDraftId} selected` : "Pick from drafts"}
+              </span>
+              <ChevronDown size={14} strokeWidth={1.75} style={{ color: "var(--t3)", transform: pickerOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+            </button>
+            {pickerOpen && (
+              <div style={{ borderTop: "1px solid var(--border)", maxHeight: "300px", overflowY: "auto" }}>
+                {draftsLoading ? (
+                  <div style={{ padding: "20px", display: "flex", justifyContent: "center" }}>
+                    <Loader2 size={15} className="animate-spin" style={{ color: "var(--t3)" }} />
                   </div>
-                  <p style={{ fontSize: "13px", color: "var(--text-dim)", margin: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", maxWidth: "600px" }}>
-                    {draft.text}
-                  </p>
-                </button>
-              ))
+                ) : drafts.length === 0 ? (
+                  <p style={{ padding: "16px 18px", fontSize: "12px", color: "var(--t3)" }}>No drafts — generate some first.</p>
+                ) : drafts.map((draft) => (
+                  <button key={draft.id} onClick={() => selectDraft(draft)} style={{ width: "100%", textAlign: "left", padding: "12px 18px", display: "flex", flexDirection: "column", gap: "3px", background: selectedDraftId === draft.id ? "var(--bg-card2)" : "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.03)", cursor: "pointer" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.6px", color: "var(--t3)" }}>{draft.topic}</span>
+                      {draft.auto_queue && <span style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", background: "rgba(255,184,0,0.08)", color: "var(--gold)", fontWeight: 600 }}>queued</span>}
+                    </div>
+                    <p style={{ fontSize: "12px", color: "var(--t2)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", maxWidth: "500px" }}>{draft.text}</p>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Editor + run review */}
-      <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          <label style={{ display: "block", fontSize: "11px", fontWeight: 600, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
-            Post to review
-          </label>
-          <textarea
-            value={text}
-            onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }}
-            rows={6}
-            placeholder="Paste or edit your post here, or pick a draft above."
-            style={{ width: "100%", padding: "14px 16px", borderRadius: "10px", resize: "none", fontSize: "14px", lineHeight: 1.7 }}
-          />
-
-          {/* Auto-queue toggle — only shown when a draft is selected */}
-          {selectedDraftId && (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <button
-                onClick={toggleAutoQueue}
-                disabled={togglingQueue}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: autoQueue ? "var(--accent)" : "var(--text-muted)", opacity: togglingQueue ? 0.4 : 1, display: "flex", alignItems: "center" }}
-              >
-                {autoQueue ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+          {/* Textarea */}
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+              <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Post to Review</p>
+            </div>
+            <div style={{ padding: "18px" }}>
+              <textarea
+                value={text}
+                onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }}
+                rows={7}
+                placeholder="Paste or edit your post, or pick a draft above."
+                style={{ width: "100%", background: "transparent", border: "none", outline: "none", fontSize: "13.5px", color: "var(--t1)", lineHeight: 1.7, resize: "none", fontFamily: "var(--font-inter), sans-serif" }}
+              />
+            </div>
+            {selectedDraftId && (
+              <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "8px" }}>
+                <button onClick={toggleAutoQueue} disabled={togglingQueue} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: autoQueue ? "var(--gold)" : "var(--t3)", display: "flex", alignItems: "center", gap: "6px", opacity: togglingQueue ? 0.4 : 1 }}>
+                  {autoQueue ? <ToggleRight size={18} strokeWidth={1.75} /> : <ToggleLeft size={18} strokeWidth={1.75} />}
+                  <span style={{ fontSize: "11px", color: autoQueue ? "var(--gold)" : "var(--t2)" }}>{autoQueue ? "In auto-queue" : "Add to auto-queue"}</span>
+                </button>
+              </div>
+            )}
+            <div style={{ padding: "12px 18px", borderTop: "1px solid var(--border)", background: "var(--bg-card2)", display: "flex", gap: "8px" }}>
+              <button onClick={check} disabled={loading || !text.trim()} style={{ display: "flex", alignItems: "center", gap: "7px", padding: "9px 22px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", opacity: (loading || !text.trim()) ? 0.45 : 1, fontFamily: "var(--font-manrope), sans-serif" }}>
+                {loading && <Loader2 size={13} className="animate-spin" />}
+                {loading ? "Checking…" : "Run Review"}
               </button>
-              <span style={{ fontSize: "13px", color: "var(--text-dim)" }}>
-                {autoQueue ? "In auto-queue" : "Add to auto-queue"}
-              </span>
-            </div>
-          )}
-        </div>
-        <div style={{ padding: "16px 28px", display: "flex", gap: "10px", borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
-          <button
-            onClick={check}
-            disabled={loading || !text.trim()}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", opacity: (loading || !text.trim()) ? 0.4 : 1, transition: "opacity 0.15s" }}
-          >
-            {loading && <Loader2 size={14} className="animate-spin" />}
-            {loading ? "Checking..." : "Run review"}
-          </button>
-          {result?.passed && (
-            <button
-              onClick={() => router.push("/schedule")}
-              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-dim)", cursor: "pointer" }}
-            >
-              Schedule <ArrowRight size={13} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {error && <p style={{ fontSize: "13px", marginTop: "16px", fontFamily: "monospace", color: "var(--red)" }}>{error}</p>}
-
-      {result && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "28px" }}>
-
-          {/* Score card */}
-          <div style={{ borderRadius: "14px", padding: "28px", background: "var(--surface)", border: "1px solid var(--border)" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
-              <div>
-                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px", color: "var(--text-muted)" }}>Quality Score</p>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-                  <span style={{ fontSize: "56px", fontWeight: 700, lineHeight: 1, letterSpacing: "-0.04em", color: scoreColor(result.score) }}>
-                    {result.score}
-                  </span>
-                  <span style={{ fontSize: "20px", color: "var(--text-muted)" }}>/10</span>
-                </div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
-                <span style={{
-                  fontSize: "13px", fontWeight: 600, padding: "6px 14px", borderRadius: "8px",
-                  background: result.passed ? "var(--green-dim)" : "var(--red-dim)",
-                  border: `1px solid ${result.passed ? "var(--green-border)" : "var(--red-border)"}`,
-                  color: result.passed ? "var(--green)" : "var(--red)",
-                }}>
-                  {result.passed ? "Passed" : "Needs work"}
-                </span>
-                <span style={{
-                  fontSize: "13px", padding: "6px 14px", borderRadius: "8px",
-                  background: aiColors[result.ai_likelihood].bg,
-                  border: `1px solid ${aiColors[result.ai_likelihood].border}`,
-                  color: aiColors[result.ai_likelihood].color,
-                }}>
-                  AI: {result.ai_likelihood}
-                </span>
-              </div>
-            </div>
-            <div style={{ height: "4px", borderRadius: "9999px", overflow: "hidden", background: "var(--surface-3)" }}>
-              <div style={{ height: "100%", borderRadius: "9999px", width: `${(result.score / 10) * 100}%`, background: scoreColor(result.score), transition: "width 0.7s ease" }} />
+              {result?.passed && (
+                <button onClick={() => router.push("/schedule")} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "9px 18px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 600, border: "1px solid rgba(255,255,255,0.14)", color: "var(--t1)", background: "transparent", cursor: "pointer" }}>
+                  Schedule <ArrowRight size={12} />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Issues */}
-          {result.issues.length > 0 && (
-            <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <div style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--red)" }}>
-                  Issues ({result.issues.length})
-                </p>
-              </div>
-              <div>
-                {result.issues.map((issue, i) => (
-                  <div key={i} style={{ display: "flex", gap: "12px", padding: "14px 24px", fontSize: "14px", color: "var(--text-dim)", borderBottom: i < result.issues.length - 1 ? "1px solid var(--border)" : "none" }}>
-                    <X size={14} style={{ flexShrink: 0, marginTop: "2px", color: "var(--red)" }} />
-                    {issue}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Suggestions */}
-          {result.suggestions.length > 0 && (
-            <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <div style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dim)" }}>
-                  Suggestions
-                </p>
-              </div>
-              <div>
-                {result.suggestions.map((s, i) => (
-                  <div key={i} style={{ display: "flex", gap: "12px", padding: "14px 24px", fontSize: "14px", color: "var(--text-dim)", borderBottom: i < result.suggestions.length - 1 ? "1px solid var(--border)" : "none" }}>
-                    <ChevronRight size={14} style={{ flexShrink: 0, marginTop: "2px", color: "var(--text-muted)" }} />
-                    {s}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <button onClick={() => router.push("/content")} style={{ fontSize: "14px", width: "fit-content", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}>
-            ← Back to generate
-          </button>
+          {error && <p style={{ fontSize: "12px", fontFamily: "var(--font-mono), monospace", color: "var(--red)" }}>{error}</p>}
         </div>
-      )}
+
+        {/* Right — score cards + violations */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+          {result ? (
+            <>
+              {/* Quality score card */}
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-g)", borderRadius: "12px", padding: "20px", textAlign: "center" }}>
+                <p style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>QUALITY SCORE</p>
+                <div style={{ fontSize: "40px", fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, letterSpacing: "-2px", color: scoreColor(result.score), lineHeight: 1 }}>
+                  {result.score}
+                </div>
+                <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: result.passed ? "var(--green)" : "var(--red)", marginTop: "6px" }}>
+                  {result.passed ? "PASSED" : "NEEDS WORK"}
+                </div>
+                <div style={{ height: "3px", borderRadius: "2px", background: "rgba(255,255,255,0.07)", marginTop: "14px" }}>
+                  <div style={{ height: "100%", borderRadius: "2px", width: `${(result.score / 10) * 100}%`, background: scoreColor(result.score), transition: "width 0.6s ease" }} />
+                </div>
+              </div>
+
+              {/* AI Likelihood score card */}
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", textAlign: "center" }}>
+                <p style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>AI LIKELIHOOD</p>
+                <div style={{ fontSize: "40px", fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, letterSpacing: "-2px", color: aiColors[result.ai_likelihood].color, lineHeight: 1, textTransform: "uppercase" }}>
+                  {result.ai_likelihood}
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", marginTop: "8px", padding: "4px 10px", borderRadius: "6px", background: aiColors[result.ai_likelihood].bg, border: `1px solid ${aiColors[result.ai_likelihood].border}` }}>
+                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1.2px", textTransform: "uppercase", color: aiColors[result.ai_likelihood].color }}>
+                    {result.ai_likelihood === "low" ? "HUMAN-LIKE" : result.ai_likelihood === "medium" ? "BORDERLINE" : "AI DETECTED"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Violations list */}
+              {violations.length > 0 && (
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+                  <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+                    <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>
+                      Findings ({violations.length})
+                    </p>
+                  </div>
+                  <div style={{ padding: "8px 18px" }}>
+                    {violations.map((v, i) => {
+                      const VIcon = violationIcon[v.type];
+                      const vs = violationStyle[v.type];
+                      return (
+                        <div key={i} style={{ display: "flex", gap: "11px", padding: "13px 0", borderBottom: i < violations.length - 1 ? "1px solid var(--border)" : "none" }}>
+                          <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: vs.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <VIcon size={13} strokeWidth={1.75} style={{ color: vs.color }} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--t1)", marginBottom: "2px" }}>{v.title}</p>
+                            <p style={{ fontSize: "11px", color: "var(--t3)", lineHeight: 1.5 }}>{v.desc}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Editorial polish */}
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px 18px" }}>
+                <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>Brand Voice</p>
+                <div style={{ height: "6px", borderRadius: "4px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: `linear-gradient(90deg, var(--gold), var(--gold-soft))`, width: `${result.score * 10}%`, borderRadius: "4px", transition: "width 0.6s ease" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
+                  <span style={{ fontSize: "10px", color: "var(--t3)" }}>Off-brand</span>
+                  <span style={{ fontSize: "10px", color: "var(--t3)" }}>On-brand</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "40px 20px", textAlign: "center" }}>
+              <CheckCircle size={28} strokeWidth={1.5} style={{ color: "var(--t3)", margin: "0 auto 12px" }} />
+              <p style={{ fontSize: "13px", color: "var(--t2)", marginBottom: "6px" }}>Run the review</p>
+              <p style={{ fontSize: "11px", color: "var(--t3)", lineHeight: 1.5 }}>Score, AI detection, and editorial notes will appear here.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,13 @@ import { store, type Project } from "@/lib/store";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
+const NAV_SECTIONS = [
+  { id: "identity", label: "Core Identity" },
+  { id: "pillars", label: "Content Pillars" },
+  { id: "schedule", label: "Posting Schedule" },
+  { id: "channels", label: "Logic & Channels" },
+];
+
 const empty = (): Partial<Project> => ({
   name: "",
   description: "",
@@ -21,6 +28,20 @@ const empty = (): Partial<Project> => ({
   timezone: "UTC",
 });
 
+function inputStyle(): React.CSSProperties {
+  return {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: "8px",
+    fontSize: "13px",
+    background: "var(--bg-mid)",
+    border: "1px solid var(--border)",
+    color: "var(--t1)",
+    outline: "none",
+    transition: "border-color 0.15s",
+  };
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [editing, setEditing] = useState<Partial<Project> | null>(null);
@@ -28,6 +49,8 @@ export default function ProjectsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [activeProject, setActiveProject] = useState<Project | null>(null);
+  const [activeSection, setActiveSection] = useState("identity");
+  const [pillarInput, setPillarInput] = useState("");
 
   useEffect(() => {
     loadProjects();
@@ -86,86 +109,102 @@ export default function ProjectsPage() {
     });
   }
 
-  return (
-    <div style={{ padding: "52px 64px", maxWidth: "860px" }}>
+  function addPillar() {
+    if (!pillarInput.trim()) return;
+    const pillars = editing?.content_pillars ?? [];
+    setEditing({ ...editing, content_pillars: [...pillars, pillarInput.trim()] });
+    setPillarInput("");
+  }
 
-      {/* Page header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "36px" }}>
+  function removePillar(idx: number) {
+    const pillars = editing?.content_pillars ?? [];
+    setEditing({ ...editing, content_pillars: pillars.filter((_, i) => i !== idx) });
+  }
+
+  return (
+    <div style={{ padding: "40px 48px", maxWidth: "1000px" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
         <div>
-          <h2 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "8px", color: "var(--text)" }}>Projects</h2>
-          <p style={{ fontSize: "15px", color: "var(--text-muted)", lineHeight: 1.5 }}>Each project has its own voice, schedule, and content pillars.</p>
+          <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "2.8px", color: "var(--gold)", fontFamily: "var(--font-manrope)", textTransform: "uppercase", marginBottom: "8px" }}>
+            PROJECT CONFIG
+          </div>
+          <h1 style={{ fontSize: "32px", fontWeight: 800, fontFamily: "var(--font-manrope)", color: "var(--t1)", letterSpacing: "-0.03em", margin: 0 }}>
+            Projects
+          </h1>
         </div>
-        <button
-          onClick={() => { setEditing(empty()); setIsNew(true); }}
-          style={{ padding: "12px 24px", background: "var(--accent)", color: "#fff", fontSize: "14px", fontWeight: 500, borderRadius: "10px", border: "none", cursor: "pointer", whiteSpace: "nowrap", marginTop: "4px", transition: "opacity 0.15s" }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-        >
-          New project
-        </button>
+        {!editing && (
+          <button
+            onClick={() => { setEditing(empty()); setIsNew(true); setActiveSection("identity"); }}
+            style={{ padding: "10px 22px", background: "var(--gold)", color: "#000", fontSize: "13px", fontWeight: 700, borderRadius: "10px", border: "none", cursor: "pointer", fontFamily: "var(--font-manrope)" }}
+          >
+            New Project
+          </button>
+        )}
       </div>
 
-      {error && <p style={{ fontSize: "13px", marginBottom: "16px", fontFamily: "monospace", color: "var(--red)" }}>{error}</p>}
+      {error && <p style={{ fontSize: "12px", marginBottom: "16px", fontFamily: "var(--font-mono)", color: "var(--red)" }}>{error}</p>}
 
       {/* Project list */}
       {!editing && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {projects.length === 0 && (
-            <p style={{ fontSize: "14px", color: "var(--text-subtle)" }}>No projects yet. Create one to get started.</p>
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px 32px", textAlign: "center" }}>
+              <p style={{ fontSize: "14px", color: "var(--t3)" }}>No projects yet.</p>
+              <p style={{ fontSize: "12px", color: "var(--ti)", marginTop: "6px" }}>Create one to get started.</p>
+            </div>
           )}
           {projects.map((p) => (
             <div
               key={p.id}
               style={{
                 borderRadius: "14px",
-                padding: "24px",
-                background: "var(--surface)",
-                border: `1px solid ${activeProject?.id === p.id ? "var(--border-2)" : "var(--border)"}`,
+                padding: "22px 24px",
+                background: "var(--bg-card)",
+                border: `1px solid ${activeProject?.id === p.id ? "rgba(255,184,0,0.3)" : "var(--border)"}`,
                 transition: "border-color 0.15s",
               }}
             >
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                    <p style={{ fontSize: "16px", fontWeight: 500, color: "var(--text)" }}>{p.name}</p>
+                    <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--t1)", fontFamily: "var(--font-manrope)" }}>{p.name}</p>
                     {activeProject?.id === p.id && (
-                      <span style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--teal-text)", border: "1px solid var(--teal-border)", borderRadius: "6px", padding: "2px 8px", background: "var(--teal-dim)" }}>
+                      <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "var(--gold)", border: "1px solid rgba(255,184,0,0.3)", borderRadius: "5px", padding: "2px 7px", background: "rgba(255,184,0,0.08)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                         active
                       </span>
                     )}
                   </div>
                   {p.description && (
-                    <p style={{ fontSize: "14px", color: "var(--text-muted)", marginBottom: "10px" }}>{p.description}</p>
+                    <p style={{ fontSize: "13px", color: "var(--t3)", marginBottom: "10px" }}>{p.description}</p>
                   )}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "12px", fontFamily: "monospace", color: "var(--text-subtle)" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--ti)" }}>
                     {p.tone && <span>tone: {p.tone.slice(0, 40)}{p.tone.length > 40 ? "…" : ""}</span>}
                     {p.content_pillars?.length ? <span>pillars: {p.content_pillars.slice(0, 3).join(", ")}</span> : null}
                     {p.posting_days?.length ? <span>posts: {p.posting_days.join(", ")}</span> : null}
-                    {p.coingecko_enabled ? <span>coingecko ✓</span> : null}
-                    {p.telegram_channels?.length ? <span>tg: {p.telegram_channels.length} channel{p.telegram_channels.length > 1 ? "s" : ""}</span> : null}
+                    {p.coingecko_enabled ? <span style={{ color: "var(--green)" }}>coingecko ✓</span> : null}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
                   <button
                     onClick={() => activate(p)}
                     disabled={activeProject?.id === p.id}
-                    style={{ fontSize: "13px", padding: "8px 16px", borderRadius: "8px", border: "1px solid var(--border-2)", color: "var(--text-dim)", background: "var(--surface-2)", cursor: activeProject?.id === p.id ? "default" : "pointer", opacity: activeProject?.id === p.id ? 0.4 : 1, transition: "opacity 0.15s" }}
+                    style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: `1px solid ${activeProject?.id === p.id ? "rgba(255,184,0,0.3)" : "var(--border)"}`, color: activeProject?.id === p.id ? "var(--gold)" : "var(--t3)", background: "var(--bg-mid)", cursor: activeProject?.id === p.id ? "default" : "pointer", opacity: activeProject?.id === p.id ? 0.7 : 1 }}
                   >
                     {activeProject?.id === p.id ? "Active" : "Select"}
                   </button>
                   <button
-                    onClick={() => { setEditing(p); setIsNew(false); }}
-                    style={{ fontSize: "13px", padding: "8px 16px", borderRadius: "8px", border: "1px solid var(--border-2)", color: "var(--text-dim)", background: "var(--surface-2)", cursor: "pointer", transition: "background 0.15s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-3)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
+                    onClick={() => { setEditing(p); setIsNew(false); setActiveSection("identity"); }}
+                    style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: "1px solid var(--border)", color: "var(--t2)", background: "var(--bg-mid)", cursor: "pointer" }}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => remove(p.id)}
-                    style={{ fontSize: "13px", padding: "8px 16px", borderRadius: "8px", border: "1px solid var(--border)", color: "var(--text-subtle)", background: "transparent", cursor: "pointer", transition: "color 0.15s, border-color 0.15s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "var(--red-border)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-subtle)"; e.currentTarget.style.borderColor = "var(--border)"; }}
+                    style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: "1px solid var(--border)", color: "var(--t3)", background: "transparent", cursor: "pointer" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--t3)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                   >
                     Delete
                   </button>
@@ -176,165 +215,241 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Editor */}
+      {/* Editor — 2-column: sticky nav + form */}
       {editing && (
-        <div style={{ borderRadius: "14px", padding: "32px", background: "var(--surface)", border: "1px solid var(--border)" }}>
-          <h3 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "28px", color: "var(--text)" }}>
-            {isNew ? "New project" : `Edit — ${editing.name}`}
-          </h3>
+        <div style={{ display: "grid", gridTemplateColumns: "190px 1fr", gap: "32px", alignItems: "start" }}>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-            <Field label="Project name *">
-              <input
-                value={editing.name ?? ""}
-                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                placeholder="e.g. GTR Trade, Personal Brand"
-              />
-            </Field>
-
-            <Field label="Description">
-              <input
-                value={editing.description ?? ""}
-                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                placeholder="What is this project about?"
-              />
-            </Field>
-
-            <SectionDivider label="Brand Voice" />
-
-            <Field label="Tone" hint="How should it sound?">
-              <input
-                value={editing.tone ?? ""}
-                onChange={(e) => setEditing({ ...editing, tone: e.target.value })}
-                placeholder="e.g. direct, trader-to-trader, no hype"
-              />
-            </Field>
-
-            <Field label="Style" hint="How should it be written?">
-              <input
-                value={editing.style ?? ""}
-                onChange={(e) => setEditing({ ...editing, style: e.target.value })}
-                placeholder="e.g. short sentences, first person, punchy"
-              />
-            </Field>
-
-            <Field label="Avoid" hint="What should never appear?">
-              <input
-                value={editing.avoid ?? ""}
-                onChange={(e) => setEditing({ ...editing, avoid: e.target.value })}
-                placeholder="e.g. emojis, buzzwords, corporate language, hype"
-              />
-            </Field>
-
-            <Field label="Target audience">
-              <input
-                value={editing.target_audience ?? ""}
-                onChange={(e) => setEditing({ ...editing, target_audience: e.target.value })}
-                placeholder="e.g. active crypto traders, DeFi users"
-              />
-            </Field>
-
-            <SectionDivider label="Content" />
-
-            <Field label="Content pillars" hint="Default topics to research (comma-separated)">
-              <input
-                value={(editing.content_pillars ?? []).join(", ")}
-                onChange={(e) =>
-                  setEditing({ ...editing, content_pillars: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
-                }
-                placeholder="e.g. crypto perps, self-custody, RWA trading"
-              />
-            </Field>
-
-            <SectionDivider label="Data Sources" />
-
-            <Field label="CoinGecko Trending" hint="Free, no key required — shows trending coins in research">
-              <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={!!editing.coingecko_enabled}
-                  onChange={(e) => setEditing({ ...editing, coingecko_enabled: e.target.checked })}
-                  style={{ width: "16px", height: "16px", accentColor: "var(--accent)", cursor: "pointer" }}
-                />
-                <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                  Enable CoinGecko trending in research
-                </span>
-              </label>
-            </Field>
-
-            <Field label="Telegram channels" hint="Public channel slugs, comma-separated (no @)">
-              <input
-                value={(editing.telegram_channels ?? []).join(", ")}
-                onChange={(e) =>
-                  setEditing({ ...editing, telegram_channels: e.target.value.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean) })
-                }
-                placeholder="e.g. coindesk, durov, hyperliquid"
-              />
-              <p style={{ fontSize: "12px", color: "var(--text-subtle)", marginTop: "6px" }}>
-                Only public channels. Leave empty to disable. Scraped automatically during research.
-              </p>
-            </Field>
-
-            <SectionDivider label="Posting Schedule" />
-
-            <Field label="Posting days">
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {DAYS.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => toggleDay(d)}
-                    style={{
-                      padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontFamily: "monospace", cursor: "pointer", transition: "all 0.15s",
-                      background: editing.posting_days?.includes(d) ? "var(--accent-dim)" : "var(--surface-2)",
-                      border: `1px solid ${editing.posting_days?.includes(d) ? "var(--accent-border)" : "var(--border-2)"}`,
-                      color: editing.posting_days?.includes(d) ? "var(--accent-light)" : "var(--text-muted)",
-                    }}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </Field>
-
-            <Field label="Posting times" hint="Comma-separated, 24h format">
-              <input
-                value={(editing.posting_times ?? []).join(", ")}
-                onChange={(e) =>
-                  setEditing({ ...editing, posting_times: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
-                }
-                placeholder="e.g. 09:00, 17:00"
-              />
-            </Field>
-
-            <Field label="Timezone" hint="IANA name — posting times and calendar display use this">
-              <input
-                value={editing.timezone ?? "UTC"}
-                onChange={(e) => setEditing({ ...editing, timezone: e.target.value.trim() || "UTC" })}
-                placeholder="e.g. Asia/Manila, America/New_York, Europe/London"
-              />
-              <p style={{ fontSize: "12px", color: "var(--text-subtle)", marginTop: "6px" }}>
-                Full list: <span style={{ fontFamily: "monospace" }}>en.wikipedia.org/wiki/List_of_tz_database_time_zones</span>
-              </p>
-            </Field>
+          {/* Left sticky nav */}
+          <div style={{ position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "2px" }}>
+            <p style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ti)", marginBottom: "10px", fontFamily: "var(--font-mono)" }}>
+              {isNew ? "New Project" : editing.name}
+            </p>
+            {NAV_SECTIONS.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setActiveSection(s.id)}
+                style={{
+                  textAlign: "left", padding: "8px 12px", borderRadius: "8px", fontSize: "13px",
+                  background: activeSection === s.id ? "rgba(255,184,0,0.08)" : "transparent",
+                  color: activeSection === s.id ? "var(--gold)" : "var(--t3)",
+                  border: activeSection === s.id ? "1px solid rgba(255,184,0,0.2)" : "1px solid transparent",
+                  cursor: "pointer", transition: "all 0.15s", fontFamily: "var(--font-manrope)", fontWeight: activeSection === s.id ? 600 : 400,
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
           </div>
 
-          <div style={{ display: "flex", gap: "10px", marginTop: "32px" }}>
-            <button
-              onClick={save}
-              disabled={saving || !editing.name?.trim()}
-              style={{ padding: "12px 28px", background: "var(--accent)", color: "#fff", fontSize: "14px", fontWeight: 500, borderRadius: "10px", border: "none", cursor: "pointer", opacity: (saving || !editing.name?.trim()) ? 0.4 : 1, transition: "opacity 0.15s" }}
-            >
-              {saving ? "Saving..." : "Save"}
-            </button>
-            <button
-              onClick={() => setEditing(null)}
-              style={{ padding: "12px 24px", background: "var(--surface-2)", border: "1px solid var(--border-2)", color: "var(--text-dim)", fontSize: "14px", borderRadius: "10px", cursor: "pointer", transition: "background 0.15s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-3)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
-            >
-              Cancel
-            </button>
+          {/* Right form */}
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+
+            {activeSection === "identity" && (
+              <>
+                <SectionHeading>Core Identity</SectionHeading>
+                <FieldRow label="Project Name *">
+                  <input
+                    style={inputStyle()}
+                    value={editing.name ?? ""}
+                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                    placeholder="e.g. GTR Trade, Personal Brand"
+                  />
+                </FieldRow>
+                <FieldRow label="Description">
+                  <input
+                    style={inputStyle()}
+                    value={editing.description ?? ""}
+                    onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                    placeholder="What is this project about?"
+                  />
+                </FieldRow>
+                <FieldRow label="Tone" hint="How should it sound?">
+                  <input
+                    style={inputStyle()}
+                    value={editing.tone ?? ""}
+                    onChange={(e) => setEditing({ ...editing, tone: e.target.value })}
+                    placeholder="e.g. direct, trader-to-trader, no hype"
+                  />
+                </FieldRow>
+                <FieldRow label="Style" hint="How should it be written?">
+                  <input
+                    style={inputStyle()}
+                    value={editing.style ?? ""}
+                    onChange={(e) => setEditing({ ...editing, style: e.target.value })}
+                    placeholder="e.g. short sentences, first person, punchy"
+                  />
+                </FieldRow>
+                <FieldRow label="Avoid" hint="What should never appear?">
+                  <input
+                    style={inputStyle()}
+                    value={editing.avoid ?? ""}
+                    onChange={(e) => setEditing({ ...editing, avoid: e.target.value })}
+                    placeholder="e.g. emojis, buzzwords, corporate language, hype"
+                  />
+                </FieldRow>
+                <FieldRow label="Target Audience">
+                  <input
+                    style={inputStyle()}
+                    value={editing.target_audience ?? ""}
+                    onChange={(e) => setEditing({ ...editing, target_audience: e.target.value })}
+                    placeholder="e.g. active crypto traders, DeFi users"
+                  />
+                </FieldRow>
+              </>
+            )}
+
+            {activeSection === "pillars" && (
+              <>
+                <SectionHeading>Content Pillars</SectionHeading>
+                <FieldRow label="Add Pillar">
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      style={{ ...inputStyle(), flex: 1 }}
+                      value={pillarInput}
+                      onChange={(e) => setPillarInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addPillar()}
+                      placeholder="e.g. crypto perps, self-custody"
+                    />
+                    <button
+                      onClick={addPillar}
+                      disabled={!pillarInput.trim()}
+                      style={{ padding: "9px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.3)", color: "var(--gold)", cursor: "pointer", opacity: !pillarInput.trim() ? 0.4 : 1, whiteSpace: "nowrap" }}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                </FieldRow>
+                {(editing.content_pillars ?? []).length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {(editing.content_pillars ?? []).map((p, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: "6px",
+                          padding: "6px 12px", borderRadius: "20px", fontSize: "12px",
+                          background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.2)",
+                          color: "var(--gold)",
+                        }}
+                      >
+                        {p}
+                        <button
+                          onClick={() => removePillar(i)}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gold)", opacity: 0.6, padding: "0", lineHeight: 1, fontSize: "14px" }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {(editing.content_pillars ?? []).length === 0 && (
+                  <p style={{ fontSize: "12px", color: "var(--ti)" }}>No pillars yet. Add topics that define your content focus.</p>
+                )}
+              </>
+            )}
+
+            {activeSection === "schedule" && (
+              <>
+                <SectionHeading>Posting Schedule</SectionHeading>
+                <FieldRow label="Posting Days">
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {DAYS.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => toggleDay(d)}
+                        style={{
+                          padding: "7px 14px", borderRadius: "8px", fontSize: "12px", fontFamily: "var(--font-mono)", cursor: "pointer", transition: "all 0.15s",
+                          background: editing.posting_days?.includes(d) ? "rgba(255,184,0,0.1)" : "var(--bg-mid)",
+                          border: `1px solid ${editing.posting_days?.includes(d) ? "rgba(255,184,0,0.35)" : "var(--border)"}`,
+                          color: editing.posting_days?.includes(d) ? "var(--gold)" : "var(--t3)",
+                        }}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </FieldRow>
+                <FieldRow label="Posting Times" hint="Comma-separated, 24h format">
+                  <input
+                    style={inputStyle()}
+                    value={(editing.posting_times ?? []).join(", ")}
+                    onChange={(e) =>
+                      setEditing({ ...editing, posting_times: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
+                    }
+                    placeholder="e.g. 09:00, 17:00"
+                  />
+                </FieldRow>
+                <FieldRow label="Timezone" hint="IANA name">
+                  <input
+                    style={inputStyle()}
+                    value={editing.timezone ?? "UTC"}
+                    onChange={(e) => setEditing({ ...editing, timezone: e.target.value.trim() || "UTC" })}
+                    placeholder="e.g. Asia/Manila, America/New_York"
+                  />
+                </FieldRow>
+              </>
+            )}
+
+            {activeSection === "channels" && (
+              <>
+                <SectionHeading>Logic & Channels</SectionHeading>
+                <FieldRow label="CoinGecko Trending" hint="Free, no key required">
+                  <label style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
+                    {/* Custom toggle */}
+                    <div
+                      onClick={() => setEditing({ ...editing, coingecko_enabled: !editing.coingecko_enabled })}
+                      style={{
+                        width: "40px", height: "22px", borderRadius: "11px", position: "relative", cursor: "pointer", transition: "background 0.2s",
+                        background: editing.coingecko_enabled ? "var(--gold)" : "var(--border)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div style={{
+                        position: "absolute", top: "3px",
+                        left: editing.coingecko_enabled ? "21px" : "3px",
+                        width: "16px", height: "16px", borderRadius: "50%",
+                        background: editing.coingecko_enabled ? "#000" : "var(--t3)",
+                        transition: "left 0.2s",
+                      }} />
+                    </div>
+                    <span style={{ fontSize: "13px", color: "var(--t2)" }}>
+                      Enable CoinGecko trending in research
+                    </span>
+                  </label>
+                </FieldRow>
+                <FieldRow label="Telegram Channels" hint="Public slugs, comma-separated (no @)">
+                  <input
+                    style={inputStyle()}
+                    value={(editing.telegram_channels ?? []).join(", ")}
+                    onChange={(e) =>
+                      setEditing({ ...editing, telegram_channels: e.target.value.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean) })
+                    }
+                    placeholder="e.g. coindesk, durov, hyperliquid"
+                  />
+                  <p style={{ fontSize: "11px", color: "var(--ti)", marginTop: "6px" }}>
+                    Only public channels. Scraped automatically during research.
+                  </p>
+                </FieldRow>
+              </>
+            )}
+
+            {/* Save button — full width */}
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: "20px", display: "flex", gap: "10px" }}>
+              <button
+                onClick={save}
+                disabled={saving || !editing.name?.trim()}
+                style={{ flex: 1, padding: "12px", background: "var(--gold)", color: "#000", fontSize: "14px", fontWeight: 700, borderRadius: "10px", border: "none", cursor: "pointer", opacity: (saving || !editing.name?.trim()) ? 0.4 : 1, fontFamily: "var(--font-manrope)" }}
+              >
+                {saving ? "Saving..." : isNew ? "Create Project" : "Save Changes"}
+              </button>
+              <button
+                onClick={() => setEditing(null)}
+                style={{ padding: "12px 24px", background: "var(--bg-mid)", border: "1px solid var(--border)", color: "var(--t3)", fontSize: "13px", borderRadius: "10px", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -342,24 +457,20 @@ export default function ProjectsPage() {
   );
 }
 
-function SectionDivider({ label }: { label: string }) {
+function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px", paddingTop: "4px" }}>
-      <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
-      <span style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-subtle)", whiteSpace: "nowrap" }}>
-        {label}
-      </span>
-      <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
-    </div>
+    <h2 style={{ fontSize: "16px", fontWeight: 700, fontFamily: "var(--font-manrope)", color: "var(--t1)", margin: 0 }}>
+      {children}
+    </h2>
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function FieldRow({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label style={{ display: "block", fontSize: "11px", fontWeight: 600, fontFamily: "monospace", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
+      <label style={{ display: "block", fontSize: "11px", fontWeight: 600, fontFamily: "var(--font-mono)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--t3)" }}>
         {label}
-        {hint && <span style={{ textTransform: "none", letterSpacing: "normal", marginLeft: "8px", color: "var(--text-subtle)", fontWeight: 400 }}>— {hint}</span>}
+        {hint && <span style={{ textTransform: "none", letterSpacing: "normal", marginLeft: "6px", color: "var(--ti)", fontWeight: 400 }}>— {hint}</span>}
       </label>
       {children}
     </div>
