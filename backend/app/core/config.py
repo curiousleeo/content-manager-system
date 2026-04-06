@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # xAI / Grok
     xai_api_key: str = ""
 
+    # API kill switch — set PAUSE_EXTERNAL_APIS=true to block all Claude + X calls
+    pause_external_apis: bool = False
+
     # CORS — comma-separated list of allowed origins
     allowed_origins: str = "http://localhost:3000,https://content-manager-system.vercel.app"
 

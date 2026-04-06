@@ -14,7 +14,7 @@ def get_client():
 
 
 def search_recent(query: str, max_results: int = 50) -> list[dict]:
-    if not settings.x_bearer_token:
+    if settings.pause_external_apis or not settings.x_bearer_token:
         return []
     try:
         client = get_client()
@@ -43,7 +43,7 @@ def search_recent(query: str, max_results: int = 50) -> list[dict]:
 
 
 def get_trending(woeid: int = 1) -> list[dict]:
-    if not settings.x_api_key:
+    if settings.pause_external_apis or not settings.x_api_key:
         return []
     try:
         auth = tweepy.OAuth1UserHandler(

@@ -9,6 +9,11 @@ MODEL_FAST = "claude-haiku-4-5-20251001"   # analysis
 MODEL_SMART = "claude-sonnet-4-6"          # generation + review
 
 
+def _check_pause():
+    if settings.pause_external_apis:
+        raise RuntimeError("External API calls are paused. Set PAUSE_EXTERNAL_APIS=false to resume.")
+
+
 def _parse_json(text: str) -> dict:
     """Parse JSON from Claude response, stripping markdown code fences if present."""
     text = text.strip()
@@ -36,6 +41,7 @@ def _project_context(project: dict | None) -> str:
 
 def analyze_insights(raw_data: dict, project: dict | None = None) -> dict:
     """Layer 2 — analyze scraped data and return structured insights."""
+    _check_pause()
     prompt = f"""You are a content strategist analyzing social media and search data.
 
 Analyze the following research data and return a JSON object with:
@@ -83,6 +89,7 @@ def _niche_context(niche_report: dict | None) -> str:
 
 def generate_content(topic: str, insights: dict, platform: str = "x", project: dict | None = None, niche_report: dict | None = None) -> str:
     """Layer 3 — generate content based on insights."""
+    _check_pause()
     platform_rules = {
         "x": "Twitter/X post. Max 280 characters. No hashtag spam (max 1-2 if relevant). Direct, punchy, no fluff.",
     }
@@ -124,6 +131,7 @@ def batch_generate_content(
     Generate `count` posts distributed across `pillars` in a single Claude call.
     Returns list of {pillar, text} dicts.
     """
+    _check_pause()
     platform_rules = {
         "x": "Twitter/X post. Max 280 characters. No hashtag spam (max 1-2 if relevant). Direct, punchy.",
     }
@@ -176,6 +184,7 @@ Return the JSON array only, no explanation."""
 
 def review_content(content: str, platform: str = "x", project: dict | None = None) -> dict:
     """Layer 4 — review content against checklist."""
+    _check_pause()
     avoid_note = ""
     if project and project.get("avoid"):
         avoid_note = f"\n- Does not use any of these (project rule): {project['avoid']}"

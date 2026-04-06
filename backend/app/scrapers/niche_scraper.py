@@ -124,11 +124,9 @@ def scrape_account(
     Fetch or return cached tweets for one watched account.
 
     auto=True  → 7-day cache window (weekly cron path)
-    force=True → re-fetch even if within 7 days (manual trigger, user chose re-fetch)
-    Same-day hard block always applies regardless of auto/force.
-
-    Returns { handle, category, posts, used_cache, fetched_at }
     """
+    if settings.pause_external_apis:
+        return {"handle": account.x_handle, "posts": account.cached_tweets or [], "used_cache": True, "paused": True}
     db = SessionLocal()
     try:
         # Re-query inside this session to get a live row
