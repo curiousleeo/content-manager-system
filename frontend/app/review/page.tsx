@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, Draft } from "@/lib/api";
 import { store } from "@/lib/store";
-import { Loader2, ArrowRight, ChevronDown, ToggleLeft, ToggleRight, AlertTriangle, Ban, Lightbulb, TrendingUp, CheckCircle } from "lucide-react";
+import { Loader2, ArrowRight, ChevronDown, ToggleLeft, ToggleRight, AlertTriangle, Ban, Lightbulb, TrendingUp, CheckCircle, Target } from "lucide-react";
 
 interface ReviewResult {
   passed: boolean;
@@ -87,7 +87,7 @@ export default function ReviewPage() {
   };
 
   const violations = [
-    ...(result?.issues ?? []).map((t) => ({ type: "block" as const, title: t,      desc: "Issue flagged by review" })),
+    ...(result?.issues ?? []).map((t) => ({ type: "block" as const, title: t, desc: "Issue flagged by review" })),
     ...(result?.suggestions ?? []).map((t) => ({ type: "tip" as const, title: t, desc: "Suggested improvement" })),
   ];
 
@@ -103,13 +103,20 @@ export default function ReviewPage() {
     <div style={{ padding: "32px 36px 80px" }}>
 
       {/* ── Page header ── */}
-      <div style={{ marginBottom: "28px" }}>
-        <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: "var(--gold)", fontFamily: "var(--font-manrope), sans-serif", marginBottom: "8px" }}>
-          EDITORIAL GATE
-        </p>
-        <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1 }}>
-          Review
-        </h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
+        <div>
+          <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "3px", textTransform: "uppercase", color: "var(--gold)", fontFamily: "var(--font-manrope), sans-serif", marginBottom: "8px" }}>
+            Editorial Gate
+          </p>
+          <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1 }}>
+            Post Analysis
+          </h1>
+        </div>
+        {selectedDraftId && (
+          <span style={{ fontSize: "11px", color: "var(--t3)", letterSpacing: "1px", fontFamily: "var(--font-mono), monospace" }}>
+            QUEUE: PRJ-{selectedDraftId}
+          </span>
+        )}
       </div>
 
       {fromDB && (
@@ -119,14 +126,37 @@ export default function ReviewPage() {
       )}
 
       {/* ── Two-column layout ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "20px", alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
 
-        {/* Left — post analysis */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        {/* Left */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+          {/* Draft meta card */}
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "22px", marginBottom: "2px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+              <span style={{ background: "rgba(255,184,0,0.08)", color: "var(--gold)", fontSize: "10px", fontWeight: 600, padding: "3px 9px", borderRadius: "4px", letterSpacing: "0.5px" }}>
+                {selectedDraftId ? `Draft #${selectedDraftId}` : "X / Twitter Draft"}
+              </span>
+              {selectedDraftId && (
+                <span style={{ background: "var(--bg-elev)", color: "var(--t2)", fontSize: "10px", fontWeight: 600, padding: "3px 9px", borderRadius: "4px" }}>
+                  V2.4
+                </span>
+              )}
+              <span style={{ fontSize: "10px", color: "var(--t3)", marginLeft: "auto" }}>
+                {text.length} Characters
+              </span>
+            </div>
+            <div style={{ fontSize: "13.5px", lineHeight: 1.75, fontStyle: text ? "normal" : "italic", color: text ? "var(--t1)" : "var(--t3)" }}>
+              {text || "No draft selected yet — pick one from the draft picker below."}
+            </div>
+          </div>
 
           {/* Draft picker */}
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-            <button onClick={() => { if (!pickerOpen && drafts.length === 0) loadDrafts(project?.id); setPickerOpen(!pickerOpen); }} style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}>
+            <button
+              onClick={() => { if (!pickerOpen && drafts.length === 0) loadDrafts(project?.id); setPickerOpen(!pickerOpen); }}
+              style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}
+            >
               <span style={{ fontSize: "12.5px", fontWeight: 500, color: "var(--t2)" }}>
                 {selectedDraftId ? `Draft #${selectedDraftId} selected` : "Pick from drafts"}
               </span>
@@ -182,7 +212,7 @@ export default function ReviewPage() {
               </button>
               {result?.passed && (
                 <button onClick={() => router.push("/schedule")} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "9px 18px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 600, border: "1px solid rgba(255,255,255,0.14)", color: "var(--t1)", background: "transparent", cursor: "pointer" }}>
-                  Schedule <ArrowRight size={12} />
+                  Approve and Schedule <ArrowRight size={12} />
                 </button>
               )}
             </div>
@@ -196,40 +226,35 @@ export default function ReviewPage() {
 
           {result ? (
             <>
-              {/* Quality score card */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-g)", borderRadius: "12px", padding: "20px", textAlign: "center" }}>
-                <p style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>QUALITY SCORE</p>
-                <div style={{ fontSize: "40px", fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, letterSpacing: "-2px", color: scoreColor(result.score), lineHeight: 1 }}>
-                  {result.score}
+              {/* Score cards 2-col */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "11px" }}>
+                {/* Quality Score */}
+                <div style={{ background: "var(--bg-card)", border: "1px solid rgba(255,184,0,0.25)", borderRadius: "12px", textAlign: "center", padding: "20px" }}>
+                  <p style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>Quality Score</p>
+                  <div style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "40px", fontWeight: 800, letterSpacing: "-2px", color: scoreColor(result.score), lineHeight: 1 }}>
+                    {result.score}
+                  </div>
+                  <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: result.passed ? "var(--green)" : "var(--red)", marginTop: "7px" }}>
+                    {result.passed ? "Excellent" : "Needs Work"}
+                  </div>
                 </div>
-                <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: result.passed ? "var(--green)" : "var(--red)", marginTop: "6px" }}>
-                  {result.passed ? "PASSED" : "NEEDS WORK"}
-                </div>
-                <div style={{ height: "3px", borderRadius: "2px", background: "rgba(255,255,255,0.07)", marginTop: "14px" }}>
-                  <div style={{ height: "100%", borderRadius: "2px", width: `${(result.score / 10) * 100}%`, background: scoreColor(result.score), transition: "width 0.6s ease" }} />
-                </div>
-              </div>
-
-              {/* AI Likelihood score card */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", textAlign: "center" }}>
-                <p style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>AI LIKELIHOOD</p>
-                <div style={{ fontSize: "40px", fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, letterSpacing: "-2px", color: aiColors[result.ai_likelihood].color, lineHeight: 1, textTransform: "uppercase" }}>
-                  {result.ai_likelihood}
-                </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", marginTop: "8px", padding: "4px 10px", borderRadius: "6px", background: aiColors[result.ai_likelihood].bg, border: `1px solid ${aiColors[result.ai_likelihood].border}` }}>
-                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1.2px", textTransform: "uppercase", color: aiColors[result.ai_likelihood].color }}>
-                    {result.ai_likelihood === "low" ? "HUMAN-LIKE" : result.ai_likelihood === "medium" ? "BORDERLINE" : "AI DETECTED"}
-                  </span>
+                {/* AI Likelihood */}
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", textAlign: "center", padding: "20px" }}>
+                  <p style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>AI Human Score</p>
+                  <div style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "40px", fontWeight: 800, letterSpacing: "-2px", color: "var(--t1)", lineHeight: 1 }}>
+                    {result.ai_likelihood === "low" ? "94%" : result.ai_likelihood === "medium" ? "62%" : "31%"}
+                  </div>
+                  <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--purple-l)", marginTop: "7px" }}>
+                    {result.ai_likelihood === "low" ? "High Auth." : result.ai_likelihood === "medium" ? "Borderline" : "AI Detected"}
+                  </div>
                 </div>
               </div>
 
-              {/* Violations list */}
+              {/* Violations */}
               {violations.length > 0 && (
                 <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
                   <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
-                    <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>
-                      Findings ({violations.length})
-                    </p>
+                    <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)" }}>Critical Violations</p>
                   </div>
                   <div style={{ padding: "8px 18px" }}>
                     {violations.map((v, i) => {
@@ -241,7 +266,7 @@ export default function ReviewPage() {
                             <VIcon size={13} strokeWidth={1.75} style={{ color: vs.color }} />
                           </div>
                           <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--t1)", marginBottom: "2px" }}>{v.title}</p>
+                            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--t1)", marginBottom: "3px" }}>{v.title}</p>
                             <p style={{ fontSize: "11px", color: "var(--t3)", lineHeight: 1.5 }}>{v.desc}</p>
                           </div>
                         </div>
@@ -251,16 +276,16 @@ export default function ReviewPage() {
                 </div>
               )}
 
-              {/* Editorial polish */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px 18px" }}>
-                <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>Brand Voice</p>
-                <div style={{ height: "6px", borderRadius: "4px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", background: `linear-gradient(90deg, var(--gold), var(--gold-soft))`, width: `${result.score * 10}%`, borderRadius: "4px", transition: "width 0.6s ease" }} />
+              {/* Brand Voice alignment */}
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px 18px", display: "flex", alignItems: "center", gap: "12px" }}>
+                <Target size={15} strokeWidth={1.75} style={{ color: "var(--purple-l)", flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "5px" }}>Brand Voice Alignment</div>
+                  <div style={{ height: "3px", background: "rgba(255,255,255,0.07)", borderRadius: "2px" }}>
+                    <div style={{ height: "100%", background: "var(--purple-l)", width: `${result.score * 10}%`, borderRadius: "2px", transition: "width 0.6s ease" }} />
+                  </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-                  <span style={{ fontSize: "10px", color: "var(--t3)" }}>Off-brand</span>
-                  <span style={{ fontSize: "10px", color: "var(--t3)" }}>On-brand</span>
-                </div>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--t1)" }}>{result.score * 10}%</div>
               </div>
             </>
           ) : (

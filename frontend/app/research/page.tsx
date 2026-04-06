@@ -78,53 +78,65 @@ export default function ResearchPage() {
 
       {/* ── Page header ── */}
       <div style={{ marginBottom: "28px" }}>
-        <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: "var(--gold)", fontFamily: "var(--font-manrope), sans-serif", marginBottom: "8px" }}>
+        <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "3px", textTransform: "uppercase", color: "var(--gold)", fontFamily: "var(--font-manrope), sans-serif", marginBottom: "8px" }}>
           SOVEREIGN INTEL
         </p>
-        <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1 }}>
-          Research
+        <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1, margin: "0 0 8px" }}>
+          Sovereign Intel
         </h1>
-        <p style={{ fontSize: "14px", color: "var(--t2)", marginTop: "8px" }}>
-          Search live sources or paste raw research from Grok, threads, news.
+        <p style={{ fontSize: "14px", color: "var(--t2)", lineHeight: 1.65, maxWidth: "540px", margin: 0 }}>
+          Cross-reference real-time trends and manual intelligence to fuel your automation engine.
         </p>
       </div>
 
-      {/* ── Source filter chips ── */}
-      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {availableSources.map((s) => {
-          const on = sources.includes(s.key);
-          return (
-            <button key={s.key} onClick={() => toggleSource(s.key)} style={{
-              borderRadius: "20px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.7px", textTransform: "uppercase",
-              border: `1px solid ${on ? s.accentBorder : "rgba(255,255,255,0.1)"}`,
-              background: on ? s.accentDim : "transparent",
-              color: on ? s.accentColor : "var(--t2)",
-              padding: "5px 13px", cursor: "pointer", transition: "all 0.12s",
-            }}>
-              {s.label}
-            </button>
-          );
-        })}
-        {!coingeckoEnabled && (
-          <span style={{ fontSize: "11px", color: "var(--t3)", alignSelf: "center", marginLeft: "4px" }}>
-            CoinGecko — enable in project settings
-          </span>
-        )}
+      {/* ── Source chips ── */}
+      <div style={{ marginBottom: "18px" }}>
+        <p style={{ fontSize: "9px", color: "var(--t3)", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: "10px" }}>
+          Primary Sources
+        </p>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {availableSources.map((s) => {
+            const on = sources.includes(s.key);
+            return (
+              <button
+                key={s.key}
+                onClick={() => toggleSource(s.key)}
+                style={{
+                  display: "inline-flex", alignItems: "center",
+                  padding: "5px 13px", borderRadius: "20px",
+                  fontSize: "11px", fontWeight: 600,
+                  letterSpacing: "0.7px", textTransform: "uppercase",
+                  cursor: "pointer", transition: "all .15s",
+                  border: `1px solid ${on ? s.accentBorder : "rgba(255,255,255,.1)"}`,
+                  background: on ? s.accentDim : "transparent",
+                  color: on ? s.accentColor : "var(--t2)",
+                }}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+          {!coingeckoEnabled && (
+            <span style={{ fontSize: "11px", color: "var(--t3)", alignSelf: "center", marginLeft: "4px" }}>
+              CoinGecko — enable in project settings
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* ── Full-width search bar ── */}
-      <div style={{ display: "flex", gap: "0", marginBottom: "28px", background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
-        <Search size={16} strokeWidth={1.75} style={{ alignSelf: "center", marginLeft: "18px", color: "var(--t3)", flexShrink: 0 }} />
+      {/* ── Search bar ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "12px", padding: "9px", marginBottom: "32px" }}>
+        <Search size={16} strokeWidth={1.75} style={{ color: "var(--t3)", flexShrink: 0 }} />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && run()}
           placeholder="Search topic, keyword, narrative…"
-          style={{ flex: 1, background: "transparent", border: "none", padding: "13px 16px", fontSize: "14px", color: "var(--t1)", outline: "none" }}
+          style={{ flex: 1, background: "transparent", border: "none", fontSize: "14px", color: "var(--t1)", outline: "none", padding: "0" }}
         />
         {pillars.length > 0 && (
-          <div style={{ display: "flex", gap: "6px", alignSelf: "center", padding: "0 12px", borderLeft: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", gap: "6px", padding: "0 6px", borderLeft: "1px solid var(--border)" }}>
             {pillars.slice(0, 3).map((p) => (
               <button key={p} onClick={() => run(p)} style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "6px", background: "rgba(255,184,0,0.07)", border: "1px solid rgba(255,184,0,0.2)", color: "var(--gold)", cursor: "pointer", whiteSpace: "nowrap" }}>
                 {p}
@@ -137,9 +149,11 @@ export default function ResearchPage() {
           disabled={loading || !query.trim()}
           style={{
             display: "flex", alignItems: "center", gap: "7px",
-            padding: "0 22px", background: "var(--gold)", color: "#1a1000",
+            padding: "8px 18px", borderRadius: "8px",
+            background: "var(--gold)", color: "#1a1000",
             fontFamily: "var(--font-manrope), sans-serif", fontWeight: 700, fontSize: "12px",
-            border: "none", cursor: "pointer", opacity: (loading || !query.trim()) ? 0.5 : 1,
+            border: "none", cursor: "pointer",
+            opacity: (loading || !query.trim()) ? 0.5 : 1,
             letterSpacing: "0.5px", transition: "opacity 0.15s", whiteSpace: "nowrap",
           }}
         >
@@ -162,58 +176,78 @@ export default function ResearchPage() {
 
           {/* Grok paste card */}
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
-              <p style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--t3)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "2px", color: "var(--gold)", margin: 0 }}>
                 Grok / Manual Paste
               </p>
+              <span style={{ fontSize: "10px", color: "var(--t3)" }}>Last updated: 2m ago</span>
             </div>
-            <div style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input
-                type="text"
-                value={pasteQuery}
-                onChange={(e) => setPasteQuery(e.target.value)}
-                placeholder='Label (e.g. "Grok — BTC perps Apr 2026")'
-                style={{ background: "var(--bg-mid)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "9px 13px", fontSize: "13px", color: "var(--t1)" }}
-              />
-              <textarea
-                value={pasteText}
-                onChange={(e) => setPasteText(e.target.value)}
-                rows={8}
-                placeholder="Paste Grok output, X threads, news articles, notes…"
-                style={{ background: "var(--bg-mid)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "11px 13px", fontSize: "13px", color: "var(--t1)", resize: "vertical", lineHeight: 1.6, outline: "none" }}
-              />
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  onClick={savePane}
-                  disabled={pasting || !pasteText.trim()}
+            <div style={{ position: "relative" }}>
+              <div style={{ background: "var(--bg-card)", border: "none", overflow: "hidden" }}>
+                <input
+                  type="text"
+                  value={pasteQuery}
+                  onChange={(e) => setPasteQuery(e.target.value)}
+                  placeholder='Label (e.g. "Grok — BTC perps Apr 2026")'
                   style={{
-                    display: "flex", alignItems: "center", gap: "7px",
-                    padding: "9px 18px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 600,
-                    letterSpacing: "0.6px", textTransform: "uppercase",
-                    background: "var(--gold)", color: "#1a1000",
-                    border: "none", cursor: "pointer",
-                    opacity: (pasting || !pasteText.trim()) ? 0.45 : 1,
+                    width: "100%", boxSizing: "border-box",
+                    background: "transparent", border: "none",
+                    borderBottom: "1px solid var(--border)",
+                    padding: "13px 18px", fontSize: "12.5px",
+                    fontFamily: "var(--font-mono), monospace",
+                    color: "var(--t2)", outline: "none",
                   }}
-                >
-                  {pasting ? <Loader2 size={13} className="animate-spin" /> : pasteSaved ? <Check size={13} /> : null}
-                  {pasting ? "Saving…" : pasteSaved ? "Saved!" : "Save Research"}
-                </button>
-                {pasteSaved && (
-                  <button onClick={() => router.push("/insights")} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "9px 18px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--t2)", cursor: "pointer", letterSpacing: "0.5px" }}>
-                    Insights <ArrowRight size={13} />
+                />
+                <textarea
+                  value={pasteText}
+                  onChange={(e) => setPasteText(e.target.value)}
+                  placeholder="Paste Grok output, X threads, news articles, notes…"
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    background: "var(--bg-card)", border: "none",
+                    padding: "14px 18px 56px",
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: "12.5px", color: "var(--t1)",
+                    resize: "none", lineHeight: 1.65, outline: "none",
+                    minHeight: "240px", display: "block",
+                  }}
+                />
+                <div style={{ position: "absolute", bottom: "12px", right: "12px", display: "flex", gap: "8px" }}>
+                  {pasteSaved && (
+                    <button
+                      onClick={() => router.push("/insights")}
+                      style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", borderRadius: "7px", fontSize: "11px", fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--t2)", cursor: "pointer" }}
+                    >
+                      Insights <ArrowRight size={12} />
+                    </button>
+                  )}
+                  <button
+                    onClick={savePane}
+                    disabled={pasting || !pasteText.trim()}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "6px",
+                      padding: "7px 14px", borderRadius: "7px",
+                      fontSize: "11px", fontWeight: 600,
+                      background: "var(--gold)", color: "#1a1000",
+                      border: "none", cursor: "pointer",
+                      opacity: (pasting || !pasteText.trim()) ? 0.45 : 1,
+                    }}
+                  >
+                    {pasting ? <Loader2 size={12} className="animate-spin" /> : pasteSaved ? <Check size={12} /> : null}
+                    {pasting ? "Saving…" : pasteSaved ? "Saved!" : "Save"}
                   </button>
-                )}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Efficiency tip card */}
-          <div style={{ background: "rgba(255,184,0,0.04)", border: "1px solid rgba(255,184,0,0.15)", borderRadius: "12px", padding: "16px 18px" }}>
+          <div style={{ background: "rgba(107,47,217,0.06)", border: "1px solid rgba(107,47,217,0.2)", borderRadius: "12px", padding: "16px" }}>
             <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-              <Lightbulb size={14} strokeWidth={1.75} style={{ color: "var(--gold)", flexShrink: 0, marginTop: "1px" }} />
+              <Lightbulb size={14} strokeWidth={1.75} style={{ color: "var(--purple)", flexShrink: 0, marginTop: "1px" }} />
               <div>
-                <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--gold)", letterSpacing: "1px", textTransform: "uppercase", marginBottom: "6px" }}>Efficiency tip</p>
-                <p style={{ fontSize: "12px", color: "var(--t2)", lineHeight: 1.65 }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--purple-l)", letterSpacing: "1px", textTransform: "uppercase", marginBottom: "6px" }}>EFFICIENCY TIP</p>
+                <p style={{ fontSize: "12px", color: "var(--t2)", lineHeight: 1.65, margin: 0 }}>
                   Paste Grok output directly — it handles unstructured text. Use the label field to track context across sessions.
                 </p>
               </div>
@@ -226,11 +260,14 @@ export default function ResearchPage() {
           {results ? (
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                <p style={{ fontSize: "13px", color: "var(--t2)" }}>
-                  Results for <strong style={{ color: "var(--t1)", fontWeight: 600 }}>{(results as { query?: string }).query}</strong>
+                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--t2)", margin: 0 }}>
+                  Live Intelligence Stream
                 </p>
-                <button onClick={() => router.push("/insights")} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                  Analyze <ArrowRight size={12} />
+                <button
+                  onClick={() => { setResults(null); }}
+                  style={{ fontSize: "11px", color: "var(--gold)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                >
+                  Clear All
                 </button>
               </div>
               {Object.entries((results as { data?: Record<string, unknown> }).data ?? {}).map(([source, items]) => {
@@ -274,30 +311,43 @@ export default function ResearchPage() {
                   </div>
                 );
               })}
+              <button
+                onClick={() => router.push("/insights")}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px 20px", borderRadius: "8px", fontSize: "11px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", letterSpacing: "0.5px", textTransform: "uppercase" }}
+              >
+                Analyze <ArrowRight size={12} />
+              </button>
             </>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {["GOOGLE TRENDS", "COINGECKO", "GROK MANUAL"].map((label, i) => {
-                const colors = [
-                  { color: "var(--gold)",     border: "rgba(255,184,0,0.15)"    },
-                  { color: "var(--purple-l)", border: "rgba(107,47,217,0.15)"   },
-                  { color: "var(--t3)",       border: "rgba(255,255,255,0.07)"  },
-                ];
-                return (
-                  <div key={label} style={{ background: "var(--bg-card)", border: `1px solid ${colors[i].border}`, borderRadius: "12px", overflow: "hidden" }}>
-                    <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: colors[i].color }} />
-                      <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: colors[i].color }}>{label}</span>
+            <>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--t2)", margin: 0 }}>
+                  Live Intelligence Stream
+                </p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                {["GOOGLE TRENDS", "COINGECKO", "GROK MANUAL"].map((label, i) => {
+                  const colors = [
+                    { color: "var(--gold)",     border: "rgba(255,184,0,0.15)"    },
+                    { color: "var(--purple-l)", border: "rgba(107,47,217,0.15)"   },
+                    { color: "var(--t3)",       border: "rgba(255,255,255,0.07)"  },
+                  ];
+                  return (
+                    <div key={label} style={{ background: "var(--bg-card)", border: `1px solid ${colors[i].border}`, borderRadius: "12px", overflow: "hidden" }}>
+                      <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: colors[i].color }} />
+                        <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: colors[i].color }}>{label}</span>
+                      </div>
+                      <div style={{ padding: "24px 18px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {[...Array(3)].map((_, j) => (
+                          <div key={j} style={{ height: "12px", borderRadius: "4px", background: "rgba(255,255,255,0.04)", width: j === 0 ? "80%" : j === 1 ? "65%" : "50%" }} />
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ padding: "24px 18px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {[...Array(3)].map((_, j) => (
-                        <div key={j} style={{ height: "12px", borderRadius: "4px", background: "rgba(255,255,255,0.04)", width: j === 0 ? "80%" : j === 1 ? "65%" : "50%" }} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

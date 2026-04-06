@@ -19,7 +19,6 @@ export default function StatusBar() {
   }, []);
 
   const project = store.getProject();
-  const version = "v2.0";
 
   return (
     <div
@@ -39,23 +38,35 @@ export default function StatusBar() {
       }}
     >
       {/* Left */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <div style={{
             width: "7px", height: "7px", borderRadius: "50%",
             background: "var(--green)",
             boxShadow: "0 0 6px var(--green)",
           }} />
-          <span style={{ fontSize: "10px", color: "var(--t2)", fontWeight: 500 }}>
+          <span style={{
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "1px",
+            textTransform: "uppercase",
+            color: "var(--green)",
+          }}>
             System Live
           </span>
         </div>
 
-        <div style={{ width: "1px", height: "12px", background: "var(--border)" }} />
+        <div style={{ width: "1px", height: "11px", background: "var(--border)" }} />
 
-        <span style={{ fontSize: "10px", color: "var(--t3)" }}>
+        <span style={{
+          fontSize: "10px",
+          fontWeight: 500,
+          letterSpacing: "0.5px",
+          textTransform: "uppercase",
+          color: "var(--t3)",
+        }}>
           {queued !== null
-            ? `${queued} post${queued !== 1 ? "s" : ""} queued`
+            ? `${queued} draft${queued !== 1 ? "s" : ""} queued for auto-poster`
             : "Loading queue…"}
           {project ? ` · ${project.name}` : ""}
         </span>
@@ -63,12 +74,11 @@ export default function StatusBar() {
 
       {/* Right */}
       <span style={{
-        fontSize: "9px",
         fontFamily: "var(--font-mono), monospace",
+        fontSize: "9px",
         color: "var(--t3)",
-        letterSpacing: "0.3px",
       }}>
-        CMS {version}
+        V 4.2.0-SOVEREIGN
       </span>
     </div>
   );

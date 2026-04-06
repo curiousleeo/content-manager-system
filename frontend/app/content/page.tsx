@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, Draft } from "@/lib/api";
 import { store } from "@/lib/store";
-import { Loader2, ArrowRight, Send, Trash2, ToggleLeft, ToggleRight, PenLine, Check } from "lucide-react";
+import { Loader2, ArrowRight, Send, Trash2, ToggleLeft, ToggleRight, PenLine, Check, Zap, Calendar } from "lucide-react";
 import StatusBar from "@/components/StatusBar";
 
 type Tab = "single" | "batch";
@@ -121,14 +121,17 @@ function ContentPageInner() {
   const charCount = text.length;
   const overLimit = charCount > 280;
 
-  /* ── Shared styles ── */
   const PILL_BTN = (active: boolean): React.CSSProperties => ({
-    padding: "8px 20px", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600,
+    padding: "8px 20px",
+    borderRadius: "8px",
+    fontSize: "12.5px",
+    fontWeight: 600,
     letterSpacing: "0.4px",
     background: active ? "var(--bg-elev)" : "transparent",
     color: active ? "var(--t1)" : "var(--ti)",
-    border: active ? "1px solid var(--border-2)" : "1px solid transparent",
-    cursor: "pointer", transition: "all 0.15s",
+    border: active ? "2px solid var(--border)" : "1px solid transparent",
+    cursor: "pointer",
+    transition: "all 0.15s",
   });
 
   const PILLAR_CARDS = project?.content_pillars?.slice(0, 2) ?? [];
@@ -137,17 +140,20 @@ function ContentPageInner() {
     <>
     <div style={{ padding: "32px 36px 80px" }}>
 
-      {/* ── Page header + tabs ── */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "28px" }}>
-        <div>
-          <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: "var(--gold)", fontFamily: "var(--font-manrope), sans-serif", marginBottom: "8px" }}>
-            CONTENT ENGINE
-          </p>
-          <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1 }}>
-            Generate
+      {/* ── Page header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "30px", letterSpacing: "-0.5px", color: "var(--t1)", lineHeight: 1 }}>
+            Engineered Posting
           </h1>
+          {/* Platform badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "20px", padding: "5px 12px" }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--blue)", flexShrink: 0 }} />
+            <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--t2)" }}>Platform: X</span>
+          </div>
         </div>
-        {/* Tab toggle in topbar style */}
+
+        {/* Tab toggle */}
         <div style={{ display: "flex", background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "10px", padding: "4px", gap: "2px" }}>
           {(["single", "batch"] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)} style={PILL_BTN(tab === t)}>
@@ -165,76 +171,133 @@ function ContentPageInner() {
 
       {/* ── Single post ── */}
       {tab === "single" && (
-        <div style={{ display: "grid", gridTemplateColumns: "7fr 5fr", gap: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "7fr 5fr", gap: "20px", alignItems: "start" }}>
 
-          {/* Left — topic + editor */}
+          {/* LEFT column */}
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* Topic input + generate */}
+            {/* Topic Architecture card */}
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px" }}>
-              <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "14px" }}>Topic / Angle</p>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <input
-                  type="text"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && generate()}
-                  placeholder="e.g. Why self-custody matters for active traders"
-                  style={{ flex: 1 }}
-                />
-                <button
-                  onClick={generate}
-                  disabled={loading || !topic.trim()}
-                  style={{ display: "flex", alignItems: "center", gap: "7px", padding: "9px 20px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", opacity: (loading || !topic.trim()) ? 0.45 : 1, whiteSpace: "nowrap", fontFamily: "var(--font-manrope), sans-serif" }}
-                >
-                  {loading ? <Loader2 size={13} className="animate-spin" /> : <PenLine size={13} />}
-                  {loading ? "Generating…" : "Synthesize"}
-                </button>
-              </div>
+              <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "14px" }}>
+                TOPIC ARCHITECTURE
+              </p>
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && generate()}
+                placeholder="e.g. Why self-custody matters for active traders"
+                style={{ width: "100%", fontSize: "15px", padding: "13px", marginBottom: "12px" }}
+              />
+              <button
+                onClick={generate}
+                disabled={loading || !topic.trim()}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "7px",
+                  padding: "11px 20px",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  background: "var(--gold)",
+                  color: "#1a1000",
+                  border: "none",
+                  cursor: "pointer",
+                  opacity: (loading || !topic.trim()) ? 0.45 : 1,
+                  fontFamily: "var(--font-manrope), sans-serif",
+                  boxShadow: "0 12px 30px rgba(255,184,0,0.2)",
+                }}
+              >
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                {loading ? "Generating…" : "Synthesize"}
+              </button>
             </div>
 
-            {/* Generated draft card */}
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", position: "relative" }}>
-              {/* Gold top line */}
-              <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,220,161,0.3), transparent)" }} />
-              <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "10px", padding: "3px 7px", borderRadius: "4px", background: "rgba(29,161,242,0.1)", color: "var(--blue)", fontWeight: 600, letterSpacing: "0.5px" }}>X / TWITTER</span>
-                </div>
-                <span style={{ fontSize: "10px", fontFamily: "var(--font-mono), monospace", color: overLimit ? "var(--red)" : "var(--t3)" }}>{charCount}/280</span>
+            {/* Generated Draft card */}
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", position: "relative", overflow: "hidden" }}>
+              {/* Gold shimmer line at top */}
+              <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,220,161,0.4), transparent)" }} />
+
+              {/* Card header */}
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: "rgba(29,161,242,0.1)", color: "var(--blue)", fontWeight: 600, letterSpacing: "0.8px" }}>
+                  X / TWITTER
+                </span>
+                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono), monospace", color: overLimit ? "var(--red)" : "var(--t3)" }}>
+                  {charCount}/280
+                </span>
               </div>
+
+              {/* Textarea */}
               <div style={{ padding: "18px 20px" }}>
                 <textarea
                   value={text}
                   onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }}
                   rows={7}
                   placeholder="Generated content appears here — edit freely."
-                  style={{ width: "100%", background: "transparent", border: "none", outline: "none", fontSize: "13.5px", color: "var(--t1)", lineHeight: 1.7, resize: "none", fontFamily: "var(--font-inter), sans-serif", fontStyle: text ? "normal" : "italic" }}
+                  style={{
+                    width: "100%",
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    fontSize: "13.5px",
+                    color: "var(--t1)",
+                    lineHeight: 1.7,
+                    resize: "none",
+                    fontFamily: "var(--font-inter), sans-serif",
+                    fontStyle: text ? "normal" : "italic",
+                  }}
                 />
               </div>
+
+              {/* Footer */}
               <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", gap: "8px", alignItems: "center" }}>
-                <button onClick={() => { store.setContent(text); router.push("/review"); }} disabled={!text.trim()} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11px", fontWeight: 600, border: "1px solid rgba(255,255,255,0.14)", color: "var(--t1)", background: "transparent", cursor: "pointer", opacity: !text.trim() ? 0.4 : 1, letterSpacing: "0.4px" }}>
-                  Review <ArrowRight size={12} />
-                </button>
-                <button onClick={saveDraft} disabled={saving || !text.trim()} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11px", fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--t2)", cursor: "pointer", opacity: (saving || !text.trim()) ? 0.4 : 1, letterSpacing: "0.4px" }}>
-                  {saving ? <Loader2 size={12} className="animate-spin" /> : null}
-                  {saving ? "Saving…" : "Save draft"}
-                </button>
-                <button onClick={postNow} disabled={posting || !text.trim() || overLimit} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", opacity: (posting || !text.trim() || overLimit) ? 0.45 : 1, letterSpacing: "0.4px", marginLeft: "auto" }}>
+                <button
+                  onClick={postNow}
+                  disabled={posting || !text.trim() || overLimit}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11px", fontWeight: 600, border: "1px solid rgba(255,255,255,0.18)", color: "var(--t1)", background: "transparent", cursor: "pointer", opacity: (posting || !text.trim() || overLimit) ? 0.4 : 1, letterSpacing: "0.4px" }}
+                >
                   {posting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-                  {posting ? "Posting…" : "Post now"}
+                  {posting ? "Posting…" : "Post Now"}
+                </button>
+                <button
+                  onClick={() => { store.setContent(text); router.push("/schedule"); }}
+                  disabled={!text.trim()}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", opacity: !text.trim() ? 0.45 : 1, letterSpacing: "0.4px" }}
+                >
+                  <Calendar size={12} />
+                  Schedule
+                </button>
+                <button
+                  onClick={saveDraft}
+                  disabled={saving || !text.trim()}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11px", fontWeight: 600, background: "transparent", border: "none", color: "var(--t2)", cursor: "pointer", opacity: (saving || !text.trim()) ? 0.4 : 1, letterSpacing: "0.4px" }}
+                >
+                  {saving ? <Loader2 size={12} className="animate-spin" /> : null}
+                  {saving ? "Saving…" : "Save Draft"}
                 </button>
               </div>
             </div>
 
-            {/* Auto-queue toggle + scheduled date */}
+            {/* Auto-queue toggle + datetime picker */}
             {text.trim() && (
               <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-                <button onClick={() => setAutoQueue(!autoQueue)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: autoQueue ? "var(--gold)" : "var(--t3)", display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  onClick={() => setAutoQueue(!autoQueue)}
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: autoQueue ? "var(--gold)" : "var(--t3)", display: "flex", alignItems: "center", gap: "6px" }}
+                >
                   {autoQueue ? <ToggleRight size={20} strokeWidth={1.75} /> : <ToggleLeft size={20} strokeWidth={1.75} />}
                   <span style={{ fontSize: "12px", color: autoQueue ? "var(--gold)" : "var(--t2)" }}>Auto-queue when saved</span>
                 </button>
-                <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} style={{ width: "auto", fontSize: "12px", padding: "7px 11px", borderRadius: "7px" }} />
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  style={{ width: "auto", fontSize: "12px", padding: "7px 11px", borderRadius: "7px" }}
+                />
               </div>
             )}
 
@@ -243,46 +306,55 @@ function ContentPageInner() {
             {savedDraft && <p style={{ fontSize: "12px", fontFamily: "var(--font-mono), monospace", color: "var(--green)" }}>Saved as draft #{savedDraft.id}{savedDraft.auto_queue ? " — queued" : ""}</p>}
           </div>
 
-          {/* Right — pillars + queue preview */}
+          {/* RIGHT column */}
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
 
-            {/* Active pillars */}
+            {/* Active Pillars */}
             {PILLAR_CARDS.length > 0 && (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px" }}>
-                <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>Active Pillars</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>
+                  Active Pillars
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                   {PILLAR_CARDS.map((pillar: string, i: number) => (
-                    <button key={pillar} onClick={() => setTopic(pillar)} style={{
-                      textAlign: "left", padding: "12px 14px", borderRadius: "8px", cursor: "pointer",
-                      background: i === 0 ? "rgba(255,184,0,0.07)" : "rgba(107,47,217,0.07)",
-                      border: `1px solid ${i === 0 ? "rgba(255,184,0,0.2)" : "rgba(107,47,217,0.2)"}`,
-                      borderLeft: `3px solid ${i === 0 ? "var(--gold)" : "var(--purple-l)"}`,
-                    }}>
-                      <p style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--t1)", marginBottom: "2px" }}>{pillar}</p>
-                      <p style={{ fontSize: "11px", color: "var(--t3)" }}>Click to use as topic</p>
+                    <button
+                      key={pillar}
+                      onClick={() => setTopic(pillar)}
+                      style={{
+                        textAlign: "left",
+                        padding: "12px 14px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        background: i === 0 ? "rgba(255,184,0,0.06)" : "rgba(107,47,217,0.06)",
+                        border: `1px solid ${i === 0 ? "rgba(255,184,0,0.15)" : "rgba(107,47,217,0.15)"}`,
+                        borderLeft: `3px solid ${i === 0 ? "var(--gold)" : "var(--purple)"}`,
+                      }}
+                    >
+                      <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--t1)", marginBottom: "3px" }}>{pillar}</p>
+                      <p style={{ fontSize: "10px", color: "var(--t3)" }}>Click to use as topic</p>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Queue preview — last 3 drafts */}
+            {/* Queue Preview */}
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
               <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
-                <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Queue Preview</p>
+                <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Queue Preview</p>
               </div>
               <div style={{ padding: "8px 0" }}>
                 {savedDraft ? (
                   <div style={{ padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
                     <div style={{ width: "3px", alignSelf: "stretch", background: "var(--gold)", borderRadius: "2px", flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--gold)", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{savedDraft.topic}</p>
+                      <p style={{ fontSize: "10px", fontWeight: 600, color: "var(--gold)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{savedDraft.topic}</p>
                       <p style={{ fontSize: "12px", color: "var(--t2)", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{savedDraft.text}</p>
                     </div>
                     <Check size={12} style={{ color: "var(--green)", flexShrink: 0, marginTop: "2px" }} />
                   </div>
                 ) : (
-                  <p style={{ padding: "20px 16px", fontSize: "12px", color: "var(--t3)", textAlign: "center" }}>Save a draft to see it here</p>
+                  <p style={{ padding: "24px 16px", fontSize: "12px", color: "var(--t3)", textAlign: "center" }}>Save a draft to see it here</p>
                 )}
               </div>
             </div>

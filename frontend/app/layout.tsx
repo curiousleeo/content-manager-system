@@ -53,14 +53,14 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} h-full`}>
       <body
-        className="h-full flex flex-col antialiased"
+        className="h-full antialiased"
         style={{ background: "var(--bg-base)", color: "var(--t1)" }}
       >
-        <div className="flex h-full overflow-hidden">
+        <div style={{ display: "flex", minHeight: "100vh" }}>
           <Sidebar user={user} signOutAction={handleSignOut} />
-          <div className="flex flex-col flex-1 overflow-hidden">
+          <div style={{ marginLeft: "220px", display: "flex", flexDirection: "column", flex: 1, minHeight: "100vh" }}>
             <Header />
-            <main className="flex-1 overflow-y-auto">{children}</main>
+            <main style={{ flex: 1 }}>{children}</main>
           </div>
         </div>
       </body>

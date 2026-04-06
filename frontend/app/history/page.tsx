@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, AnalyticsRow, Draft } from "@/lib/api";
 import { store } from "@/lib/store";
-import { Loader2, Eye, Heart, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Loader2, Eye, Heart, Trash2, ToggleLeft, ToggleRight, MoreHorizontal, Lock } from "lucide-react";
 import StatusBar from "@/components/StatusBar";
 
 interface ScheduledPost {
@@ -75,6 +75,8 @@ function mergeRows(posts: ScheduledPost[], drafts: Draft[]): Row[] {
   return rows;
 }
 
+const PAGE_SIZE = 20;
+
 export default function HistoryPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [analyticsMap, setAnalyticsMap] = useState<Record<string, AnalyticsRow>>({});
@@ -85,6 +87,7 @@ export default function HistoryPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
 
   const project = store.getProject();
 
@@ -168,37 +171,75 @@ export default function HistoryPage() {
   const allChecked = filteredRows.length > 0 && filteredRows.every(r => selected.has(r.id));
   const someChecked = selected.size > 0;
 
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const pagedRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  function getPillarColor(topic?: string | null): { color: string; bg: string } {
+    if (!topic) return { color: "var(--t2)", bg: "rgba(255,255,255,0.06)" };
+    const map: Record<string, { color: string; bg: string }> = {
+      education:  { color: "#93c5fd", bg: "rgba(147,197,253,0.12)" },
+      authority:  { color: "var(--gold)", bg: "rgba(255,184,0,0.12)" },
+      conversion: { color: "var(--green)", bg: "rgba(34,197,94,0.12)" },
+      community:  { color: "var(--purple-l)", bg: "rgba(107,47,217,0.12)" },
+      growth:     { color: "#f5b84a", bg: "rgba(245,184,74,0.12)" },
+    };
+    return map[topic.toLowerCase()] ?? { color: "var(--t2)", bg: "rgba(255,255,255,0.06)" };
+  }
+
   return (
     <>
-      <div style={{ padding: "40px 48px", maxWidth: "1200px" }}>
+      <div style={{ padding: "32px 36px 80px", maxWidth: "1200px" }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: "28px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        {/* Page header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "22px" }}>
           <div>
-            <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "2.8px", color: "var(--gold)", fontFamily: "var(--font-manrope)", textTransform: "uppercase", marginBottom: "8px" }}>
-              ACTIVITY LOG
-            </div>
-            <h1 style={{ fontSize: "32px", fontWeight: 800, fontFamily: "var(--font-manrope)", color: "var(--t1)", letterSpacing: "-0.03em", margin: 0 }}>
-              History
+            <h1 style={{
+              fontSize: "24px", fontWeight: 800, fontFamily: "var(--font-manrope)",
+              color: "var(--t1)", letterSpacing: "-1px", margin: "0 0 4px",
+            }}>
+              Historical Records
             </h1>
+            <p style={{ fontSize: "13px", color: "var(--t3)", maxWidth: "500px", margin: 0 }}>
+              A sovereign archive of all automated interactions, published content, and performance metrics.
+            </p>
           </div>
 
-          {someChecked && (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "12px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>{selected.size} selected</span>
-              {confirmDelete ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Status filter button */}
+            <button
+              style={{
+                padding: "5px 12px", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600,
+                background: "transparent", border: "1px solid var(--border)", color: "var(--t2)",
+                cursor: "pointer",
+              }}
+            >
+              Filter
+            </button>
+
+            {/* Bulk Delete */}
+            {someChecked && (
+              confirmDelete ? (
                 <>
-                  <span style={{ fontSize: "13px", color: "var(--red)", fontWeight: 500 }}>Confirm delete?</span>
+                  <span style={{ fontSize: "12px", color: "var(--red)", fontWeight: 500 }}>Confirm delete?</span>
                   <button
                     onClick={deleteSelected}
                     disabled={deleting}
-                    style={{ padding: "8px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "var(--red)", cursor: "pointer", opacity: deleting ? 0.5 : 1 }}
+                    style={{
+                      padding: "5px 12px", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600,
+                      background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
+                      color: "var(--red)", cursor: "pointer", opacity: deleting ? 0.5 : 1,
+                      display: "flex", alignItems: "center", gap: "5px",
+                    }}
                   >
-                    {deleting ? <Loader2 size={13} className="animate-spin" /> : "Yes, delete"}
+                    {deleting ? <Loader2 size={12} className="animate-spin" /> : "Yes, delete"}
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    style={{ padding: "8px 14px", borderRadius: "8px", fontSize: "12px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--t3)", cursor: "pointer" }}
+                    style={{
+                      padding: "5px 12px", borderRadius: "6px", fontSize: "11.5px",
+                      background: "var(--bg-card)", border: "1px solid var(--border)",
+                      color: "var(--t3)", cursor: "pointer",
+                    }}
                   >
                     Cancel
                   </button>
@@ -206,49 +247,59 @@ export default function HistoryPage() {
               ) : (
                 <button
                   onClick={deleteSelected}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "12px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--t2)", cursor: "pointer" }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "5px",
+                    padding: "5px 12px", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600,
+                    background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
+                    color: "var(--red)", cursor: "pointer",
+                  }}
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={12} />
                   Bulk Delete
+                  <span style={{ fontSize: "10px", opacity: 0.7 }}>{selected.size}</span>
                 </button>
-              )}
-            </div>
-          )}
+              )
+            )}
+          </div>
         </div>
 
         {/* Status filter chips */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-          {ALL_FILTERS.map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{
-                padding: "6px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 500,
-                background: filter === f ? "rgba(255,184,0,0.1)" : "var(--bg-card)",
-                border: filter === f ? "1px solid rgba(255,184,0,0.35)" : "1px solid var(--border)",
-                color: filter === f ? "var(--gold)" : "var(--t3)",
-                cursor: "pointer", transition: "all 0.15s",
-              }}
-            >
-              {f}
-              {f !== "All" && (
-                <span style={{ marginLeft: "6px", fontSize: "10px", color: "inherit", opacity: 0.7 }}>
-                  {rows.filter(r => r.status.toLowerCase() === f.toLowerCase()).length}
-                </span>
-              )}
-            </button>
-          ))}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "22px", flexWrap: "wrap" }}>
+          {ALL_FILTERS.map(f => {
+            const active = filter === f;
+            return (
+              <button
+                key={f}
+                onClick={() => { setFilter(f); setPage(1); }}
+                style={{
+                  display: "inline-flex", alignItems: "center",
+                  padding: "5px 13px", borderRadius: "20px",
+                  fontSize: "11px", fontWeight: 600, letterSpacing: "0.7px", textTransform: "uppercase",
+                  cursor: "pointer", transition: "all .15s",
+                  background: active ? "var(--gold)" : "transparent",
+                  border: active ? "1px solid var(--gold)" : "1px solid rgba(255,255,255,.1)",
+                  color: active ? "#1a1000" : "var(--t2)",
+                }}
+              >
+                {f}
+                {f !== "All" && (
+                  <span style={{ marginLeft: "5px", fontSize: "10px", opacity: 0.75 }}>
+                    {rows.filter(r => r.status.toLowerCase() === f.toLowerCase()).length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Table */}
-        <div style={{ borderRadius: "14px", overflow: "hidden", background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", marginBottom: "22px" }}>
           {/* Table header */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: "36px 1fr 110px 160px 130px 90px",
-            padding: "12px 20px",
+            gridTemplateColumns: "36px 140px 1fr 100px 90px 90px 80px 40px",
+            padding: "9px 14px",
             borderBottom: "1px solid var(--border)",
-            background: "var(--bg-mid)",
             alignItems: "center",
           }}>
             <label style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
@@ -259,8 +310,11 @@ export default function HistoryPage() {
                 style={{ width: "13px", height: "13px", cursor: "pointer", accentColor: "var(--gold)" }}
               />
             </label>
-            {["Post", "Status", "Date", "Analytics", "Queue"].map((col) => (
-              <span key={col} style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)" }}>
+            {["Date", "Post", "Pillar", "Status", "Impressions", "Likes", ""].map((col, i) => (
+              <span key={i} style={{
+                fontSize: "9px", fontWeight: 600, textTransform: "uppercase",
+                letterSpacing: "1.5px", color: "var(--t3)",
+              }}>
                 {col}
               </span>
             ))}
@@ -270,31 +324,37 @@ export default function HistoryPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px" }}>
               <Loader2 size={18} className="animate-spin" style={{ color: "var(--t3)" }} />
             </div>
-          ) : filteredRows.length === 0 ? (
+          ) : pagedRows.length === 0 ? (
             <p style={{ padding: "48px 24px", fontSize: "13px", textAlign: "center", color: "var(--t3)" }}>No posts yet.</p>
           ) : (
             <div>
-              {filteredRows.map((row, idx) => {
+              {pagedRows.map((row, idx) => {
                 const s = statusConfig[row.status] ?? statusConfig.draft;
                 const analytics = row.tweet_id ? analyticsMap[row.tweet_id] : null;
                 const isSelected = selected.has(row.id);
                 const isToggling = togglingIds.has(row.id);
+                const pillar = getPillarColor(row.topic);
+                const rowDate = row.date ? new Date(row.date) : null;
+                const isLast = idx === pagedRows.length - 1;
 
                 return (
                   <div
                     key={row.id}
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "36px 1fr 110px 160px 130px 90px",
+                      gridTemplateColumns: "36px 140px 1fr 100px 90px 90px 80px 40px",
                       alignItems: "center",
-                      padding: "14px 20px",
-                      borderBottom: idx < filteredRows.length - 1 ? "1px solid var(--border)" : "none",
+                      padding: "13px 14px",
+                      borderBottom: isLast ? "none" : "1px solid var(--border)",
+                      fontSize: "12px",
+                      color: "var(--t2)",
                       background: isSelected ? "rgba(255,184,0,0.03)" : "transparent",
                       transition: "background 0.1s",
                     }}
-                    onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)"; }}
+                    onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.015)"; }}
                     onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                   >
+                    {/* Checkbox */}
                     <label style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
                       <input
                         type="checkbox"
@@ -304,114 +364,214 @@ export default function HistoryPage() {
                       />
                     </label>
 
-                    {/* Post text */}
-                    <div style={{ paddingRight: "20px" }}>
-                      {row.topic && row.topic !== "posted" && row.topic !== "scheduled" && row.topic !== "manual" && row.topic !== "batch" && (
-                        <span style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--gold)", display: "inline-block", marginBottom: "3px", background: "rgba(255,184,0,0.08)", padding: "1px 6px", borderRadius: "3px" }}>
+                    {/* Date */}
+                    <div>
+                      {rowDate ? (
+                        <>
+                          <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--t1)" }}>
+                            {rowDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </div>
+                          <div style={{ fontSize: "10px", color: "var(--t3)", marginTop: "1px" }}>
+                            {rowDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </>
+                      ) : (
+                        <span style={{ color: "var(--ti)", fontFamily: "var(--font-mono)" }}>—</span>
+                      )}
+                    </div>
+
+                    {/* Post preview */}
+                    <div style={{ paddingRight: "16px" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                        {/* Thumbnail placeholder */}
+                        <div style={{
+                          width: "36px", height: "36px", borderRadius: "4px", flexShrink: 0,
+                          background: "var(--bg-elev)", display: "flex", alignItems: "center",
+                          justifyContent: "center",
+                        }}>
+                          <span style={{ fontSize: "8px", color: "var(--t3)" }}>
+                            {row.platform.slice(0, 1).toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{
+                            fontSize: "12px", color: "var(--t2)", margin: "0 0 2px",
+                            display: "-webkit-box", WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.5,
+                          }}>
+                            {row.text}
+                          </p>
+                          {row.tweet_id && (
+                            <a
+                              href={`https://twitter.com/i/web/status/${row.tweet_id}`}
+                              target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize: "10px", color: "var(--t3)", textDecoration: "none" }}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              View post ↗
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pillar badge */}
+                    <div>
+                      {row.topic && row.topic !== "posted" && row.topic !== "scheduled" && row.topic !== "manual" && row.topic !== "batch" ? (
+                        <span style={{
+                          fontSize: "9px", fontWeight: 600, textTransform: "uppercase",
+                          letterSpacing: "0.08em", padding: "3px 7px", borderRadius: "4px",
+                          color: pillar.color, background: pillar.bg,
+                        }}>
                           {row.topic}
                         </span>
+                      ) : (
+                        <span style={{ color: "var(--ti)", fontFamily: "var(--font-mono)" }}>—</span>
                       )}
-                      <p style={{ fontSize: "12px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", color: "var(--t2)", margin: 0, lineHeight: 1.5 }}>
-                        {row.text}
-                      </p>
                     </div>
 
                     {/* Status badge */}
-                    <span>
-                      <span style={{ fontSize: "10px", padding: "3px 9px", borderRadius: "5px", fontWeight: 500, background: s.bg, color: s.color }}>
+                    <div>
+                      <span style={{
+                        fontSize: "10px", padding: "3px 9px", borderRadius: "5px",
+                        fontWeight: 600, background: s.bg, color: s.color,
+                        letterSpacing: "0.4px", textTransform: "uppercase",
+                      }}>
                         {s.label}
                       </span>
-                    </span>
+                    </div>
 
-                    {/* Date */}
-                    <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--t3)" }}>
-                      {row.date ? new Date(row.date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
-                    </span>
-
-                    {/* Analytics */}
-                    {analytics ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--t3)" }}>
-                          <Eye size={10} />
+                    {/* Impressions */}
+                    <div>
+                      {analytics ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "var(--t2)", fontFamily: "var(--font-mono)" }}>
+                          <Eye size={11} style={{ color: "var(--t3)" }} />
                           {analytics.impressions.toLocaleString()}
                         </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--t3)" }}>
-                          <Heart size={10} />
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "var(--ti)", fontFamily: "var(--font-mono)" }}>—</span>
+                      )}
+                    </div>
+
+                    {/* Likes */}
+                    <div>
+                      {analytics ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "var(--green)", fontFamily: "var(--font-mono)" }}>
+                          <Heart size={11} />
                           {analytics.likes.toLocaleString()}
                         </span>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: "11px", color: "var(--ti)", fontFamily: "var(--font-mono)" }}>—</span>
-                    )}
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "var(--ti)", fontFamily: "var(--font-mono)" }}>—</span>
+                      )}
+                    </div>
 
-                    {/* Auto-queue toggle */}
-                    {row.source === "draft" ? (
-                      <button
-                        onClick={() => toggleAutoQueue(row)}
-                        disabled={isToggling}
-                        title={row.auto_queue ? "Remove from auto-queue" : "Add to auto-queue"}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: row.auto_queue ? "var(--gold)" : "var(--t3)", opacity: isToggling ? 0.4 : 1, display: "flex", alignItems: "center" }}
-                      >
-                        {row.auto_queue ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                    {/* Actions */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      {row.source === "draft" ? (
+                        <button
+                          onClick={() => toggleAutoQueue(row)}
+                          disabled={isToggling}
+                          title={row.auto_queue ? "Remove from auto-queue" : "Add to auto-queue"}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer", padding: "2px",
+                            color: row.auto_queue ? "var(--gold)" : "var(--t3)",
+                            opacity: isToggling ? 0.4 : 1, display: "flex", alignItems: "center",
+                          }}
+                        >
+                          {row.auto_queue ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                        </button>
+                      ) : null}
+                      <button style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "var(--t3)", padding: "2px", display: "flex", alignItems: "center",
+                      }}>
+                        <MoreHorizontal size={14} />
                       </button>
-                    ) : (
-                      <span />
-                    )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
+
+          {/* Table footer */}
+          {!loading && filteredRows.length > 0 && (
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "12px 18px", borderTop: "1px solid var(--border)",
+            }}>
+              <span style={{ fontSize: "11px", color: "var(--t3)" }}>
+                Showing {Math.min((page - 1) * PAGE_SIZE + 1, filteredRows.length)}–{Math.min(page * PAGE_SIZE, filteredRows.length)} of {filteredRows.length}
+              </span>
+              {/* Pagination */}
+              <div style={{ display: "flex", gap: "5px" }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    style={{
+                      width: "26px", height: "26px", borderRadius: "5px",
+                      fontSize: "11px", fontWeight: 600,
+                      background: p === page ? "var(--gold)" : "var(--bg-card)",
+                      border: p === page ? "1px solid var(--gold)" : "1px solid var(--border)",
+                      color: p === page ? "#1a1000" : "var(--t2)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Pagination placeholder */}
-        {filteredRows.length > 0 && (
-          <div style={{ display: "flex", justifyContent: "center", gap: "6px", marginTop: "20px" }}>
-            {[1, 2, 3].map(p => (
-              <button
-                key={p}
-                style={{
-                  width: "28px", height: "28px", borderRadius: "6px", fontSize: "12px",
-                  background: p === 1 ? "rgba(255,184,0,0.1)" : "var(--bg-card)",
-                  border: p === 1 ? "1px solid rgba(255,184,0,0.35)" : "1px solid var(--border)",
-                  color: p === 1 ? "var(--gold)" : "var(--t3)",
-                  cursor: "pointer",
-                }}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Bottom cards row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "24px" }}>
+        {/* Bottom 2-col grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "20px" }}>
           {/* Engagement Velocity */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px", overflow: "hidden", position: "relative" }}>
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(255,184,0,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
-            <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--gold)", marginBottom: "12px" }}>Engagement Velocity</p>
-            <p style={{ fontSize: "28px", fontWeight: 800, fontFamily: "var(--font-manrope)", color: "var(--t1)" }}>
-              {rows.filter(r => r.status === "posted").length}
-              <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--t3)", marginLeft: "6px" }}>posts published</span>
-            </p>
-            <p style={{ fontSize: "12px", color: "var(--t3)", marginTop: "6px" }}>
-              {rows.filter(r => r.status === "scheduled").length} scheduled · {rows.filter(r => r.status === "draft").length} drafts
-            </p>
+          <div style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: "14px", padding: "20px", overflow: "hidden", position: "relative",
+          }}>
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(135deg, rgba(255,184,0,0.06) 0%, transparent 60%)",
+              pointerEvents: "none",
+            }} />
+            <p style={{
+              fontSize: "11px", fontWeight: 600, letterSpacing: "0.09em", textTransform: "uppercase",
+              color: "var(--gold)", marginBottom: "12px",
+            }}>Engagement Velocity</p>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "28px", fontWeight: 800, fontFamily: "var(--font-manrope)", color: "var(--t1)" }}>
+                {rows.filter(r => r.status === "posted").length}
+              </span>
+              <span style={{ fontSize: "13px", color: "var(--t3)" }}>posts published</span>
+            </div>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <span style={{ fontSize: "12px", color: "var(--gold)" }}>
+                {rows.filter(r => r.status === "scheduled").length} scheduled
+              </span>
+              <span style={{ fontSize: "12px", color: "var(--t3)" }}>
+                {rows.filter(r => r.status === "draft").length} drafts
+              </span>
+            </div>
           </div>
 
-          {/* Audit Log */}
+          {/* Audit Logs */}
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px" }}>
-            <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>Recent Activity</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {rows.slice(0, 3).map((r, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: statusConfig[r.status]?.color ?? "var(--t3)", flexShrink: 0 }} />
-                  <span style={{ fontSize: "11px", color: "var(--t2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{r.text.slice(0, 50)}…</span>
-                  <span style={{ fontSize: "10px", color: "var(--t3)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>{statusConfig[r.status]?.label}</span>
-                </div>
-              ))}
-              {rows.length === 0 && <p style={{ fontSize: "12px", color: "var(--ti)" }}>No activity yet</p>}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+              <Lock size={13} style={{ color: "var(--t3)" }} />
+              <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--t3)", margin: 0 }}>
+                Audit Logs
+              </p>
             </div>
+            <p style={{ fontSize: "12px", color: "var(--t2)", marginBottom: "12px", lineHeight: 1.5 }}>
+              Full tamper-evident record of all system actions, API calls, and post events for compliance and debugging.
+            </p>
+            <a href="#" style={{ fontSize: "12px", color: "var(--gold)", textDecoration: "none", fontWeight: 600 }}>
+              View Full Security Log →
+            </a>
           </div>
         </div>
       </div>

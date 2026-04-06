@@ -157,66 +157,95 @@ export default function CalendarPage() {
 
   return (
     <>
-      <div style={{ padding: "40px 48px", maxWidth: "1160px" }}>
+      <div style={{ padding: "32px 36px 64px", maxWidth: "1160px" }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: "28px" }}>
-          <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "2.8px", color: "var(--gold)", fontFamily: "var(--font-manrope)", textTransform: "uppercase", marginBottom: "8px" }}>
-            PUBLISH CALENDAR
-          </div>
-          <h1 style={{ fontSize: "32px", fontWeight: 800, fontFamily: "var(--font-manrope)", color: "var(--t1)", letterSpacing: "-0.03em", margin: 0 }}>
-            Calendar
+        {/* Calendar header */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "22px" }}>
+          {/* Month title */}
+          <h1 style={{
+            fontSize: "24px", fontWeight: 800, fontFamily: "var(--font-manrope)",
+            color: "var(--t1)", letterSpacing: "-1px", margin: 0, flex: 1,
+          }}>
+            {MONTHS[month - 1]} {year}
+            {loading && (
+              <span style={{ fontSize: "11px", color: "var(--t3)", marginLeft: "8px", fontWeight: 400, fontFamily: "var(--font-mono)" }}>…</span>
+            )}
           </h1>
-        </div>
 
-        {/* Controls row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-          {/* Month nav */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <button
-              onClick={prevMonth}
-              style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "8px", cursor: "pointer", color: "var(--t3)" }}
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--t1)", fontFamily: "var(--font-manrope)", minWidth: "180px", textAlign: "center" }}>
-              {MONTHS[month - 1]} {year}
-              {loading && <span style={{ fontSize: "11px", color: "var(--t3)", marginLeft: "8px", fontWeight: 400, fontFamily: "var(--font-mono)" }}>…</span>}
-            </span>
-            <button
-              onClick={nextMonth}
-              style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "8px", cursor: "pointer", color: "var(--t3)" }}
-            >
-              <ChevronRight size={15} />
-            </button>
-          </div>
+          {/* Nav buttons */}
+          <button
+            onClick={prevMonth}
+            style={{
+              width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px",
+              cursor: "pointer", color: "var(--t3)",
+            }}
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <button
+            onClick={nextMonth}
+            style={{
+              width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px",
+              cursor: "pointer", color: "var(--t3)",
+            }}
+          >
+            <ChevronRight size={13} />
+          </button>
+
+          {/* Today button */}
+          <button
+            onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); }}
+            style={{
+              padding: "5px 13px", borderRadius: "6px", border: "1px solid var(--border)",
+              background: "var(--bg-card)", fontSize: "11.5px", fontWeight: 600, color: "var(--t1)",
+              cursor: "pointer",
+            }}
+          >
+            Today
+          </button>
 
           {/* View toggle */}
-          <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "8px", padding: "3px", gap: "2px" }}>
-            {(["month", "week", "day"] as ViewMode[]).map(v => (
-              <button
-                key={v}
-                onClick={() => setViewMode(v)}
-                style={{
-                  padding: "5px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: 500,
-                  background: viewMode === v ? "rgba(255,184,0,0.1)" : "transparent",
-                  border: viewMode === v ? "1px solid rgba(255,184,0,0.3)" : "1px solid transparent",
-                  color: viewMode === v ? "var(--gold)" : "var(--t3)",
-                  cursor: "pointer", transition: "all 0.15s", textTransform: "capitalize",
-                }}
-              >
-                {v}
-              </button>
-            ))}
+          <div style={{
+            display: "flex", gap: "2px", background: "var(--bg-card)",
+            border: "1px solid var(--border)", borderRadius: "7px", padding: "2px",
+          }}>
+            {(["Month", "Week", "Day"] as string[]).map(v => {
+              const key = v.toLowerCase() as ViewMode;
+              const active = viewMode === key;
+              return (
+                <button
+                  key={v}
+                  onClick={() => setViewMode(key)}
+                  style={{
+                    padding: "4px 11px", borderRadius: "5px", fontSize: "11.5px", fontWeight: 600,
+                    background: active ? "var(--gold)" : "transparent",
+                    border: "none",
+                    color: active ? "#1a1000" : "var(--ti)",
+                    cursor: "pointer", transition: "all 0.15s",
+                  }}
+                >
+                  {v}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Calendar grid — gap:1px + bg:border creates grid lines */}
-        <div style={{ borderRadius: "12px", overflow: "hidden", display: "grid", gap: "1px", background: "var(--border)" }}>
+        <div style={{
+          display: "grid", gap: "1px", background: "var(--border)",
+          borderRadius: "12px", overflow: "hidden",
+        }}>
           {/* Day headers */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "1px", background: "var(--border)" }}>
             {DAYS.map(d => (
-              <div key={d} style={{ background: "var(--bg-mid)", padding: "10px 0", textAlign: "center", fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)" }}>
+              <div key={d} style={{
+                background: "var(--bg-mid)", padding: "9px", textAlign: "center",
+                fontSize: "9px", fontWeight: 600, textTransform: "uppercase",
+                letterSpacing: "1px", color: "var(--t3)",
+              }}>
                 {d}
               </div>
             ))}
@@ -230,6 +259,7 @@ export default function CalendarPage() {
                 const dayPosts = dk ? (byDate[dk] ?? []) : [];
                 const isDragTarget = dk === draggingOver;
                 const todayDay = day && isToday(day);
+                const otherMonth = !day;
 
                 return (
                   <div
@@ -250,6 +280,7 @@ export default function CalendarPage() {
                             : "rgba(0,0,0,0.2)",
                       outline: todayDay ? "1px solid rgba(255,184,0,0.3)" : "none",
                       outlineOffset: "-1px",
+                      opacity: otherMonth ? 0.3 : 1,
                       cursor: day && dayPosts.length === 0 ? "pointer" : "default",
                       transition: "background 0.1s",
                     }}
@@ -263,13 +294,13 @@ export default function CalendarPage() {
                               width: "21px", height: "21px", borderRadius: "50%",
                               background: "var(--gold)", display: "inline-flex",
                               alignItems: "center", justifyContent: "center",
-                              fontSize: "11px", fontWeight: 700, color: "#000",
+                              fontSize: "10px", fontWeight: 700, color: "#1a1000",
                               fontFamily: "var(--font-manrope)",
                             }}>
                               {day}
                             </div>
                           ) : (
-                            <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--t3)" }}>{day}</span>
+                            <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--t3)" }}>{day}</span>
                           )}
                         </div>
 
@@ -277,6 +308,12 @@ export default function CalendarPage() {
                         <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                           {dayPosts.map(post => {
                             const s = STATUS_STYLE[post.status] ?? STATUS_STYLE.draft;
+                            const statusLabel = post.status === "posted"
+                              ? "POSTED"
+                              : post.status === "scheduled"
+                                ? "SCHEDULED"
+                                : "DRAFT";
+                            const preview = post.text.slice(0, 28);
                             return (
                               <div
                                 key={post.id}
@@ -285,9 +322,9 @@ export default function CalendarPage() {
                                 onClick={(e) => { e.stopPropagation(); setExpanded(post); }}
                                 title={post.text}
                                 style={{
-                                  padding: "3px 7px",
+                                  padding: "3px 6px",
                                   borderRadius: "4px",
-                                  fontSize: "10px",
+                                  fontSize: "9.5px",
                                   lineHeight: "1.4",
                                   color: s.color,
                                   background: s.bg,
@@ -296,10 +333,10 @@ export default function CalendarPage() {
                                   whiteSpace: "nowrap",
                                   textOverflow: "ellipsis",
                                   userSelect: "none",
-                                  borderLeft: `2px solid ${s.color}`,
+                                  marginBottom: "3px",
                                 }}
                               >
-                                {post.text.slice(0, 36)}{post.text.length > 36 ? "…" : ""}
+                                {statusLabel} · {preview}{post.text.length > 28 ? "…" : ""}
                               </div>
                             );
                           })}
@@ -322,12 +359,12 @@ export default function CalendarPage() {
           ))}
         </div>
 
-        {/* Legend — bottom */}
-        <div style={{ display: "flex", gap: "20px", marginTop: "16px", flexWrap: "wrap" }}>
+        {/* Legend */}
+        <div style={{ display: "flex", gap: "18px", marginTop: "14px", flexWrap: "wrap" }}>
           {Object.entries(STATUS_STYLE).map(([s, cfg]) => (
-            <div key={s} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: cfg.bg, borderLeft: `2px solid ${cfg.color}` }} />
-              <span style={{ fontSize: "11px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>{cfg.label}</span>
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "var(--t3)" }}>
+              <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: cfg.bg }} />
+              <span>{cfg.label}</span>
             </div>
           ))}
         </div>
