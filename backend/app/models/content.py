@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, JSON, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 import enum
@@ -58,7 +58,7 @@ class Project(Base):
     # Personal tweet audit
     personal_x_handle = Column(String(100), nullable=True)   # user's own X handle
     personal_x_user_id = Column(String(30), nullable=True)   # cached permanently after first lookup
-    audit_auto_fetch = Column(JSON, nullable=True, default=False)  # bool — fetch every Monday
+    audit_auto_fetch = Column(Boolean, nullable=True, default=False)  # fetch every Monday
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

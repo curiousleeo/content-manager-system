@@ -46,6 +46,7 @@ def serialize(p: Project) -> dict:
         "posting_times":      p.posting_times or [],
         "coingecko_enabled":  bool(p.coingecko_enabled),
         "telegram_channels":  p.telegram_channels or [],
+        "timezone":           p.timezone or "UTC",
         "x_bearer_token":     p.x_bearer_token or "",
         "personal_x_handle":  p.personal_x_handle or "",
         "audit_auto_fetch":   bool(p.audit_auto_fetch),
