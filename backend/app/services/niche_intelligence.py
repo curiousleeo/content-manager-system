@@ -99,4 +99,15 @@ Return ONLY valid JSON, no markdown, no explanation."""
         max_tokens=3000,
         messages=[{"role": "user", "content": prompt}],
     )
-    return _parse_json(response.content[0].text)
+    raw = response.content[0].text
+    # Strip markdown fences, then find the first { to handle any leading prose
+    raw = raw.strip()
+    raw = re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = raw.rstrip('`').strip()
+    start = raw.find('{')
+    if start > 0:
+        raw = raw[start:]
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Claude returned non-JSON response: {exc}. Raw: {raw[:300]}")

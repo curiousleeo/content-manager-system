@@ -144,7 +144,10 @@ def run_niche_report(
         record_usage(db, "x_reads", project_id=project_id)
 
     # Analyse with Claude
-    report_data = analyze_niche(scraped, proj_ctx)
+    try:
+        report_data = analyze_niche(scraped, proj_ctx)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Claude analysis failed: {exc}")
     record_usage(db, "claude_calls", project_id=project_id)
 
     # Build per-account fetch summary to return to frontend
