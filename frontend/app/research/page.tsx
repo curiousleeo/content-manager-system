@@ -125,7 +125,7 @@ export default function ResearchPage() {
       </div>
 
       {/* ── Search bar ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "12px", padding: "9px", marginBottom: "32px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "var(--bg-mid)", borderRadius: "12px", padding: "9px", marginBottom: "32px" }}>
         <Search size={16} strokeWidth={1.75} style={{ color: "var(--t3)", flexShrink: 0 }} />
         <input
           type="text"
@@ -175,8 +175,8 @@ export default function ResearchPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
           {/* Grok paste card */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "2px", color: "var(--gold)", margin: 0 }}>
                 Grok / Manual Paste
               </p>
@@ -192,7 +192,7 @@ export default function ResearchPage() {
                   style={{
                     width: "100%", boxSizing: "border-box",
                     background: "transparent", border: "none",
-                    borderBottom: "1px solid var(--border)",
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
                     padding: "13px 18px", fontSize: "12.5px",
                     fontFamily: "var(--font-mono), monospace",
                     color: "var(--t2)", outline: "none",
@@ -274,7 +274,7 @@ export default function ResearchPage() {
                 const srcConfig = SOURCES.find((s) => s.key === source);
                 return (
                   <div key={source} style={{ background: "var(--bg-card)", border: `1px solid ${srcConfig?.accentBorder ?? "var(--border)"}`, borderRadius: "12px", overflow: "hidden" }}>
-                    <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
                       <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: srcConfig?.accentColor ?? "var(--t3)", flexShrink: 0 }} />
                       <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: srcConfig?.accentColor ?? "var(--t2)" }}>
                         {SOURCE_LABELS[source] ?? source}
@@ -334,7 +334,7 @@ export default function ResearchPage() {
                   ];
                   return (
                     <div key={label} style={{ background: "var(--bg-card)", border: `1px solid ${colors[i].border}`, borderRadius: "12px", overflow: "hidden" }}>
-                      <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
                         <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: colors[i].color }} />
                         <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: colors[i].color }}>{label}</span>
                       </div>

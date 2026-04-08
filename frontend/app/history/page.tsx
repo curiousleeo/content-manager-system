@@ -209,7 +209,7 @@ export default function HistoryPage() {
             <button
               style={{
                 padding: "5px 12px", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600,
-                background: "transparent", border: "1px solid var(--border)", color: "var(--t2)",
+                background: "transparent", color: "var(--t2)",
                 cursor: "pointer",
               }}
             >
@@ -237,7 +237,7 @@ export default function HistoryPage() {
                     onClick={() => setConfirmDelete(false)}
                     style={{
                       padding: "5px 12px", borderRadius: "6px", fontSize: "11.5px",
-                      background: "var(--bg-card)", border: "1px solid var(--border)",
+                      background: "var(--bg-card)",
                       color: "var(--t3)", cursor: "pointer",
                     }}
                   >
@@ -293,13 +293,13 @@ export default function HistoryPage() {
         </div>
 
         {/* Table */}
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", marginBottom: "22px" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden", marginBottom: "22px" }}>
           {/* Table header */}
           <div style={{
             display: "grid",
             gridTemplateColumns: "36px 140px 1fr 100px 90px 90px 80px 40px",
             padding: "9px 14px",
-            borderBottom: "1px solid var(--border)",
+            borderBottom: "1px solid rgba(255,255,255,0.04)",
             alignItems: "center",
           }}>
             <label style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
@@ -345,7 +345,7 @@ export default function HistoryPage() {
                       gridTemplateColumns: "36px 140px 1fr 100px 90px 90px 80px 40px",
                       alignItems: "center",
                       padding: "13px 14px",
-                      borderBottom: isLast ? "none" : "1px solid var(--border)",
+                      borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.04)",
                       fontSize: "12px",
                       color: "var(--t2)",
                       background: isSelected ? "rgba(255,184,0,0.03)" : "transparent",
@@ -498,7 +498,7 @@ export default function HistoryPage() {
           {!loading && filteredRows.length > 0 && (
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "12px 18px", borderTop: "1px solid var(--border)",
+              padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.04)",
             }}>
               <span style={{ fontSize: "11px", color: "var(--t3)" }}>
                 Showing {Math.min((page - 1) * PAGE_SIZE + 1, filteredRows.length)}–{Math.min(page * PAGE_SIZE, filteredRows.length)} of {filteredRows.length}
@@ -513,7 +513,7 @@ export default function HistoryPage() {
                       width: "26px", height: "26px", borderRadius: "5px",
                       fontSize: "11px", fontWeight: 600,
                       background: p === page ? "var(--gold)" : "var(--bg-card)",
-                      border: p === page ? "1px solid var(--gold)" : "1px solid var(--border)",
+                      border: p === page ? "1px solid var(--gold)" : "1px solid rgba(255,255,255,0.06)",
                       color: p === page ? "#1a1000" : "var(--t2)",
                       cursor: "pointer",
                     }}
@@ -530,7 +530,7 @@ export default function HistoryPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "20px" }}>
           {/* Engagement Velocity */}
           <div style={{
-            background: "var(--bg-card)", border: "1px solid var(--border)",
+            background: "var(--bg-card)",
             borderRadius: "14px", padding: "20px", overflow: "hidden", position: "relative",
           }}>
             <div style={{
@@ -559,7 +559,7 @@ export default function HistoryPage() {
           </div>
 
           {/* Audit Logs */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ background: "var(--bg-card)", borderRadius: "14px", padding: "20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
               <Lock size={13} style={{ color: "var(--t3)" }} />
               <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--t3)", margin: 0 }}>

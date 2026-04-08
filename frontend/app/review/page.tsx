@@ -132,7 +132,7 @@ export default function ReviewPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
           {/* Draft meta card */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "22px", marginBottom: "2px" }}>
+          <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "22px", marginBottom: "2px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
               <span style={{ background: "rgba(255,184,0,0.08)", color: "var(--gold)", fontSize: "10px", fontWeight: 600, padding: "3px 9px", borderRadius: "4px", letterSpacing: "0.5px" }}>
                 {selectedDraftId ? `Draft #${selectedDraftId}` : "X / Twitter Draft"}
@@ -152,7 +152,7 @@ export default function ReviewPage() {
           </div>
 
           {/* Draft picker */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden" }}>
             <button
               onClick={() => { if (!pickerOpen && drafts.length === 0) loadDrafts(project?.id); setPickerOpen(!pickerOpen); }}
               style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}
@@ -163,7 +163,7 @@ export default function ReviewPage() {
               <ChevronDown size={14} strokeWidth={1.75} style={{ color: "var(--t3)", transform: pickerOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
             </button>
             {pickerOpen && (
-              <div style={{ borderTop: "1px solid var(--border)", maxHeight: "300px", overflowY: "auto" }}>
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", maxHeight: "300px", overflowY: "auto" }}>
                 {draftsLoading ? (
                   <div style={{ padding: "20px", display: "flex", justifyContent: "center" }}>
                     <Loader2 size={15} className="animate-spin" style={{ color: "var(--t3)" }} />
@@ -184,8 +184,8 @@ export default function ReviewPage() {
           </div>
 
           {/* Textarea */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
               <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Post to Review</p>
             </div>
             <div style={{ padding: "18px" }}>
@@ -198,14 +198,14 @@ export default function ReviewPage() {
               />
             </div>
             {selectedDraftId && (
-              <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ padding: "10px 18px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: "8px" }}>
                 <button onClick={toggleAutoQueue} disabled={togglingQueue} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: autoQueue ? "var(--gold)" : "var(--t3)", display: "flex", alignItems: "center", gap: "6px", opacity: togglingQueue ? 0.4 : 1 }}>
                   {autoQueue ? <ToggleRight size={18} strokeWidth={1.75} /> : <ToggleLeft size={18} strokeWidth={1.75} />}
                   <span style={{ fontSize: "11px", color: autoQueue ? "var(--gold)" : "var(--t2)" }}>{autoQueue ? "In auto-queue" : "Add to auto-queue"}</span>
                 </button>
               </div>
             )}
-            <div style={{ padding: "12px 18px", borderTop: "1px solid var(--border)", background: "var(--bg-card2)", display: "flex", gap: "8px" }}>
+            <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-card2)", display: "flex", gap: "8px" }}>
               <button onClick={check} disabled={loading || !text.trim()} style={{ display: "flex", alignItems: "center", gap: "7px", padding: "9px 22px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", opacity: (loading || !text.trim()) ? 0.45 : 1, fontFamily: "var(--font-manrope), sans-serif" }}>
                 {loading && <Loader2 size={13} className="animate-spin" />}
                 {loading ? "Checking…" : "Run Review"}
@@ -239,7 +239,7 @@ export default function ReviewPage() {
                   </div>
                 </div>
                 {/* AI Likelihood */}
-                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", textAlign: "center", padding: "20px" }}>
+                <div style={{ background: "var(--bg-card)", borderRadius: "12px", textAlign: "center", padding: "20px" }}>
                   <p style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "10px" }}>AI Human Score</p>
                   <div style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "40px", fontWeight: 800, letterSpacing: "-2px", color: "var(--t1)", lineHeight: 1 }}>
                     {result.ai_likelihood === "low" ? "94%" : result.ai_likelihood === "medium" ? "62%" : "31%"}
@@ -252,8 +252,8 @@ export default function ReviewPage() {
 
               {/* Violations */}
               {violations.length > 0 && (
-                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-                  <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+                <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden" }}>
+                  <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                     <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: "var(--t3)" }}>Critical Violations</p>
                   </div>
                   <div style={{ padding: "8px 18px" }}>
@@ -261,7 +261,7 @@ export default function ReviewPage() {
                       const VIcon = violationIcon[v.type];
                       const vs = violationStyle[v.type];
                       return (
-                        <div key={i} style={{ display: "flex", gap: "11px", padding: "13px 0", borderBottom: i < violations.length - 1 ? "1px solid var(--border)" : "none" }}>
+                        <div key={i} style={{ display: "flex", gap: "11px", padding: "13px 0", borderBottom: i < violations.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                           <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: vs.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <VIcon size={13} strokeWidth={1.75} style={{ color: vs.color }} />
                           </div>
@@ -277,7 +277,7 @@ export default function ReviewPage() {
               )}
 
               {/* Brand Voice alignment */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px 18px", display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "16px 18px", display: "flex", alignItems: "center", gap: "12px" }}>
                 <Target size={15} strokeWidth={1.75} style={{ color: "var(--purple-l)", flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "5px" }}>Brand Voice Alignment</div>
@@ -289,7 +289,7 @@ export default function ReviewPage() {
               </div>
             </>
           ) : (
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "40px 20px", textAlign: "center" }}>
+            <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "40px 20px", textAlign: "center" }}>
               <CheckCircle size={28} strokeWidth={1.5} style={{ color: "var(--t3)", margin: "0 auto 12px" }} />
               <p style={{ fontSize: "13px", color: "var(--t2)", marginBottom: "6px" }}>Run the review</p>
               <p style={{ fontSize: "11px", color: "var(--t3)", lineHeight: 1.5 }}>Score, AI detection, and editorial notes will appear here.</p>

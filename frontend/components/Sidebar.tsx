@@ -42,7 +42,8 @@ function NavItem({ href, label, icon: Icon, active }: {
         cursor: "pointer",
         color: active ? "var(--gold)" : "var(--ti)",
         background: active ? "rgba(255,184,0,0.07)" : "transparent",
-        borderRight: `2px solid ${active ? "var(--gold)" : "transparent"}`,
+        borderLeft: `2px solid ${active ? "var(--gold)" : "transparent"}`,
+        paddingLeft: active ? "7px" : "9px",
         fontSize: "12.5px",
         fontWeight: active ? 600 : 500,
         textDecoration: "none",
@@ -70,7 +71,6 @@ export default function Sidebar({ signOutAction }: Props) {
         width: "220px",
         minWidth: "220px",
         background: "var(--bg-base)",
-        borderRight: "1px solid var(--border)",
         display: "flex",
         flexDirection: "column",
         position: "fixed",
@@ -79,7 +79,7 @@ export default function Sidebar({ signOutAction }: Props) {
         bottom: 0,
         zIndex: 100,
         padding: "22px 12px",
-        boxShadow: "8px 0 32px rgba(0,0,0,0.5)",
+        boxShadow: "8px 0 32px rgba(0,0,0,0.5), inset -1px 0 0 rgba(255,255,255,0.04)",
       }}
     >
       {/* Logo */}
@@ -116,7 +116,7 @@ export default function Sidebar({ signOutAction }: Props) {
 
       {/* Bottom */}
       <div>
-        <div style={{ height: "1px", background: "var(--border)", margin: "10px 0" }} />
+        <div style={{ height: "1px", background: "rgba(255,255,255,0.04)", margin: "10px 0" }} />
 
         <Link
           href="/content"

@@ -139,7 +139,6 @@ export default function InsightsPage() {
             {/* Left — large analysis card */}
             <div style={{
               background: "rgba(31,31,37,0.65)",
-              border: "1px solid var(--border)",
               borderRadius: "20px",
               padding: "26px",
               backdropFilter: "blur(12px)",
@@ -195,7 +194,7 @@ export default function InsightsPage() {
               })()}
 
               {/* CTA */}
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: "18px", marginTop: "4px" }}>
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "18px", marginTop: "4px" }}>
                 <button
                   onClick={() => router.push("/content")}
                   style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 20px", borderRadius: "8px", fontSize: "12px", fontWeight: 700, background: "var(--gold)", color: "#1a1000", border: "none", cursor: "pointer", letterSpacing: "0.4px" }}
@@ -208,7 +207,7 @@ export default function InsightsPage() {
             {/* Right — two stacked cards */}
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {/* Network Pulse */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px" }}>
+              <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "20px" }}>
                 <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "14px" }}>Network Pulse</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {[
@@ -230,7 +229,7 @@ export default function InsightsPage() {
               </div>
 
               {/* Signal Distribution */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px" }}>
+              <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "20px" }}>
                 <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "14px" }}>Signal Distribution</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {[
@@ -281,8 +280,7 @@ export default function InsightsPage() {
                   key={key}
                   style={{
                     background: "var(--bg-card2)",
-                    border: `1px solid var(--border)`,
-                    borderLeft: isExp ? "3px solid var(--gold)" : "1px solid var(--border)",
+                    borderLeft: isExp ? "3px solid var(--gold)" : "3px solid transparent",
                     borderRadius: "12px",
                     overflow: "hidden",
                   }}

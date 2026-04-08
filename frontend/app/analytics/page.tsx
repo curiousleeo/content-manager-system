@@ -14,7 +14,7 @@ import { Lightbulb } from "lucide-react";
 function DarkTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", fontSize: "12px" }}>
+    <div style={{ background: "var(--bg-card)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", borderRadius: "10px", padding: "10px 14px", fontSize: "12px" }}>
       <p style={{ color: "var(--t3)", marginBottom: "6px", fontFamily: "var(--font-mono)" }}>{label}</p>
       {payload.map((p: { name: string; value: number; color: string }, i: number) => (
         <p key={i} style={{ color: p.color, marginBottom: "2px" }}>
@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
           { label: "Posts Published",   value: postsPosted.toString(),           sub: "tracked posts",       color: "var(--blue)"     },
           { label: "Share of Voice",    value: shareOfVoice !== null ? `${shareOfVoice}%` : "—", sub: "vs competitors", color: "var(--purple-l)" },
         ].map(card => (
-          <div key={card.label} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px" }}>
+          <div key={card.label} style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "20px" }}>
             <p style={{ fontSize: "9px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "1.8px", color: "var(--t3)", marginBottom: "10px" }}>{card.label}</p>
             <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "28px", letterSpacing: "-1px", color: card.color, lineHeight: 1, margin: 0 }}>{card.value}</p>
             <p style={{ fontSize: "10px", color: "var(--t3)", marginTop: "8px" }}>{card.sub}</p>
@@ -134,7 +134,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Engagement over time chart ── */}
-      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "22px", marginBottom: "20px" }}>
+      <div style={{ background: "var(--bg-card)", borderRadius: "14px", padding: "22px", marginBottom: "20px" }}>
         <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--t1)", marginBottom: "3px" }}>Engagement Over Time</p>
         <p style={{ fontSize: "11px", color: "var(--t3)", marginBottom: "18px" }}>Performance metrics over the last 30-day window</p>
         <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
       {/* ── Two-column charts ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "22px" }}>
         {/* Posts Per Day */}
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "22px" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: "14px", padding: "22px" }}>
           <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--t1)", marginBottom: "20px" }}>Posts Per Day</p>
           {hasFrequency ? (
             <ResponsiveContainer width="100%" height={75}>
@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Avg Impressions per Pillar */}
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "22px" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: "14px", padding: "22px" }}>
           <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--t1)", marginBottom: "16px" }}>Avg Impressions per Pillar</p>
           {hasPillars ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
@@ -218,9 +218,31 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ── Competitor benchmark ── */}
-      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "22px", marginBottom: "20px" }}>
-        <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--t1)", marginBottom: "20px" }}>Competitor Benchmark</p>
+      {/* ── Top 10 Sovereign Posts ── */}
+      {topPosts.length > 0 && (
+        <div style={{ background: "var(--bg-card)", borderRadius: "14px", overflow: "hidden", marginBottom: "20px" }}>
+          <div style={{ padding: "22px 22px 14px" }}>
+            <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--t1)", margin: 0 }}>Top 10 Sovereign Posts</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 60px", padding: "8px 22px", borderTop: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+            {["Post", "Impressions", "Likes", "RT"].map((h) => (
+              <span key={h} style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--t3)" }}>{h}</span>
+            ))}
+          </div>
+          {topPosts.slice(0, 10).map((post, i) => (
+            <div key={post.tweet_id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 60px", padding: "13px 22px", alignItems: "center", borderBottom: i < Math.min(topPosts.length, 10) - 1 ? "1px solid rgba(255,255,255,0.03)" : "none" }}>
+              <p style={{ fontSize: "12.5px", color: "var(--t1)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", paddingRight: "20px" }}>{post.text}</p>
+              <span style={{ fontSize: "12px", fontFamily: "var(--font-mono), monospace", color: "var(--gold)" }}>{post.impressions.toLocaleString()}</span>
+              <span style={{ fontSize: "12px", fontFamily: "var(--font-mono), monospace", color: "var(--t2)" }}>{post.likes.toLocaleString()}</span>
+              <span style={{ fontSize: "12px", fontFamily: "var(--font-mono), monospace", color: "var(--t2)" }}>{post.retweets?.toLocaleString() ?? "0"}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Competitor Benchmarking ── */}
+      <div style={{ background: "var(--bg-card)", borderRadius: "14px", padding: "22px", marginBottom: "20px" }}>
+        <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--t1)", marginBottom: "20px" }}>Competitor Benchmarking</p>
         {hasBenchmark && benchmarkData.length > 0 && !benchmarkData.every(d => d.noData) ? (
           <>
             {benchmark?.report_date && (

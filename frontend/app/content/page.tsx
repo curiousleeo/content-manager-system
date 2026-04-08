@@ -147,14 +147,14 @@ function ContentPageInner() {
             Engineered Posting
           </h1>
           {/* Platform badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "20px", padding: "5px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", borderRadius: "20px", padding: "5px 12px" }}>
             <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--blue)", flexShrink: 0 }} />
             <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--t2)" }}>Platform: X</span>
           </div>
         </div>
 
         {/* Tab toggle */}
-        <div style={{ display: "flex", background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "10px", padding: "4px", gap: "2px" }}>
+        <div style={{ display: "flex", background: "var(--bg-mid)", borderRadius: "10px", padding: "4px", gap: "2px" }}>
           {(["single", "batch"] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)} style={PILL_BTN(tab === t)}>
               {t === "single" ? "Single Post" : "Batch Week"}
@@ -177,7 +177,7 @@ function ContentPageInner() {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
             {/* Topic Architecture card */}
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px" }}>
+            <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "20px" }}>
               <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "14px" }}>
                 TOPIC ARCHITECTURE
               </p>
@@ -217,12 +217,12 @@ function ContentPageInner() {
             </div>
 
             {/* Generated Draft card */}
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", position: "relative", overflow: "hidden" }}>
+            <div style={{ background: "var(--bg-card)", borderRadius: "12px", position: "relative", overflow: "hidden" }}>
               {/* Gold shimmer line at top */}
               <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,220,161,0.4), transparent)" }} />
 
               {/* Card header */}
-              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: "rgba(29,161,242,0.1)", color: "var(--blue)", fontWeight: 600, letterSpacing: "0.8px" }}>
                   X / TWITTER
                 </span>
@@ -254,7 +254,7 @@ function ContentPageInner() {
               </div>
 
               {/* Footer */}
-              <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", gap: "8px", alignItems: "center" }}>
+              <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", gap: "8px", alignItems: "center" }}>
                 <button
                   onClick={postNow}
                   disabled={posting || !text.trim() || overLimit}
@@ -311,7 +311,7 @@ function ContentPageInner() {
 
             {/* Active Pillars */}
             {PILLAR_CARDS.length > 0 && (
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px" }}>
+              <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "18px" }}>
                 <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "12px" }}>
                   Active Pillars
                 </p>
@@ -339,8 +339,8 @@ function ContentPageInner() {
             )}
 
             {/* Queue Preview */}
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-              <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden" }}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                 <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Queue Preview</p>
               </div>
               <div style={{ padding: "8px 0" }}>
@@ -365,7 +365,7 @@ function ContentPageInner() {
       {/* ── Batch week tab ── */}
       {tab === "batch" && (
         <>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "22px", marginBottom: "20px" }}>
+          <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "22px", marginBottom: "20px" }}>
             <p style={{ fontSize: "13px", color: "var(--t2)", lineHeight: 1.65, marginBottom: "16px" }}>
               Generates posts distributed across your content pillars in a single Claude call. All saved as drafts.
             </p>
@@ -397,7 +397,7 @@ function ContentPageInner() {
                 </button>
               </div>
               {batchDrafts.map((draft, idx) => (
-                <div key={draft.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", position: "relative" }}>
+                <div key={draft.id} style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden", position: "relative" }}>
                   {idx === 0 && <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,220,161,0.3), transparent)" }} />}
                   <div style={{ padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <div style={{ flex: 1 }}>

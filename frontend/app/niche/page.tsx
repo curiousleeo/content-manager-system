@@ -165,22 +165,22 @@ export default function NichePage() {
       </div>
 
       {!projectId ? (
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px 32px", textAlign: "center" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: "14px", padding: "48px 32px", textAlign: "center" }}>
           <p style={{ fontSize: "14px", color: "var(--t3)" }}>Select a project to use Niche Intelligence.</p>
         </div>
       ) : (
         <>
           {/* ── Competitor Surveillance List ── */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden", marginBottom: "20px" }}>
+          <div style={{ background: "var(--bg-card)", borderRadius: "14px", overflow: "hidden", marginBottom: "20px" }}>
             {/* Table header */}
-            <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 100px 95px 75px 90px 40px", alignItems: "center", padding: "10px 18px", borderBottom: "1px solid var(--border)", background: "var(--bg-mid)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 100px 95px 75px 90px 40px", alignItems: "center", padding: "10px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)" }}>
               {["#", "Handle", "Category", "Last Fetched", "Status", "Action", ""].map((h, i) => (
                 <span key={i} style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)" }}>{h}</span>
               ))}
             </div>
 
             {/* Add row */}
-            <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 100px 95px 75px 90px 40px", alignItems: "center", padding: "10px 18px", borderBottom: "1px solid var(--border)", background: "rgba(255,184,0,0.02)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 100px 95px 75px 90px 40px", alignItems: "center", padding: "10px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "rgba(255,184,0,0.02)" }}>
               <span style={{ fontSize: "11px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>+</span>
               <input
                 type="text"
@@ -188,12 +188,12 @@ export default function NichePage() {
                 onChange={(e) => setHandle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addAccount()}
                 placeholder="@handle"
-                style={{ padding: "7px 10px", borderRadius: "6px", fontSize: "12px", background: "var(--bg-mid)", border: "1px solid var(--border)", color: "var(--t1)", outline: "none", marginRight: "8px" }}
+                style={{ padding: "7px 10px", borderRadius: "6px", fontSize: "12px", background: "var(--bg-mid)", color: "var(--t1)", outline: "none", marginRight: "8px" }}
               />
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as Category)}
-                style={{ padding: "7px 8px", borderRadius: "6px", fontSize: "11px", background: "var(--bg-mid)", color: "var(--t2)", border: "1px solid var(--border)", outline: "none" }}
+                style={{ padding: "7px 8px", borderRadius: "6px", fontSize: "11px", background: "var(--bg-mid)", color: "var(--t2)", outline: "none" }}
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
@@ -229,7 +229,7 @@ export default function NichePage() {
                   ? Math.round((Date.now() - new Date(acc.fetched_at).getTime()) / 86400000)
                   : null;
                 return (
-                  <div key={acc.id} style={{ display: "grid", gridTemplateColumns: "40px 1fr 100px 95px 75px 90px 40px", alignItems: "center", padding: "10px 18px", borderBottom: "1px solid var(--border)" }}>
+                  <div key={acc.id} style={{ display: "grid", gridTemplateColumns: "40px 1fr 100px 95px 75px 90px 40px", alignItems: "center", padding: "10px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                     <span style={{ fontSize: "10px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>{idx + 1}</span>
                     <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--t1)", fontWeight: 500 }}>@{acc.x_handle}</span>
                     <span style={{ fontSize: "9px", padding: "2px 8px", borderRadius: "5px", background: c.bg, color: c.color, fontWeight: 600, width: "fit-content" }}>{acc.category}</span>
@@ -261,13 +261,13 @@ export default function NichePage() {
 
             {/* Run report footer */}
             {accounts.length > 0 && runStep === "idle" && (
-              <div style={{ padding: "12px 18px", borderTop: "1px solid var(--border)", background: "var(--bg-mid)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontSize: "11px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>
                   {accounts.length} account{accounts.length !== 1 ? "s" : ""} under surveillance
                 </span>
                 <button
                   onClick={previewRun}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--t2)", cursor: "pointer", fontFamily: "var(--font-manrope)" }}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "var(--bg-card)", color: "var(--t2)", cursor: "pointer", fontFamily: "var(--font-manrope)" }}
                 >
                   <RefreshCw size={11} />
                   Run Full Report
@@ -284,7 +284,7 @@ export default function NichePage() {
                 {cacheStatus.map((s) => {
                   const col = cacheStatusColors[s.status];
                   return (
-                    <div key={s.handle} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "8px", background: "var(--bg-mid)", border: "1px solid var(--border)" }}>
+                    <div key={s.handle} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "8px", background: "var(--bg-mid)" }}>
                       <span style={{ color: col.color }}>{col.icon}</span>
                       <div style={{ flex: 1 }}>
                         <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--t1)", fontFamily: "var(--font-mono)" }}>@{s.handle}</span>
@@ -309,14 +309,14 @@ export default function NichePage() {
                 {apiCallsNeeded > 0 && (
                   <button
                     onClick={() => confirmRun(true)}
-                    style={{ flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px", background: "var(--bg-mid)", border: "1px solid var(--border)", color: "var(--t2)", cursor: "pointer" }}
+                    style={{ flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px", background: "var(--bg-mid)", color: "var(--t2)", cursor: "pointer" }}
                   >
                     Force re-fetch
                   </button>
                 )}
                 <button
                   onClick={() => setRunStep("idle")}
-                  style={{ padding: "10px 16px", borderRadius: "10px", fontSize: "13px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--t3)", cursor: "pointer" }}
+                  style={{ padding: "10px 16px", borderRadius: "10px", fontSize: "13px", background: "var(--bg-card)", color: "var(--t3)", cursor: "pointer" }}
                 >
                   Cancel
                 </button>
@@ -325,7 +325,7 @@ export default function NichePage() {
           )}
 
           {runStep === "running" && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px", background: "var(--bg-card)", borderRadius: "14px", border: "1px solid var(--border)", marginBottom: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px", background: "var(--bg-card)", borderRadius: "14px", marginBottom: "20px" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px" }}>
                 <Loader2 size={22} className="animate-spin" style={{ color: "var(--gold)" }} />
                 <p style={{ fontSize: "13px", color: "var(--t3)" }}>Scraping and analysing…</p>
@@ -340,8 +340,8 @@ export default function NichePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
 
               {/* Hook Patterns */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden" }}>
-                <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", background: "var(--bg-mid)" }}>
+              <div style={{ background: "var(--bg-card)", borderRadius: "14px", overflow: "hidden" }}>
+                <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)" }}>
                   <p style={{ fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-manrope)", color: "var(--t1)", margin: 0 }}>Hook Patterns</p>
                 </div>
                 {!latestReport?.hook_patterns?.length ? (
@@ -350,7 +350,7 @@ export default function NichePage() {
                   </div>
                 ) : (
                   latestReport.hook_patterns.slice(0, 5).map((h, i) => (
-                    <div key={i} style={{ padding: "11px 18px", borderBottom: i < Math.min(latestReport.hook_patterns.length, 5) - 1 ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                    <div key={i} style={{ padding: "11px 18px", borderBottom: i < Math.min(latestReport.hook_patterns.length, 5) - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--t1)", textTransform: "capitalize", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {h.type?.replace(/_/g, " ")}
@@ -373,7 +373,7 @@ export default function NichePage() {
               </div>
 
               {/* Dominant Tone */}
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "18px" }}>
+              <div style={{ background: "var(--bg-card)", borderRadius: "14px", padding: "18px" }}>
                 <p style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)", marginBottom: "10px" }}>Dominant Tone</p>
                 {latestReport?.dominant_tone ? (
                   <>
@@ -398,7 +398,7 @@ export default function NichePage() {
 
                 {/* Post formats */}
                 {latestReport?.post_formats?.length > 0 && (
-                  <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid var(--border)" }}>
+                  <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                     <p style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)", marginBottom: "8px" }}>Top Formats</p>
                     {latestReport.post_formats.slice(0, 3).map((f, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
@@ -412,8 +412,8 @@ export default function NichePage() {
 
               {/* Reports list */}
               {allReports.length > 0 && (
-                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-                  <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)", background: "var(--bg-mid)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden" }}>
+                  <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)" }}>
                       Reports ({allReports.length})
                     </span>
@@ -422,7 +422,7 @@ export default function NichePage() {
                     </button>
                   </div>
                   {(loadingReports ? [] : allReports).map((r, i) => (
-                    <div key={r.id} style={{ padding: "9px 14px", borderBottom: i < allReports.length - 1 ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div key={r.id} style={{ padding: "9px 14px", borderBottom: i < allReports.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div>
                         <span style={{ fontSize: "11px", color: "var(--t1)", fontFamily: "var(--font-mono)" }}>
                           {new Date(r.report_date).toLocaleDateString()}
@@ -438,8 +438,8 @@ export default function NichePage() {
             </div>
 
             {/* Right: Swipe Intelligence */}
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden" }}>
-              <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", background: "var(--bg-mid)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "var(--bg-card)", borderRadius: "14px", overflow: "hidden" }}>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <p style={{ fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-manrope)", color: "var(--t1)", margin: 0 }}>Swipe Intelligence</p>
                   <p style={{ fontSize: "11px", color: "var(--t3)", marginTop: "2px" }}>Best-performing posts from your watch list</p>
@@ -456,7 +456,7 @@ export default function NichePage() {
                     <button
                       onClick={() => discardReport(latestReport.id)}
                       disabled={discardingId === latestReport.id}
-                      style={{ padding: "7px 14px", borderRadius: "8px", fontSize: "12px", background: "transparent", border: "1px solid var(--border)", color: "var(--t3)", cursor: "pointer", opacity: discardingId === latestReport.id ? 0.4 : 1 }}
+                      style={{ padding: "7px 14px", borderRadius: "8px", fontSize: "12px", background: "transparent", color: "var(--t3)", cursor: "pointer", opacity: discardingId === latestReport.id ? 0.4 : 1 }}
                     >
                       {discardingId === latestReport.id ? <Loader2 size={11} className="animate-spin" /> : "Discard"}
                     </button>
@@ -476,17 +476,21 @@ export default function NichePage() {
                       key={i}
                       style={{
                         padding: "18px 20px",
-                        borderBottom: "1px solid var(--border)",
-                        borderRight: i % 2 === 0 ? "1px solid var(--border)" : "none",
+                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        borderRight: i % 2 === 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
                         background: i % 4 < 2
-                          ? "linear-gradient(135deg, rgba(255,184,0,0.04) 0%, transparent 60%)"
-                          : "linear-gradient(135deg, rgba(107,47,217,0.04) 0%, transparent 60%)",
+                          ? "linear-gradient(135deg, rgba(255,184,0,0.06) 0%, rgba(10,10,15,0.8) 60%)"
+                          : "linear-gradient(135deg, rgba(107,47,217,0.08) 0%, rgba(10,10,15,0.8) 60%)",
+                        position: "relative",
+                        overflow: "hidden",
                       }}
                     >
+                      {/* Dark image thumbnail area */}
+                      <div style={{ position: "absolute", top: 0, right: 0, width: "60px", height: "60px", background: i % 4 < 2 ? "rgba(255,184,0,0.06)" : "rgba(107,47,217,0.06)", borderBottomLeftRadius: "8px" }} />
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                         <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--gold)", fontWeight: 600 }}>@{ex.handle}</span>
                         {ex.hook_type && (
-                          <span style={{ fontSize: "8px", padding: "2px 6px", borderRadius: "4px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", color: "var(--t3)", textTransform: "capitalize" }}>
+                          <span style={{ fontSize: "8px", padding: "2px 6px", borderRadius: "4px", background: "rgba(255,255,255,0.05)", color: "var(--t3)", textTransform: "capitalize" }}>
                             {ex.hook_type.replace(/_/g, " ")}
                           </span>
                         )}
@@ -500,7 +504,7 @@ export default function NichePage() {
 
               {/* Top insights footer */}
               {latestReport?.top_insights?.length > 0 && (
-                <div style={{ padding: "16px 20px", borderTop: "1px solid var(--border)", background: "var(--bg-mid)", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)", display: "flex", flexDirection: "column", gap: "8px" }}>
                   <p style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)", marginBottom: "4px" }}>Key Takeaways</p>
                   {latestReport.top_insights.slice(0, 2).map((insight, i) => (
                     <div key={i} style={{ display: "flex", gap: "8px" }}>
@@ -515,13 +519,13 @@ export default function NichePage() {
 
           {/* Fetch summary */}
           {fetchSummary.length > 0 && runStep === "idle" && (
-            <div style={{ borderRadius: "10px", overflow: "hidden", background: "var(--bg-card)", border: "1px solid var(--border)", marginBottom: "16px" }}>
-              <div style={{ padding: "8px 14px", borderBottom: "1px solid var(--border)", background: "var(--bg-mid)" }}>
+            <div style={{ borderRadius: "10px", overflow: "hidden", background: "var(--bg-card)", marginBottom: "16px" }}>
+              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)" }}>
                 <p style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)" }}>Last run summary</p>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "1px" }}>
                 {fetchSummary.map((s, i) => (
-                  <div key={i} style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: "8px", borderRight: "1px solid var(--border)" }}>
+                  <div key={i} style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: "8px", borderRight: "1px solid rgba(255,255,255,0.04)" }}>
                     <span style={{ fontSize: "11px", color: "var(--t1)", fontFamily: "var(--font-mono)" }}>@{s.handle}</span>
                     <span style={{ fontSize: "10px", color: s.used_cache ? "var(--green)" : "var(--gold)" }}>
                       {s.used_cache ? "cache" : "fetched"} · {s.posts_count}

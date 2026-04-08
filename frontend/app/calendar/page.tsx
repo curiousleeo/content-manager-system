@@ -177,7 +177,7 @@ export default function CalendarPage() {
             onClick={prevMonth}
             style={{
               width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center",
-              background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px",
+              background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "6px",
               cursor: "pointer", color: "var(--t3)",
             }}
           >
@@ -187,7 +187,7 @@ export default function CalendarPage() {
             onClick={nextMonth}
             style={{
               width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center",
-              background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px",
+              background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "6px",
               cursor: "pointer", color: "var(--t3)",
             }}
           >
@@ -198,7 +198,7 @@ export default function CalendarPage() {
           <button
             onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); }}
             style={{
-              padding: "5px 13px", borderRadius: "6px", border: "1px solid var(--border)",
+              padding: "5px 13px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.04)",
               background: "var(--bg-card)", fontSize: "11.5px", fontWeight: 600, color: "var(--t1)",
               cursor: "pointer",
             }}
@@ -209,7 +209,7 @@ export default function CalendarPage() {
           {/* View toggle */}
           <div style={{
             display: "flex", gap: "2px", background: "var(--bg-card)",
-            border: "1px solid var(--border)", borderRadius: "7px", padding: "2px",
+            border: "1px solid rgba(255,255,255,0.04)", borderRadius: "7px", padding: "2px",
           }}>
             {(["Month", "Week", "Day"] as string[]).map(v => {
               const key = v.toLowerCase() as ViewMode;
@@ -383,7 +383,7 @@ export default function CalendarPage() {
             <div
               onClick={e => e.stopPropagation()}
               style={{
-                background: "var(--bg-card)", border: "1px solid var(--border)",
+                background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.04)",
                 borderRadius: "16px", padding: "28px", width: "520px", maxWidth: "90vw",
                 position: "relative", maxHeight: "80vh", overflowY: "auto",
               }}
@@ -416,7 +416,7 @@ export default function CalendarPage() {
                 {expanded.text}
               </p>
 
-              <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid var(--border)", display: "flex", gap: "20px", flexWrap: "wrap" }}>
+              <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {expanded.scheduled_at && (
                   <div>
                     <p style={{ fontSize: "11px", color: "var(--t3)", marginBottom: "2px" }}>Scheduled</p>

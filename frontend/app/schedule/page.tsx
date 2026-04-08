@@ -138,9 +138,14 @@ export default function SchedulePage() {
         <p style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: "var(--gold)", fontFamily: "var(--font-manrope), sans-serif", marginBottom: "8px" }}>
           Publish Queue
         </p>
-        <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1 }}>
-          Schedule
-        </h1>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "18px" }}>
+          <h1 style={{ fontFamily: "var(--font-manrope), sans-serif", fontWeight: 800, fontSize: "40px", letterSpacing: "-1.5px", color: "var(--t1)", lineHeight: 1 }}>
+            Temporal Engine
+          </h1>
+          <span style={{ fontFamily: "var(--font-mono), monospace", fontSize: "20px", color: "var(--gold)", letterSpacing: "2px" }}>
+            {scheduledAt.slice(11, 16) || "14:00"}
+          </span>
+        </div>
       </div>
 
       {fromDB && (
@@ -153,7 +158,7 @@ export default function SchedulePage() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "22px", marginBottom: "32px" }}>
 
         {/* Date picker card */}
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "24px" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: "16px", padding: "24px" }}>
           <p style={{ fontSize: "9px", letterSpacing: "2.5px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "5px" }}>Set Parameters</p>
           <p style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "20px", fontWeight: 800, color: "var(--t1)", marginBottom: "18px", letterSpacing: "-0.5px" }}>
             Schedule Post
@@ -200,7 +205,7 @@ export default function SchedulePage() {
               <div style={{ fontSize: "9px", textTransform: "uppercase", color: "var(--t3)", marginBottom: "6px", letterSpacing: "1.5px" }}>Platform Sync</div>
               <div style={{ display: "flex", gap: "6px", alignItems: "center", marginTop: "8px" }}>
                 {["X", "LI", "TG"].map((p) => (
-                  <div key={p} style={{ width: "24px", height: "24px", background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "8px", color: "var(--t3)", fontWeight: 700 }}>
+                  <div key={p} style={{ width: "24px", height: "24px", background: "var(--bg-mid)", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "8px", color: "var(--t3)", fontWeight: 700 }}>
                     {p}
                   </div>
                 ))}
@@ -210,12 +215,12 @@ export default function SchedulePage() {
         </div>
 
         {/* Draft selector card */}
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: "9px", textTransform: "uppercase", color: "var(--t3)", letterSpacing: "2px", marginBottom: "10px" }}>Selected Draft</div>
 
           <div
             onClick={() => { if (!pickerOpen && drafts.length === 0) loadDrafts(project?.id); setPickerOpen(!pickerOpen); }}
-            style={{ background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 13px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", marginBottom: "14px" }}
+            style={{ background: "var(--bg-mid)", borderRadius: "8px", padding: "10px 13px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", marginBottom: "14px" }}
           >
             <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--t2)" }}>
               {selectedDraftId ? `Draft #${selectedDraftId}` : "Quarterly Analysis: Web3 Trends"}
@@ -224,7 +229,7 @@ export default function SchedulePage() {
           </div>
 
           {pickerOpen && (
-            <div style={{ background: "var(--bg-mid)", border: "1px solid var(--border)", borderRadius: "8px", maxHeight: "200px", overflowY: "auto", marginBottom: "14px" }}>
+            <div style={{ background: "var(--bg-mid)", borderRadius: "8px", maxHeight: "200px", overflowY: "auto", marginBottom: "14px" }}>
               {draftsLoading ? (
                 <div style={{ padding: "16px", display: "flex", justifyContent: "center" }}><Loader2 size={14} className="animate-spin" style={{ color: "var(--t3)" }} /></div>
               ) : drafts.length === 0 ? (
@@ -272,13 +277,13 @@ export default function SchedulePage() {
       </div>
 
       {/* Compose textarea */}
-      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px", marginBottom: "20px" }}>
+      <div style={{ background: "var(--bg-card)", borderRadius: "12px", padding: "18px", marginBottom: "20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
           <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Post Content</p>
           <span style={{ fontSize: "10px", fontFamily: "var(--font-mono), monospace", color: text.length > 280 ? "var(--red)" : "var(--t3)" }}>{text.length}/280</span>
         </div>
         <textarea value={text} onChange={(e) => { setText(e.target.value); store.setContent(e.target.value); }} rows={4} placeholder="Your post or select a draft above…" style={{ width: "100%", background: "transparent", border: "none", outline: "none", fontSize: "13.5px", color: "var(--t1)", lineHeight: 1.7, resize: "none", fontFamily: "var(--font-inter), sans-serif" }} />
-        <div style={{ display: "flex", gap: "8px", marginTop: "10px", borderTop: "1px solid var(--border)", paddingTop: "10px" }}>
+        <div style={{ display: "flex", gap: "8px", marginTop: "10px", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "10px" }}>
           <button onClick={postNow} disabled={posting || !text.trim() || text.length > 280} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 600, border: "1px solid rgba(255,255,255,0.14)", color: "var(--t1)", background: "transparent", cursor: "pointer", opacity: (posting || !text.trim() || text.length > 280) ? 0.45 : 1 }}>
             {posting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
             {posting ? "Posting…" : "Post now"}
@@ -289,9 +294,9 @@ export default function SchedulePage() {
       {error   && <p style={{ fontSize: "12px", marginBottom: "12px", fontFamily: "var(--font-mono), monospace", color: "var(--red)" }}>{error}</p>}
       {success && <p style={{ fontSize: "12px", marginBottom: "12px", fontFamily: "var(--font-mono), monospace", color: "var(--green)" }}>{success}</p>}
 
-      {/* ── Scheduled Queue ── */}
+      {/* ── The Chronology ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
-        <h2 style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "21px", fontWeight: 800, letterSpacing: "-0.4px", color: "var(--t1)" }}>Scheduled Queue</h2>
+        <h2 style={{ fontFamily: "var(--font-manrope), sans-serif", fontSize: "21px", fontWeight: 800, letterSpacing: "-0.4px", color: "var(--t1)" }}>The Chronology</h2>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--t3)" }}>
             {scheduled.length} Posts Queued
@@ -302,9 +307,9 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+      <div style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden" }}>
         {/* Column headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "125px 1fr 95px", gap: "14px", padding: "9px 18px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "125px 1fr 95px", gap: "14px", padding: "9px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>
           <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Execution Time</span>
           <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)" }}>Draft Preview</span>
           <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--t3)", textAlign: "right" }}>Action</span>

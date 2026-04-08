@@ -32,10 +32,11 @@ function inputStyle(): React.CSSProperties {
   return {
     width: "100%",
     padding: "10px 14px",
-    borderRadius: "8px",
+    borderRadius: "8px 8px 0 0",
     fontSize: "13px",
     background: "var(--bg-mid)",
-    border: "1px solid var(--border)",
+    border: "none",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
     color: "var(--t1)",
     outline: "none",
     transition: "border-color 0.15s",
@@ -150,7 +151,7 @@ export default function ProjectsPage() {
       {!editing && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {projects.length === 0 && (
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px 32px", textAlign: "center" }}>
+            <div style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "48px 32px", textAlign: "center" }}>
               <p style={{ fontSize: "14px", color: "var(--t3)" }}>No projects yet.</p>
               <p style={{ fontSize: "12px", color: "var(--ti)", marginTop: "6px" }}>Create one to get started.</p>
             </div>
@@ -196,13 +197,13 @@ export default function ProjectsPage() {
                   </button>
                   <button
                     onClick={() => { setEditing(p); setIsNew(false); setActiveSection("identity"); }}
-                    style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: "1px solid var(--border)", color: "var(--t2)", background: "var(--bg-mid)", cursor: "pointer" }}
+                    style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)", color: "var(--t2)", background: "var(--bg-mid)", cursor: "pointer" }}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => remove(p.id)}
-                    style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: "1px solid var(--border)", color: "var(--t3)", background: "transparent", cursor: "pointer" }}
+                    style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)", color: "var(--t3)", background: "transparent", cursor: "pointer" }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = "var(--t3)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                   >
@@ -242,7 +243,7 @@ export default function ProjectsPage() {
           </div>
 
           {/* Right form */}
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "16px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
 
             {activeSection === "identity" && (
               <>
@@ -435,7 +436,7 @@ export default function ProjectsPage() {
             )}
 
             {/* Save button — full width */}
-            <div style={{ borderTop: "1px solid var(--border)", paddingTop: "20px", display: "flex", gap: "10px" }}>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "20px", display: "flex", gap: "10px" }}>
               <button
                 onClick={save}
                 disabled={saving || !editing.name?.trim()}
@@ -445,7 +446,7 @@ export default function ProjectsPage() {
               </button>
               <button
                 onClick={() => setEditing(null)}
-                style={{ padding: "12px 24px", background: "var(--bg-mid)", border: "1px solid var(--border)", color: "var(--t3)", fontSize: "13px", borderRadius: "10px", cursor: "pointer" }}
+                style={{ padding: "12px 24px", background: "var(--bg-mid)", border: "1px solid rgba(255,255,255,0.06)", color: "var(--t3)", fontSize: "13px", borderRadius: "10px", cursor: "pointer" }}
               >
                 Cancel
               </button>

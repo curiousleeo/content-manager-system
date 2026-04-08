@@ -20,7 +20,7 @@ export default async function Header() {
       style={{
         height: "58px",
         padding: "0 30px",
-        borderBottom: "1px solid var(--border)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.04)",
         background: "rgba(10,10,15,0.94)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",

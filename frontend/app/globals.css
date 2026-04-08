@@ -133,9 +133,10 @@ body {
 input, textarea, select {
   width: 100%;
   background: var(--bg-mid);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   color: var(--t1);
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
   font-family: inherit;
   font-size: 13px;
   padding: 9px 13px;
@@ -147,8 +148,8 @@ input[type="datetime-local"] {
 }
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: rgba(255,184,0,0.35);
-  box-shadow: 0 0 0 3px rgba(255,184,0,0.06);
+  border-bottom-color: rgba(255,184,0,0.5);
+  box-shadow: 0 1px 0 rgba(255,184,0,0.35);
 }
 input::placeholder, textarea::placeholder { color: var(--t3); }
 input[type="datetime-local"] { color-scheme: dark; }
