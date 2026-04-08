@@ -63,8 +63,10 @@ export default function NichePage() {
   const [expandedAccount, setExpandedAccount] = useState<string | null>(null);
   const [vaultOpen, setVaultOpen] = useState(false);
   const [audit, setAudit] = useState<PersonalAuditData | null>(null);
-  const [auditStep, setAuditStep] = useState<"idle" | "fetching" | "analyzing">("idle");
+  const [auditStep, setAuditStep] = useState<"idle" | "fetching" | "analyzing" | "pasting">("idle");
   const [auditError, setAuditError] = useState("");
+  const [pasteMode, setPasteMode] = useState(false);
+  const [pastedTweets, setPastedTweets] = useState("");
 
   const project = store.getProject();
   const projectId = project?.id;
@@ -115,6 +117,19 @@ export default function NichePage() {
       setAuditStep("analyzing");
       const auditRes = await api.niche.analyzeAudit(fetchRes.audit_id);
       setAudit(auditRes);
+    } catch (e) { setAuditError((e as Error).message); }
+    finally { setAuditStep("idle"); }
+  }
+
+  async function runPasteAudit() {
+    if (!projectId || !pastedTweets.trim()) return;
+    setAuditError("");
+    setAuditStep("pasting");
+    try {
+      const auditRes = await api.niche.pasteAndAudit(projectId, pastedTweets);
+      setAudit(auditRes);
+      setPasteMode(false);
+      setPastedTweets("");
     } catch (e) { setAuditError((e as Error).message); }
     finally { setAuditStep("idle"); }
   }
@@ -726,16 +741,47 @@ export default function NichePage() {
                   Strict comparison — finds real flaws, rewrites only what needs fixing
                 </p>
               </div>
-              <button
-                onClick={runAudit}
-                disabled={auditStep !== "idle"}
-                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "var(--gold)", color: "#000", border: "none", cursor: auditStep !== "idle" ? "not-allowed" : "pointer", opacity: auditStep !== "idle" ? 0.6 : 1, fontFamily: "var(--font-manrope)" }}
-              >
-                {auditStep === "fetching" && <><Loader2 size={11} className="animate-spin" /> Fetching tweets…</>}
-                {auditStep === "analyzing" && <><Loader2 size={11} className="animate-spin" /> Analysing…</>}
-                {auditStep === "idle" && <><RefreshCw size={11} /> Run Audit</>}
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  onClick={() => { setPasteMode(!pasteMode); setAuditError(""); }}
+                  disabled={auditStep !== "idle"}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: pasteMode ? "rgba(255,184,0,0.15)" : "var(--bg-mid)", color: pasteMode ? "var(--gold)" : "var(--t2)", border: `1px solid ${pasteMode ? "rgba(255,184,0,0.4)" : "var(--border)"}`, cursor: "pointer", fontFamily: "var(--font-manrope)" }}
+                >
+                  Paste Tweets
+                </button>
+                <button
+                  onClick={runAudit}
+                  disabled={auditStep !== "idle"}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "var(--gold)", color: "#000", border: "none", cursor: auditStep !== "idle" ? "not-allowed" : "pointer", opacity: auditStep !== "idle" ? 0.6 : 1, fontFamily: "var(--font-manrope)" }}
+                >
+                  {auditStep === "fetching" && <><Loader2 size={11} className="animate-spin" /> Fetching…</>}
+                  {auditStep === "analyzing" && <><Loader2 size={11} className="animate-spin" /> Analysing…</>}
+                  {auditStep === "pasting" && <><Loader2 size={11} className="animate-spin" /> Analysing…</>}
+                  {auditStep === "idle" && <><RefreshCw size={11} /> Run Audit</>}
+                </button>
+              </div>
             </div>
+
+            {pasteMode && (
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,184,0,0.03)" }}>
+                <p style={{ fontSize: "11px", color: "var(--t3)", marginBottom: "10px", fontFamily: "var(--font-mono)" }}>
+                  Paste your recent tweets below — one tweet per block, separated by a blank line. Then click Analyse.
+                </p>
+                <textarea
+                  value={pastedTweets}
+                  onChange={(e) => setPastedTweets(e.target.value)}
+                  placeholder={"Your first tweet here...\n\nYour second tweet here...\n\nYour third tweet here..."}
+                  style={{ width: "100%", minHeight: "180px", padding: "12px", background: "var(--bg-mid)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "var(--t1)", fontSize: "13px", fontFamily: "var(--font-mono)", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+                />
+                <button
+                  onClick={runPasteAudit}
+                  disabled={!pastedTweets.trim() || auditStep !== "idle"}
+                  style={{ marginTop: "10px", padding: "9px 20px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "var(--gold)", color: "#000", border: "none", cursor: (!pastedTweets.trim() || auditStep !== "idle") ? "not-allowed" : "pointer", opacity: (!pastedTweets.trim() || auditStep !== "idle") ? 0.4 : 1, fontFamily: "var(--font-manrope)" }}
+                >
+                  {auditStep === "pasting" ? "Analysing…" : "Analyse Pasted Tweets"}
+                </button>
+              </div>
+            )}
 
             {auditError && (
               <div style={{ padding: "12px 20px", background: "rgba(239,68,68,0.06)", borderBottom: "1px solid rgba(239,68,68,0.15)" }}>
@@ -747,7 +793,7 @@ export default function NichePage() {
               <div style={{ padding: "48px 32px", textAlign: "center" }}>
                 <p style={{ fontSize: "13px", color: "var(--t3)", marginBottom: "6px" }}>No audit yet.</p>
                 <p style={{ fontSize: "12px", color: "var(--t3)" }}>
-                  Make sure your X handle is set in Project → Integrations, then click Run Audit.
+                  Paste your tweets using the button above, or set your X handle in Project → Integrations.
                 </p>
               </div>
             ) : (() => {

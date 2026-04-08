@@ -418,6 +418,76 @@ def get_latest_audit(project_id: int, db: Session = Depends(get_db)):
     return {"audit": _serialize_audit(audit) if audit else None}
 
 
+class PasteAuditRequest(BaseModel):
+    project_id: int
+    tweets_text: str  # raw pasted text — each tweet separated by blank line or "---"
+
+
+@router.post("/audit/paste")
+def paste_and_audit(req: PasteAuditRequest, db: Session = Depends(get_db)):
+    """Accept pasted tweet text, parse into tweets, run audit immediately. No X API needed."""
+    project = db.query(Project).filter(Project.id == req.project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Parse tweets — split on blank lines or "---" separators
+    import re as _re
+    raw_blocks = _re.split(r"\n\s*[-]{3,}\s*\n|\n{2,}", req.tweets_text.strip())
+    tweets = []
+    for block in raw_blocks:
+        text = block.strip()
+        if text:
+            tweets.append({"id": f"pasted_{len(tweets)}", "text": text,
+                           "likes": 0, "replies": 0, "retweets": 0, "impressions": 0})
+
+    if not tweets:
+        raise HTTPException(status_code=400, detail="No tweets found in pasted text.")
+    if len(tweets) > 50:
+        tweets = tweets[:50]  # cap at 50
+
+    # Get injected niche report
+    niche_report_row = (
+        db.query(NicheReport)
+        .filter(NicheReport.project_id == req.project_id, NicheReport.status == "injected")
+        .order_by(NicheReport.report_date.desc())
+        .first()
+    )
+    niche_data = {}
+    niche_report_id = None
+    if niche_report_row:
+        patterns = niche_report_row.patterns or {}
+        niche_data = {
+            "hook_patterns": patterns.get("hook_patterns", []),
+            "dominant_tone": patterns.get("dominant_tone", ""),
+            "post_formats": patterns.get("post_formats", []),
+            "swipe_file": niche_report_row.swipe_file or [],
+        }
+        niche_report_id = niche_report_row.id
+
+    proj_ctx = {"tone": project.tone, "target_audience": project.target_audience}
+
+    try:
+        result = audit_tweets(tweets, niche_data, proj_ctx)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Audit analysis failed: {exc}")
+
+    record_usage(db, "claude_calls", project_id=req.project_id)
+
+    audit = PersonalAudit(
+        project_id=req.project_id,
+        audit_date=datetime.utcnow(),
+        tweets_fetched=tweets,
+        niche_report_id=niche_report_id,
+        audit_result=result,
+        auto_fetched=False,
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(audit)
+
+    return _serialize_audit(audit)
+
+
 @router.get("/audit/all")
 def get_all_audits(project_id: int, db: Session = Depends(get_db)):
     audits = (

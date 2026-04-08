@@ -197,6 +197,11 @@ export const api = {
       request<{ audit_id: number; tweets_count: number; status: string }>(
         `/api/niche/audit/fetch?project_id=${project_id}`, { method: "POST" }
       ),
+    pasteAndAudit: (project_id: number, tweets_text: string) =>
+      request<PersonalAuditData>("/api/niche/audit/paste", {
+        method: "POST",
+        body: JSON.stringify({ project_id, tweets_text }),
+      }),
     analyzeAudit: (audit_id: number) =>
       request<PersonalAuditData>(`/api/niche/audit/${audit_id}/analyze`, { method: "POST" }),
     latestAudit: (project_id: number) =>
