@@ -316,50 +316,47 @@ def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) ->
     if not project.personal_x_handle:
         raise HTTPException(status_code=400, detail="No personal X handle set. Add it in Project → Integrations.")
 
-    # Prefer OAuth 1.0a (user context) — works without pay-per-use credits
-    # Check project-level first, fall back to global Railway env vars
-    api_key    = project.x_api_key    or _settings.x_api_key
-    api_secret = project.x_api_secret or _settings.x_api_secret
-    acc_token  = project.x_access_token or _settings.x_access_token
-    acc_secret = project.x_access_token_secret or _settings.x_access_token_secret
+    # Bearer token for fetching (same path as competitor fetch — proven to work)
+    token = bearer_token or project.x_bearer_token or _settings.x_bearer_token
+    if not token:
+        raise HTTPException(status_code=400, detail="No X bearer token configured.")
+    fetch_client = _get_client(token)
 
-    has_oauth = all([api_key, api_secret, acc_token, acc_secret])
-    if has_oauth:
-        client = _tweepy.Client(
-            consumer_key=api_key,
-            consumer_secret=api_secret,
-            access_token=acc_token,
-            access_token_secret=acc_secret,
-            wait_on_rate_limit=False,
-        )
-    else:
-        token = bearer_token or project.x_bearer_token or _settings.x_bearer_token
-        if not token:
-            raise HTTPException(status_code=400, detail="No X credentials configured. Add OAuth keys or bearer token in Project → Integrations.")
-        client = _get_client(token)
+    # Resolve user ID — use OAuth get_me() if available (avoids paid lookup),
+    # otherwise look up by handle via bearer token
+    if not project.personal_x_user_id:
+        api_key   = project.x_api_key    or _settings.x_api_key
+        api_secret= project.x_api_secret or _settings.x_api_secret
+        acc_token = project.x_access_token or _settings.x_access_token
+        acc_secret= project.x_access_token_secret or _settings.x_access_token_secret
+        has_oauth = all([api_key, api_secret, acc_token, acc_secret])
 
-    # Resolve user ID
-    if has_oauth:
-        # With OAuth 1.0a, get_me() returns the authenticated user's own ID — free, always correct
-        try:
-            me = client.get_me()
-            user_id = str(me.data.id)
-            project.personal_x_user_id = user_id
-            db.commit()
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=f"get_me() failed: {type(e).__name__}: {e}")
-    elif not project.personal_x_user_id:
-        try:
-            user_id = _lookup_user_id(client, project.personal_x_handle)
-            project.personal_x_user_id = user_id
-            db.commit()
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=f"Could not resolve @{project.personal_x_handle}: {e}")
+        if has_oauth:
+            try:
+                oauth_client = _tweepy.Client(
+                    consumer_key=api_key, consumer_secret=api_secret,
+                    access_token=acc_token, access_token_secret=acc_secret,
+                    wait_on_rate_limit=False,
+                )
+                me = oauth_client.get_me()
+                user_id = str(me.data.id)
+                project.personal_x_user_id = user_id
+                db.commit()
+            except Exception as e:
+                raise HTTPException(status_code=502, detail=f"get_me() failed: {type(e).__name__}: {e}")
+        else:
+            try:
+                user_id = _lookup_user_id(fetch_client, project.personal_x_handle)
+                project.personal_x_user_id = user_id
+                db.commit()
+            except Exception as e:
+                raise HTTPException(status_code=502, detail=f"Could not resolve @{project.personal_x_handle}: {e}")
     else:
         user_id = project.personal_x_user_id
 
+    # Fetch timeline with bearer token — exactly like competitor fetch
     try:
-        tweets = fetch_own_timeline(client, user_id, handle=project.personal_x_handle or "")
+        tweets = fetch_own_timeline(fetch_client, user_id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Failed to fetch timeline (user_id={user_id}): {type(e).__name__}: {e}")
 

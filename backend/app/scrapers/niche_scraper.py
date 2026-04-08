@@ -71,21 +71,51 @@ def _fetch_timeline(client: tweepy.Client, user_id: str) -> list[dict]:
     return [t for t in tweets if t["likes"] >= MIN_LIKES]
 
 
-def fetch_own_timeline(client: tweepy.Client, user_id: str, handle: str = "") -> list[dict]:
+def fetch_own_timeline_v1(api_key: str, api_secret: str,
+                          access_token: str, access_token_secret: str,
+                          user_id: str) -> list[dict]:
     """
-    Fetch the user's own recent tweets for audit using get_users_tweets.
-    Works with both OAuth 1.0a (user context) and bearer token.
-    No engagement filter — audit needs all recent tweets regardless of likes.
+    Fetch own tweets via Twitter API v1.1 user_timeline.
+    v1.1 OAuth 1.0a Read+Write works without v2 endpoint restrictions.
+    """
+    auth = tweepy.OAuth1UserHandler(api_key, api_secret, access_token, access_token_secret)
+    api_v1 = tweepy.API(auth, wait_on_rate_limit=False)
+    items = api_v1.user_timeline(
+        user_id=int(user_id),
+        count=100,
+        tweet_mode="extended",
+        exclude_replies=True,
+        include_rts=False,
+    )
+    return [
+        {
+            "id":          str(t.id),
+            "text":        t.full_text,
+            "likes":       t.favorite_count,
+            "replies":     0,
+            "retweets":    t.retweet_count,
+            "impressions": 0,
+        }
+        for t in (items or [])
+    ]
+
+
+def fetch_own_timeline(client: tweepy.Client, user_id: str, handle: str = "",
+                       use_user_auth: bool = False) -> list[dict]:
+    """
+    Fetch own tweets via v2 API.
+    user_auth=True forces OAuth 1.0a (bypasses bearer token).
+    user_auth=False (default) uses bearer token / app-only auth.
     """
     resp = client.get_users_tweets(
         id=user_id,
+        user_auth=use_user_auth,
         exclude=["retweets", "replies"],
         tweet_fields=["public_metrics"],
         max_results=100,
     )
     if not resp.data:
         return []
-
     return [
         {
             "id": str(t.id),
