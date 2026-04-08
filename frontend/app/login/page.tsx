@@ -91,10 +91,7 @@ export default function LoginPage() {
                 color: "rgba(255,255,255,0.5)",
                 textDecoration: "none",
                 letterSpacing: "0.01em",
-                transition: "color 0.15s",
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#e4e1e9")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)")}
             >
               {label}
             </a>
