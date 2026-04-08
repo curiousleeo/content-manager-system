@@ -338,8 +338,17 @@ def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) ->
             raise HTTPException(status_code=400, detail="No X credentials configured. Add OAuth keys or bearer token in Project → Integrations.")
         client = _get_client(token)
 
-    # Resolve user ID (cached permanently on project)
-    if not project.personal_x_user_id:
+    # Resolve user ID
+    if has_oauth:
+        # With OAuth 1.0a, get_me() returns the authenticated user's own ID — free, always correct
+        try:
+            me = client.get_me()
+            user_id = str(me.data.id)
+            project.personal_x_user_id = user_id
+            db.commit()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"get_me() failed: {type(e).__name__}: {e}")
+    elif not project.personal_x_user_id:
         try:
             user_id = _lookup_user_id(client, project.personal_x_handle)
             project.personal_x_user_id = user_id
