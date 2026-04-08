@@ -353,10 +353,10 @@ export default function NichePage() {
                     <div key={i} style={{ padding: "11px 18px", borderBottom: i < Math.min(latestReport.hook_patterns.length, 5) - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--t1)", textTransform: "capitalize", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {h.type?.replace(/_/g, " ")}
+                          {String(h.type ?? "").replace(/_/g, " ")}
                         </p>
                         {h.example && (
-                          <p style={{ fontSize: "10px", color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>"{h.example}"</p>
+                          <p style={{ fontSize: "10px", color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>"{String(h.example)}"</p>
                         )}
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px", flexShrink: 0 }}>
@@ -495,8 +495,8 @@ export default function NichePage() {
                           </span>
                         )}
                       </div>
-                      <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--t1)", marginBottom: "6px" }}>{ex.text}</p>
-                      {ex.why && <p style={{ fontSize: "11px", color: "var(--t3)", fontStyle: "italic" }}>{ex.why}</p>}
+                      <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--t1)", marginBottom: "6px" }}>{String(ex.text ?? "")}</p>
+                      {ex.why && <p style={{ fontSize: "11px", color: "var(--t3)", fontStyle: "italic" }}>{String(ex.why)}</p>}
                     </div>
                   ))}
                 </div>
@@ -509,7 +509,7 @@ export default function NichePage() {
                   {latestReport.top_insights.slice(0, 2).map((insight, i) => (
                     <div key={i} style={{ display: "flex", gap: "8px" }}>
                       <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--gold)", minWidth: "14px" }}>{i + 1}</span>
-                      <p style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--t2)", margin: 0 }}>{insight}</p>
+                      <p style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--t2)", margin: 0 }}>{String(insight)}</p>
                     </div>
                   ))}
                 </div>
