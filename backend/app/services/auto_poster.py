@@ -356,6 +356,78 @@ def run_niche_report_for_project(project_id: int) -> None:
         db.close()
 
 
+def run_tweet_audit_for_project(project_id: int) -> None:
+    """Monday cron job: fetch user's own tweets and run Claude audit against niche benchmark."""
+    from app.scrapers.niche_scraper import _get_client, _lookup_user_id, _fetch_timeline
+    from app.services.tweet_auditor import audit_tweets
+    from app.models.content import PersonalAudit
+
+    db = SessionLocal()
+    try:
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project or not project.personal_x_handle:
+            log.info("Tweet audit skipped for project %d — no personal handle set", project_id)
+            return
+        if not project.audit_auto_fetch:
+            return
+
+        from app.core.config import settings as _settings
+        token = project.x_bearer_token or _settings.x_bearer_token
+        if not token:
+            log.warning("Tweet audit skipped for project %d — no bearer token", project_id)
+            return
+
+        client = _get_client(token)
+        if not project.personal_x_user_id:
+            user_id = _lookup_user_id(client, project.personal_x_handle)
+            project.personal_x_user_id = user_id
+            db.commit()
+        else:
+            user_id = project.personal_x_user_id
+
+        tweets = _fetch_timeline(client, user_id)
+        record_usage(db, "x_reads", project_id=project_id)
+
+        # Get injected niche report
+        niche_row = (
+            db.query(NicheReport)
+            .filter(NicheReport.project_id == project_id, NicheReport.status == "injected")
+            .order_by(NicheReport.report_date.desc())
+            .first()
+        )
+        niche_data = {}
+        niche_report_id = None
+        if niche_row:
+            patterns = niche_row.patterns or {}
+            niche_data = {
+                "hook_patterns": patterns.get("hook_patterns", []),
+                "dominant_tone": patterns.get("dominant_tone", ""),
+                "post_formats": patterns.get("post_formats", []),
+                "swipe_file": niche_row.swipe_file or [],
+            }
+            niche_report_id = niche_row.id
+
+        proj_ctx = {"tone": project.tone, "target_audience": project.target_audience}
+        result = audit_tweets(tweets, niche_data, proj_ctx)
+        record_usage(db, "claude_calls", project_id=project_id)
+
+        audit = PersonalAudit(
+            project_id=project_id,
+            audit_date=datetime.utcnow(),
+            tweets_fetched=tweets,
+            niche_report_id=niche_report_id,
+            audit_result=result,
+            auto_fetched=True,
+        )
+        db.add(audit)
+        db.commit()
+        log.info("Auto tweet audit complete for project %d — %d tweets", project_id, len(tweets))
+    except Exception:
+        log.exception("Auto tweet audit failed for project %d", project_id)
+    finally:
+        db.close()
+
+
 def _recover_stale_processing_drafts(db) -> None:
     """
     Reset any drafts stuck in 'processing' for more than 5 minutes back to 'draft'.
@@ -407,6 +479,22 @@ def register_all_projects() -> None:
                 id=niche_job_id,
             )
             log.info("Scheduled weekly niche report: project=%s every Monday 06:00 UTC", p.name)
+
+            # Weekly tweet audit — every Monday at 07:00 UTC (1h after niche report)
+            audit_job_id = f"tweet_audit_{p.id}"
+            try:
+                scheduler.remove_job(audit_job_id)
+            except Exception:
+                pass
+            scheduler.add_job(
+                run_tweet_audit_for_project,
+                "cron",
+                day_of_week="mon",
+                hour=7,
+                minute=0,
+                args=[p.id],
+                id=audit_job_id,
+            )
 
         log.info("Auto-poster: registered %d cron jobs across %d projects", total, len(projects))
 

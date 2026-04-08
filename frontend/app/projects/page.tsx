@@ -452,6 +452,25 @@ export default function ProjectsPage() {
                     If left blank, falls back to the global <code style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>X_BEARER_TOKEN</code> env var.
                   </p>
                 </FieldRow>
+                <FieldRow label="Your X Handle" hint="For personal tweet audit">
+                  <input
+                    style={inputStyle()}
+                    value={editing.personal_x_handle ?? ""}
+                    onChange={(e) => setEditing({ ...editing, personal_x_handle: e.target.value.replace(/^@/, "") })}
+                    placeholder="yourhandle (no @)"
+                  />
+                </FieldRow>
+                <FieldRow label="Auto-fetch every Monday">
+                  <label style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
+                    <div
+                      onClick={() => setEditing({ ...editing, audit_auto_fetch: !editing.audit_auto_fetch })}
+                      style={{ width: "40px", height: "22px", borderRadius: "11px", position: "relative", cursor: "pointer", transition: "background 0.2s", background: editing.audit_auto_fetch ? "var(--gold)" : "var(--border)", flexShrink: 0 }}
+                    >
+                      <div style={{ position: "absolute", top: "3px", left: editing.audit_auto_fetch ? "21px" : "3px", width: "16px", height: "16px", borderRadius: "50%", background: editing.audit_auto_fetch ? "#000" : "var(--t3)", transition: "left 0.2s" }} />
+                    </div>
+                    <span style={{ fontSize: "13px", color: "var(--t2)" }}>Fetch + audit your tweets automatically every Monday at 07:00 UTC</span>
+                  </label>
+                </FieldRow>
               </>
             )}
 

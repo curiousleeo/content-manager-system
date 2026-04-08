@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api, NicheReportData, CacheStatusItem, CachedTweetAccount } from "@/lib/api";
+import { api, NicheReportData, CacheStatusItem, CachedTweetAccount, PersonalAuditData, TweetReview } from "@/lib/api";
 import { store } from "@/lib/store";
 import { Loader2, Plus, Trash2, RefreshCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, Heart, MessageCircle, Repeat2 } from "lucide-react";
 
@@ -62,6 +62,9 @@ export default function NichePage() {
   const [tweetVault, setTweetVault] = useState<CachedTweetAccount[]>([]);
   const [expandedAccount, setExpandedAccount] = useState<string | null>(null);
   const [vaultOpen, setVaultOpen] = useState(false);
+  const [audit, setAudit] = useState<PersonalAuditData | null>(null);
+  const [auditStep, setAuditStep] = useState<"idle" | "fetching" | "analyzing">("idle");
+  const [auditError, setAuditError] = useState("");
 
   const project = store.getProject();
   const projectId = project?.id;
@@ -73,6 +76,7 @@ export default function NichePage() {
     loadAccounts();
     loadAllReports();
     loadTweetVault();
+    loadLatestAudit();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
@@ -92,6 +96,27 @@ export default function NichePage() {
       setAllReports(res.reports);
     } catch { /* ignore */ }
     finally { setLoadingReports(false); }
+  }
+
+  async function loadLatestAudit() {
+    if (!projectId) return;
+    try {
+      const res = await api.niche.latestAudit(projectId);
+      if (res.audit) setAudit(res.audit);
+    } catch { /* ignore */ }
+  }
+
+  async function runAudit() {
+    if (!projectId) return;
+    setAuditError("");
+    setAuditStep("fetching");
+    try {
+      const fetchRes = await api.niche.fetchPersonalTweets(projectId);
+      setAuditStep("analyzing");
+      const auditRes = await api.niche.analyzeAudit(fetchRes.audit_id);
+      setAudit(auditRes);
+    } catch (e) { setAuditError((e as Error).message); }
+    finally { setAuditStep("idle"); }
   }
 
   async function loadTweetVault() {
@@ -688,6 +713,166 @@ export default function NichePage() {
           )}
 
           {error && <p style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--red)" }}>{error}</p>}
+
+          {/* ── Tweet Audit ── */}
+          <div style={{ background: "var(--bg-card)", borderRadius: "14px", overflow: "hidden", marginTop: "20px" }}>
+            {/* Header */}
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-mid)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <p style={{ fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-manrope)", color: "var(--t1)", margin: 0 }}>
+                  Tweet Audit <span style={{ fontSize: "10px", fontWeight: 400, color: "var(--t3)", marginLeft: "8px" }}>Your tweets vs niche benchmark</span>
+                </p>
+                <p style={{ fontSize: "11px", color: "var(--t3)", marginTop: "3px" }}>
+                  Strict comparison — finds real flaws, rewrites only what needs fixing
+                </p>
+              </div>
+              <button
+                onClick={runAudit}
+                disabled={auditStep !== "idle"}
+                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", borderRadius: "8px", fontSize: "12px", fontWeight: 600, background: "var(--gold)", color: "#000", border: "none", cursor: auditStep !== "idle" ? "not-allowed" : "pointer", opacity: auditStep !== "idle" ? 0.6 : 1, fontFamily: "var(--font-manrope)" }}
+              >
+                {auditStep === "fetching" && <><Loader2 size={11} className="animate-spin" /> Fetching tweets…</>}
+                {auditStep === "analyzing" && <><Loader2 size={11} className="animate-spin" /> Analysing…</>}
+                {auditStep === "idle" && <><RefreshCw size={11} /> Run Audit</>}
+              </button>
+            </div>
+
+            {auditError && (
+              <div style={{ padding: "12px 20px", background: "rgba(239,68,68,0.06)", borderBottom: "1px solid rgba(239,68,68,0.15)" }}>
+                <p style={{ fontSize: "12px", color: "var(--red)", fontFamily: "var(--font-mono)" }}>{auditError}</p>
+              </div>
+            )}
+
+            {!audit?.audit_result ? (
+              <div style={{ padding: "48px 32px", textAlign: "center" }}>
+                <p style={{ fontSize: "13px", color: "var(--t3)", marginBottom: "6px" }}>No audit yet.</p>
+                <p style={{ fontSize: "12px", color: "var(--t3)" }}>
+                  Make sure your X handle is set in Project → Integrations, then click Run Audit.
+                </p>
+              </div>
+            ) : (() => {
+              const r = audit.audit_result!;
+              const gradeColor = r.overall_score >= 7 ? "var(--green)" : r.overall_score >= 5 ? "var(--gold)" : "var(--red)";
+              return (
+                <>
+                  {/* Overall score */}
+                  <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "24px", padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "80px", height: "80px", borderRadius: "12px", background: `${gradeColor}18`, border: `1px solid ${gradeColor}40` }}>
+                      <span style={{ fontSize: "28px", fontWeight: 800, fontFamily: "var(--font-manrope)", color: gradeColor }}>{r.overall_grade}</span>
+                      <span style={{ fontSize: "10px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>{r.overall_score}/10</span>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: "13px", lineHeight: 1.6, color: "var(--t2)", marginBottom: "12px" }}>{r.summary}</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                        {[
+                          { label: "Tone match", value: r.vs_niche?.tone_match },
+                          { label: "Hook quality", value: r.vs_niche?.hook_quality },
+                          { label: "Format alignment", value: r.vs_niche?.format_alignment },
+                          { label: "Engagement gap", value: r.vs_niche?.engagement_gap },
+                        ].map((item, i) => (
+                          <div key={i} style={{ padding: "8px 12px", borderRadius: "8px", background: "var(--bg-mid)" }}>
+                            <p style={{ fontSize: "9px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--t3)", marginBottom: "3px" }}>{item.label}</p>
+                            <p style={{ fontSize: "11px", color: "var(--t2)", margin: 0 }}>{String(item.value ?? "—")}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Strengths + Weaknesses */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ padding: "16px 20px", borderRight: "1px solid rgba(255,255,255,0.04)" }}>
+                      <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--green)", marginBottom: "10px" }}>What's working</p>
+                      {r.strengths?.map((s, i) => (
+                        <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                          <span style={{ color: "var(--green)", fontSize: "12px", flexShrink: 0 }}>✓</span>
+                          <p style={{ fontSize: "12px", color: "var(--t2)", margin: 0, lineHeight: 1.5 }}>{String(s)}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ padding: "16px 20px" }}>
+                      <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--red)", marginBottom: "10px" }}>What's broken</p>
+                      {r.weaknesses?.map((w, i) => (
+                        <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                          <span style={{ color: "var(--red)", fontSize: "12px", flexShrink: 0 }}>✗</span>
+                          <p style={{ fontSize: "12px", color: "var(--t2)", margin: 0, lineHeight: 1.5 }}>{String(w)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tweet-by-tweet reviews */}
+                  <div style={{ padding: "14px 20px", background: "var(--bg-mid)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--t3)" }}>
+                      Tweet Reviews ({r.tweet_reviews?.length ?? 0})
+                      {" · "}
+                      <span style={{ color: "var(--gold)" }}>{r.tweet_reviews?.filter((t: TweetReview) => t.needs_improvement).length ?? 0} improved</span>
+                      {" · "}
+                      <span style={{ color: "var(--green)" }}>{r.tweet_reviews?.filter((t: TweetReview) => !t.needs_improvement).length ?? 0} solid</span>
+                    </p>
+                  </div>
+                  {r.tweet_reviews?.map((review: TweetReview, i: number) => {
+                    const scoreColor = review.score >= 7 ? "var(--green)" : review.score >= 5 ? "var(--gold)" : "var(--red)";
+                    return (
+                      <div key={i} style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                        <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+                          {/* Score badge */}
+                          <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                            <div style={{ width: "36px", height: "36px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: `${scoreColor}18`, border: `1px solid ${scoreColor}40` }}>
+                              <span style={{ fontSize: "14px", fontWeight: 700, color: scoreColor, fontFamily: "var(--font-manrope)" }}>{review.score}</span>
+                            </div>
+                            <div style={{ display: "flex", gap: "6px" }}>
+                              <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>
+                                <Heart size={8} />{fmt(review.likes ?? 0)}
+                              </span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>
+                                <MessageCircle size={8} />{fmt(review.replies ?? 0)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {/* Original tweet */}
+                            <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--t1)", marginBottom: "8px", whiteSpace: "pre-line" }}>{String(review.original ?? "")}</p>
+
+                            {/* Issues */}
+                            {review.issues?.length > 0 && (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+                                {review.issues.map((issue: string, j: number) => (
+                                  <span key={j} style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "5px", background: "rgba(239,68,68,0.08)", color: "var(--red)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                                    {String(issue)}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Improved version */}
+                            {review.needs_improvement && review.improved && (
+                              <div style={{ borderRadius: "8px", background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.2)", padding: "12px 14px" }}>
+                                <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--green)", marginBottom: "6px" }}>Improved version</p>
+                                <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--t1)", margin: 0, whiteSpace: "pre-line" }}>{String(review.improved)}</p>
+                                {review.why_improved && (
+                                  <p style={{ fontSize: "11px", color: "var(--t3)", marginTop: "6px", fontStyle: "italic" }}>{String(review.why_improved)}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Audit meta */}
+                  <div style={{ padding: "10px 20px", background: "var(--bg-mid)", display: "flex", gap: "16px" }}>
+                    <span style={{ fontSize: "10px", color: "var(--t3)", fontFamily: "var(--font-mono)" }}>
+                      {new Date(audit.audit_date).toLocaleDateString()} · {audit.tweets_count} tweets · {audit.auto_fetched ? "auto" : "manual"}
+                      {audit.niche_report_id ? " · benchmarked against niche report" : " · no niche report — benchmark limited"}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
         </>
       )}
     </div>

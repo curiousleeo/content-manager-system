@@ -22,6 +22,8 @@ class ProjectCreate(BaseModel):
     coingecko_enabled: Optional[bool] = False
     telegram_channels: Optional[list[str]] = None
     x_bearer_token: Optional[str] = None
+    personal_x_handle: Optional[str] = None
+    audit_auto_fetch: Optional[bool] = None
 
 
 class ProjectUpdate(ProjectCreate):
@@ -44,6 +46,8 @@ def serialize(p: Project) -> dict:
         "coingecko_enabled":  bool(p.coingecko_enabled),
         "telegram_channels":  p.telegram_channels or [],
         "x_bearer_token":     p.x_bearer_token or "",
+        "personal_x_handle":  p.personal_x_handle or "",
+        "audit_auto_fetch":   bool(p.audit_auto_fetch),
         "created_at":         p.created_at.isoformat() if p.created_at else None,
     }
 

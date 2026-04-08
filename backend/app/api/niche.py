@@ -4,9 +4,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.content import WatchedAccount, NicheReport, Project
-from app.scrapers.niche_scraper import scrape_watched_accounts, get_cache_status
+from app.models.content import WatchedAccount, NicheReport, Project, PersonalAudit
+from app.scrapers.niche_scraper import scrape_watched_accounts, get_cache_status, _get_client, _lookup_user_id, _fetch_timeline
 from app.services.niche_intelligence import analyze_niche
+from app.services.tweet_auditor import audit_tweets
 from app.services.usage_tracker import record_usage
 
 router = APIRouter()
@@ -301,4 +302,142 @@ def _serialize_report(r: NicheReport) -> dict:
         "swipe_file":        r.swipe_file or [],
         "status":            r.status,
         "created_at":        r.created_at.isoformat(),
+    }
+
+
+# ── Personal Tweet Audit ──────────────────────────────────────────────────────
+
+def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) -> list[dict]:
+    """Fetch the user's own tweets from the past 7 days using the niche scraper internals."""
+    from app.core.config import settings as _settings
+    token = bearer_token or project.x_bearer_token or _settings.x_bearer_token
+    if not token:
+        raise HTTPException(status_code=400, detail="No X bearer token configured.")
+    if not project.personal_x_handle:
+        raise HTTPException(status_code=400, detail="No personal X handle set. Add it in Project → Integrations.")
+
+    client = _get_client(token)
+
+    # Resolve user ID (cache on project)
+    if not project.personal_x_user_id:
+        try:
+            user_id = _lookup_user_id(client, project.personal_x_handle)
+            project.personal_x_user_id = user_id
+            db.commit()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Could not resolve @{project.personal_x_handle}: {e}")
+    else:
+        user_id = project.personal_x_user_id
+
+    try:
+        tweets = _fetch_timeline(client, user_id)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch timeline: {e}")
+
+    return tweets
+
+
+@router.post("/audit/fetch")
+def fetch_personal_tweets(project_id: int, db: Session = Depends(get_db)):
+    """Fetch the user's own tweets and store them for audit. Does NOT run analysis."""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    tweets = _fetch_user_tweets(project, db)
+    record_usage(db, "x_reads", project_id=project_id)
+
+    audit = PersonalAudit(
+        project_id=project_id,
+        audit_date=datetime.utcnow(),
+        tweets_fetched=tweets,
+        auto_fetched=False,
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(audit)
+
+    return {"audit_id": audit.id, "tweets_count": len(tweets), "status": "fetched"}
+
+
+@router.post("/audit/{audit_id}/analyze")
+def analyze_personal_audit(audit_id: int, db: Session = Depends(get_db)):
+    """Run Claude audit on already-fetched tweets, comparing against injected niche report."""
+    audit = db.query(PersonalAudit).filter(PersonalAudit.id == audit_id).first()
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+
+    tweets = audit.tweets_fetched or []
+    if not tweets:
+        raise HTTPException(status_code=400, detail="No tweets in this audit. Fetch first.")
+
+    # Get the injected niche report
+    niche_report_row = (
+        db.query(NicheReport)
+        .filter(NicheReport.project_id == audit.project_id, NicheReport.status == "injected")
+        .order_by(NicheReport.report_date.desc())
+        .first()
+    )
+    niche_data = {}
+    if niche_report_row:
+        patterns = niche_report_row.patterns or {}
+        niche_data = {
+            "hook_patterns": patterns.get("hook_patterns", []),
+            "dominant_tone": patterns.get("dominant_tone", ""),
+            "post_formats": patterns.get("post_formats", []),
+            "swipe_file": niche_report_row.swipe_file or [],
+        }
+        audit.niche_report_id = niche_report_row.id
+
+    project = db.query(Project).filter(Project.id == audit.project_id).first()
+    proj_ctx = None
+    if project:
+        proj_ctx = {"tone": project.tone, "target_audience": project.target_audience}
+
+    try:
+        result = audit_tweets(tweets, niche_data, proj_ctx)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Audit analysis failed: {exc}")
+
+    record_usage(db, "claude_calls", project_id=audit.project_id)
+
+    audit.audit_result = result
+    db.commit()
+
+    return _serialize_audit(audit)
+
+
+@router.get("/audit/latest")
+def get_latest_audit(project_id: int, db: Session = Depends(get_db)):
+    audit = (
+        db.query(PersonalAudit)
+        .filter(PersonalAudit.project_id == project_id)
+        .order_by(PersonalAudit.audit_date.desc())
+        .first()
+    )
+    return {"audit": _serialize_audit(audit) if audit else None}
+
+
+@router.get("/audit/all")
+def get_all_audits(project_id: int, db: Session = Depends(get_db)):
+    audits = (
+        db.query(PersonalAudit)
+        .filter(PersonalAudit.project_id == project_id)
+        .order_by(PersonalAudit.audit_date.desc())
+        .limit(10)
+        .all()
+    )
+    return {"audits": [_serialize_audit(a) for a in audits]}
+
+
+def _serialize_audit(a: PersonalAudit) -> dict:
+    return {
+        "id":             a.id,
+        "project_id":     a.project_id,
+        "audit_date":     a.audit_date.isoformat(),
+        "tweets_count":   len(a.tweets_fetched or []),
+        "niche_report_id": a.niche_report_id,
+        "audit_result":   a.audit_result,
+        "auto_fetched":   bool(a.auto_fetched),
+        "created_at":     a.created_at.isoformat(),
     }

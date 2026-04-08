@@ -55,6 +55,11 @@ class Project(Base):
     x_client_id = Column(Text, nullable=True)
     x_client_secret = Column(Text, nullable=True)
 
+    # Personal tweet audit
+    personal_x_handle = Column(String(100), nullable=True)   # user's own X handle
+    personal_x_user_id = Column(String(30), nullable=True)   # cached permanently after first lookup
+    audit_auto_fetch = Column(JSON, nullable=True, default=False)  # bool — fetch every Monday
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -114,6 +119,19 @@ class PostAnalytics(Base):
     replies = Column(Integer, default=0)
     retweets = Column(Integer, default=0)
     pulled_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PersonalAudit(Base):
+    __tablename__ = "personal_audits"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    audit_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    tweets_fetched = Column(JSON, nullable=True)       # raw tweets fetched from user's timeline
+    niche_report_id = Column(Integer, ForeignKey("niche_reports.id"), nullable=True)
+    audit_result = Column(JSON, nullable=True)          # Claude's full analysis
+    auto_fetched = Column(JSON, nullable=False, default=False)  # bool
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class NicheReport(Base):

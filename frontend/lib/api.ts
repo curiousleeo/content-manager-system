@@ -193,6 +193,16 @@ export const api = {
       request<{ status: string; report_id: number }>(`/api/niche/report/${report_id}/discard`, { method: "POST" }),
     cachedTweets: (project_id: number) =>
       request<{ accounts: CachedTweetAccount[] }>(`/api/niche/tweets?project_id=${project_id}`),
+    fetchPersonalTweets: (project_id: number) =>
+      request<{ audit_id: number; tweets_count: number; status: string }>(
+        `/api/niche/audit/fetch?project_id=${project_id}`, { method: "POST" }
+      ),
+    analyzeAudit: (audit_id: number) =>
+      request<PersonalAuditData>(`/api/niche/audit/${audit_id}/analyze`, { method: "POST" }),
+    latestAudit: (project_id: number) =>
+      request<{ audit: PersonalAuditData | null }>(`/api/niche/audit/latest?project_id=${project_id}`),
+    allAudits: (project_id: number) =>
+      request<{ audits: PersonalAuditData[] }>(`/api/niche/audit/all?project_id=${project_id}`),
   },
 };
 
@@ -293,6 +303,41 @@ export interface CachedTweetAccount {
   fetched_at: string | null;
   count: number;
   tweets: CachedTweet[];
+}
+
+export interface TweetReview {
+  original: string;
+  likes: number;
+  replies: number;
+  score: number;
+  needs_improvement: boolean;
+  issues: string[];
+  improved: string | null;
+  why_improved: string | null;
+}
+
+export interface PersonalAuditData {
+  id: number;
+  project_id: number;
+  audit_date: string;
+  tweets_count: number;
+  niche_report_id: number | null;
+  auto_fetched: boolean;
+  created_at: string;
+  audit_result: {
+    overall_score: number;
+    overall_grade: string;
+    summary: string;
+    vs_niche: {
+      tone_match: string;
+      hook_quality: string;
+      format_alignment: string;
+      engagement_gap: string;
+    };
+    strengths: string[];
+    weaknesses: string[];
+    tweet_reviews: TweetReview[];
+  } | null;
 }
 
 export interface NicheReportData {
