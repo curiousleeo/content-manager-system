@@ -24,8 +24,10 @@ def _run_column_migrations():
         "ALTER TABLE projects ADD COLUMN IF NOT EXISTS personal_x_handle VARCHAR(100)",
         "ALTER TABLE projects ADD COLUMN IF NOT EXISTS personal_x_user_id VARCHAR(30)",
         "ALTER TABLE projects ADD COLUMN IF NOT EXISTS audit_auto_fetch JSONB DEFAULT 'false'::jsonb",
-        # Cast existing BOOLEAN column to JSONB (safe no-op if already JSONB)
-        "ALTER TABLE projects ALTER COLUMN audit_auto_fetch TYPE JSONB USING audit_auto_fetch::text::jsonb",
+        # Fix existing BOOLEAN column → JSONB: drop default first, cast type, restore default
+        "ALTER TABLE projects ALTER COLUMN audit_auto_fetch DROP DEFAULT",
+        "ALTER TABLE projects ALTER COLUMN audit_auto_fetch TYPE JSONB USING to_jsonb(audit_auto_fetch)",
+        "ALTER TABLE projects ALTER COLUMN audit_auto_fetch SET DEFAULT 'false'::jsonb",
     ]
     is_sqlite = engine.dialect.name == "sqlite"
     with engine.connect() as conn:
