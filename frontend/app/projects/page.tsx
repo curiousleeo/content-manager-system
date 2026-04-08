@@ -460,6 +460,19 @@ export default function ProjectsPage() {
                     placeholder="yourhandle (no @)"
                   />
                 </FieldRow>
+                <FieldRow label="Your X Numeric User ID" hint="Bypasses paid API lookup">
+                  <input
+                    style={inputStyle()}
+                    value={editing.personal_x_user_id ?? ""}
+                    onChange={(e) => setEditing({ ...editing, personal_x_user_id: e.target.value.trim() })}
+                    placeholder="e.g. 2038698307405705216"
+                  />
+                  <p style={{ fontSize: "11px", color: "var(--ti)", marginTop: "6px" }}>
+                    Paste your numeric ID to skip the paid username lookup. Find it at{" "}
+                    <span style={{ color: "var(--gold)", fontFamily: "var(--font-mono)" }}>tweeterid.com</span>
+                    {" "}or from the error message if you saw one.
+                  </p>
+                </FieldRow>
                 <FieldRow label="Auto-fetch every Monday">
                   <label style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
                     <div
