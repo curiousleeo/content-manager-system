@@ -5,6 +5,7 @@ Niche Intelligence — Claude service that analyzes scraped account data to prod
   - Post format breakdown
   - Swipe file: 10 best examples worth studying
 """
+import re
 import json
 import logging
 import anthropic
