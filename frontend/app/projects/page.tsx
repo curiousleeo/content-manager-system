@@ -439,7 +439,19 @@ export default function ProjectsPage() {
             {activeSection === "integrations" && (
               <>
                 <SectionHeading>Integrations</SectionHeading>
-                <FieldRow label="X Bearer Token" hint="Required for Niche Intelligence">
+                <FieldRow label="API Key (Consumer Key)" hint="From X Developer Portal → your app">
+                  <input style={inputStyle()} type="password" value={editing.x_api_key ?? ""} onChange={(e) => setEditing({ ...editing, x_api_key: e.target.value })} placeholder="Consumer Key" />
+                </FieldRow>
+                <FieldRow label="API Secret (Consumer Secret)">
+                  <input style={inputStyle()} type="password" value={editing.x_api_secret ?? ""} onChange={(e) => setEditing({ ...editing, x_api_secret: e.target.value })} placeholder="Consumer Key Secret" />
+                </FieldRow>
+                <FieldRow label="Access Token">
+                  <input style={inputStyle()} type="password" value={editing.x_access_token ?? ""} onChange={(e) => setEditing({ ...editing, x_access_token: e.target.value })} placeholder="Access Token" />
+                </FieldRow>
+                <FieldRow label="Access Token Secret">
+                  <input style={inputStyle()} type="password" value={editing.x_access_token_secret ?? ""} onChange={(e) => setEditing({ ...editing, x_access_token_secret: e.target.value })} placeholder="Access Token Secret" />
+                </FieldRow>
+                <FieldRow label="X Bearer Token" hint="Required for Niche Intelligence (competitor fetch)">
                   <input
                     style={inputStyle()}
                     type="password"

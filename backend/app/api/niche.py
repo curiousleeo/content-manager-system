@@ -308,17 +308,32 @@ def _serialize_report(r: NicheReport) -> dict:
 # ── Personal Tweet Audit ──────────────────────────────────────────────────────
 
 def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) -> list[dict]:
-    """Fetch the user's own tweets from the past 7 days using the niche scraper internals."""
+    """Fetch the user's own tweets. Uses OAuth 1.0a user context if credentials are set
+    (bypasses pay-per-use billing), otherwise falls back to bearer token."""
+    import tweepy as _tweepy
     from app.core.config import settings as _settings
-    token = bearer_token or project.x_bearer_token or _settings.x_bearer_token
-    if not token:
-        raise HTTPException(status_code=400, detail="No X bearer token configured.")
+
     if not project.personal_x_handle:
         raise HTTPException(status_code=400, detail="No personal X handle set. Add it in Project → Integrations.")
 
-    client = _get_client(token)
+    # Prefer OAuth 1.0a (user context) — doesn't hit pay-per-use billing
+    has_oauth = all([project.x_api_key, project.x_api_secret,
+                     project.x_access_token, project.x_access_token_secret])
+    if has_oauth:
+        client = _tweepy.Client(
+            consumer_key=project.x_api_key,
+            consumer_secret=project.x_api_secret,
+            access_token=project.x_access_token,
+            access_token_secret=project.x_access_token_secret,
+            wait_on_rate_limit=False,
+        )
+    else:
+        token = bearer_token or project.x_bearer_token or _settings.x_bearer_token
+        if not token:
+            raise HTTPException(status_code=400, detail="No X credentials configured. Add OAuth keys or bearer token in Project → Integrations.")
+        client = _get_client(token)
 
-    # Resolve user ID (cache on project)
+    # Resolve user ID (cached permanently on project)
     if not project.personal_x_user_id:
         try:
             user_id = _lookup_user_id(client, project.personal_x_handle)

@@ -24,6 +24,10 @@ export interface Project {
   coingecko_enabled?: boolean;
   telegram_channels?: string[];
   timezone?: string;
+  x_api_key?: string;
+  x_api_secret?: string;
+  x_access_token?: string;
+  x_access_token_secret?: string;
   x_bearer_token?: string;
   personal_x_handle?: string;
   personal_x_user_id?: string;
