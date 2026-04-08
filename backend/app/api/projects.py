@@ -1,3 +1,4 @@
+import traceback
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -60,11 +61,15 @@ def list_projects(db: Session = Depends(get_db)):
 
 @router.post("/")
 def create_project(req: ProjectCreate, db: Session = Depends(get_db)):
-    project = Project(**req.model_dump())
-    db.add(project)
-    db.commit()
-    db.refresh(project)
-    return serialize(project)
+    try:
+        project = Project(**req.model_dump())
+        db.add(project)
+        db.commit()
+        db.refresh(project)
+        return serialize(project)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"DB error creating project: {e}")
 
 
 @router.get("/{project_id}")
@@ -77,21 +82,33 @@ def get_project(project_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/{project_id}")
 def update_project(project_id: int, req: ProjectUpdate, db: Session = Depends(get_db)):
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    for field, value in req.model_dump(exclude_none=True).items():
-        setattr(project, field, value)
-    db.commit()
-    db.refresh(project)
-    return serialize(project)
+    try:
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        for field, value in req.model_dump(exclude_none=True).items():
+            setattr(project, field, value)
+        db.commit()
+        db.refresh(project)
+        return serialize(project)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"DB error saving project: {e}")
 
 
 @router.delete("/{project_id}")
 def delete_project(project_id: int, db: Session = Depends(get_db)):
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    db.delete(project)
-    db.commit()
-    return {"status": "deleted"}
+    try:
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        db.delete(project)
+        db.commit()
+        return {"status": "deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"DB error deleting project: {e}")
