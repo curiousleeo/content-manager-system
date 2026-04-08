@@ -81,6 +81,31 @@ def remove_account(account_id: int, db: Session = Depends(get_db)):
     return {"status": "removed"}
 
 
+# ── Cached tweets ────────────────────────────────────────────────────────────
+
+@router.get("/tweets")
+def get_cached_tweets(project_id: int, db: Session = Depends(get_db)):
+    """Return all cached tweets for every watched account in the project."""
+    accounts = (
+        db.query(WatchedAccount)
+        .filter(WatchedAccount.project_id == project_id)
+        .order_by(WatchedAccount.added_at.asc())
+        .all()
+    )
+    result = []
+    for acc in accounts:
+        tweets = acc.cached_tweets or []
+        tweets_sorted = sorted(tweets, key=lambda t: t.get("likes", 0), reverse=True)
+        result.append({
+            "handle":     acc.x_handle,
+            "category":   acc.category,
+            "fetched_at": acc.fetched_at.isoformat() if acc.fetched_at else None,
+            "count":      len(tweets_sorted),
+            "tweets":     tweets_sorted,
+        })
+    return {"accounts": result}
+
+
 # ── Cache status preview ──────────────────────────────────────────────────────
 
 @router.get("/cache-status")

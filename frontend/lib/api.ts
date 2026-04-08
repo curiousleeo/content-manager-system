@@ -191,6 +191,8 @@ export const api = {
       request<{ status: string; report_id: number }>(`/api/niche/report/${report_id}/inject`, { method: "POST" }),
     discard: (report_id: number) =>
       request<{ status: string; report_id: number }>(`/api/niche/report/${report_id}/discard`, { method: "POST" }),
+    cachedTweets: (project_id: number) =>
+      request<{ accounts: CachedTweetAccount[] }>(`/api/niche/tweets?project_id=${project_id}`),
   },
 };
 
@@ -274,6 +276,23 @@ export interface CacheStatusItem {
   label: string;
   days_ago: number | null;
   can_refetch: boolean;
+}
+
+export interface CachedTweet {
+  id: string;
+  text: string;
+  likes: number;
+  replies: number;
+  retweets: number;
+  impressions: number;
+}
+
+export interface CachedTweetAccount {
+  handle: string;
+  category: string;
+  fetched_at: string | null;
+  count: number;
+  tweets: CachedTweet[];
 }
 
 export interface NicheReportData {
