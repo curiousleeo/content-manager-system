@@ -316,8 +316,8 @@ def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) ->
     if not project.personal_x_handle:
         raise HTTPException(status_code=400, detail="No personal X handle set. Add it in Project → Integrations.")
 
-    # Bearer token for fetching (same path as competitor fetch — proven to work)
-    token = bearer_token or project.x_bearer_token or _settings.x_bearer_token
+    # Bearer token: global Railway env var takes precedence over stale project-level token
+    token = bearer_token or _settings.x_bearer_token or project.x_bearer_token
     if not token:
         raise HTTPException(status_code=400, detail="No X bearer token configured.")
     fetch_client = _get_client(token)
