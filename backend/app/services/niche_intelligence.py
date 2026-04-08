@@ -42,20 +42,21 @@ def analyze_niche(scraped_data: list[dict], project_context: dict | None = None)
         if parts:
             proj_note = "\n\nOur project context (use this to frame relevance):\n" + "\n".join(f"- {p}" for p in parts)
 
-    # Condense scraped data into a flat list of posts for the prompt
+    # Condense scraped data into a flat list of posts for the prompt.
+    # Cap at 25 posts per account (top by likes) to keep the prompt size bounded.
     all_posts = []
     for account in scraped_data:
         handle = account.get("handle", "unknown")
         category = account.get("category", "competitor")
-        for post in account.get("posts", []):
+        posts = account.get("posts", [])
+        posts = sorted(posts, key=lambda p: p.get("likes", 0), reverse=True)[:25]
+        for post in posts:
+            text = post.get("text", "")[:400]  # cap text length
             all_posts.append({
                 "handle": handle,
                 "category": category,
-                "text": post.get("text", ""),
-                "hook_type": post.get("hook_type", ""),
-                "post_format": post.get("post_format", ""),
-                "engagement_level": post.get("engagement_level", ""),
-                "why_it_worked": post.get("why_it_worked", ""),
+                "text": text,
+                "likes": post.get("likes", 0),
             })
 
     if not all_posts:
@@ -97,7 +98,7 @@ Return ONLY valid JSON, no markdown, no explanation."""
 
     response = client.messages.create(
         model=MODEL,
-        max_tokens=3000,
+        max_tokens=8000,
         messages=[{"role": "user", "content": prompt}],
     )
     raw = response.content[0].text
