@@ -28,6 +28,15 @@ def _run_column_migrations():
     with engine.connect() as conn:
         from sqlalchemy import text, inspect
 
+        # One-time fix: clear stale project-level bearer tokens so they fall back to env var
+        try:
+            conn.execute(text("UPDATE projects SET x_bearer_token = NULL WHERE x_bearer_token IS NOT NULL AND x_bearer_token != ''"))
+            conn.commit()
+            print("[db.migration] Cleared stale project bearer tokens → will use Railway X_BEARER_TOKEN", flush=True)
+        except Exception as e:
+            conn.rollback()
+            print(f"[db.migration] bearer token clear skipped: {e}", flush=True)
+
         for sql in add_col_migrations:
             try:
                 if is_sqlite:
