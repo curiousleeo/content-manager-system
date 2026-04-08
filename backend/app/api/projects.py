@@ -21,6 +21,7 @@ class ProjectCreate(BaseModel):
     posting_times: Optional[list[str]] = None
     coingecko_enabled: Optional[bool] = False
     telegram_channels: Optional[list[str]] = None
+    x_bearer_token: Optional[str] = None
 
 
 class ProjectUpdate(ProjectCreate):
@@ -42,6 +43,7 @@ def serialize(p: Project) -> dict:
         "posting_times":      p.posting_times or [],
         "coingecko_enabled":  bool(p.coingecko_enabled),
         "telegram_channels":  p.telegram_channels or [],
+        "x_bearer_token":     p.x_bearer_token or "",
         "created_at":         p.created_at.isoformat() if p.created_at else None,
     }
 

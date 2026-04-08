@@ -11,6 +11,7 @@ const NAV_SECTIONS = [
   { id: "pillars", label: "Content Pillars" },
   { id: "schedule", label: "Posting Schedule" },
   { id: "channels", label: "Logic & Channels" },
+  { id: "integrations", label: "Integrations" },
 ];
 
 const empty = (): Partial<Project> => ({
@@ -430,6 +431,25 @@ export default function ProjectsPage() {
                   />
                   <p style={{ fontSize: "11px", color: "var(--ti)", marginTop: "6px" }}>
                     Only public channels. Scraped automatically during research.
+                  </p>
+                </FieldRow>
+              </>
+            )}
+
+            {activeSection === "integrations" && (
+              <>
+                <SectionHeading>Integrations</SectionHeading>
+                <FieldRow label="X Bearer Token" hint="Required for Niche Intelligence">
+                  <input
+                    style={inputStyle()}
+                    type="password"
+                    value={editing.x_bearer_token ?? ""}
+                    onChange={(e) => setEditing({ ...editing, x_bearer_token: e.target.value })}
+                    placeholder="Bearer token from developer.twitter.com"
+                  />
+                  <p style={{ fontSize: "11px", color: "var(--ti)", marginTop: "6px" }}>
+                    Used to scrape competitor timelines. Get it from the X Developer Portal → your app → Keys & Tokens.
+                    If left blank, falls back to the global <code style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>X_BEARER_TOKEN</code> env var.
                   </p>
                 </FieldRow>
               </>

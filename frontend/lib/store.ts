@@ -24,6 +24,7 @@ export interface Project {
   coingecko_enabled?: boolean;
   telegram_channels?: string[];
   timezone?: string;
+  x_bearer_token?: string;
 }
 
 const ls = {

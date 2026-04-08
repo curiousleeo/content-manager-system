@@ -126,8 +126,17 @@ def run_niche_report(
         proj_ctx = {"tone": project.tone, "target_audience": project.target_audience}
         bearer = project.x_bearer_token or None
 
+    # Require a bearer token — either per-project or global fallback
+    from app.core.config import settings as _settings
+    effective_bearer = bearer or _settings.x_bearer_token or None
+    if not effective_bearer:
+        raise HTTPException(
+            status_code=400,
+            detail="No X bearer token configured. Add one in Project settings (Integrations tab) or set X_BEARER_TOKEN in your environment.",
+        )
+
     # Scrape — passes WatchedAccount ORM objects directly (niche_scraper manages its own session)
-    scraped = scrape_watched_accounts(accounts, auto=False, force=force, bearer_token=bearer)
+    scraped = scrape_watched_accounts(accounts, auto=False, force=force, bearer_token=effective_bearer)
 
     # Count actual API calls made
     api_calls_made = sum(1 for s in scraped if not s.get("used_cache"))
