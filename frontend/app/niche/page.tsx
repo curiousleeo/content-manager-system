@@ -486,6 +486,12 @@ export default function NichePage() {
                     </button>
                   </div>
                 )}
+                {latestReport?.status === "injected" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 14px", borderRadius: "8px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)" }}>
+                    <CheckCircle2 size={13} color="var(--green)" />
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--green)" }}>Active — influencing content generation</span>
+                  </div>
+                )}
               </div>
 
               {!latestReport?.swipe_file?.length ? (
