@@ -330,7 +330,7 @@ def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) ->
         user_id = project.personal_x_user_id
 
     try:
-        tweets = fetch_own_timeline(client, user_id)
+        tweets = fetch_own_timeline(client, user_id, handle=project.personal_x_handle or "")
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Failed to fetch timeline (user_id={user_id}): {type(e).__name__}: {e}")
 
