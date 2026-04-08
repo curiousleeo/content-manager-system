@@ -73,46 +73,28 @@ def _fetch_timeline(client: tweepy.Client, user_id: str) -> list[dict]:
 
 def fetch_own_timeline(client: tweepy.Client, user_id: str, handle: str = "") -> list[dict]:
     """
-    Fetch the user's own recent tweets for audit.
-    Tries search_recent_tweets first (different endpoint, avoids per-user billing quirks),
-    falls back to get_users_tweets if search fails.
-    No engagement filter — audit needs all recent tweets.
+    Fetch the user's own recent tweets for audit using get_users_tweets.
+    Works with both OAuth 1.0a (user context) and bearer token.
+    No engagement filter — audit needs all recent tweets regardless of likes.
     """
-    # Try search endpoint first — uses from: operator, different billing path
-    if handle:
-        try:
-            resp = client.search_recent_tweets(
-                query=f"from:{handle} -is:retweet -is:reply lang:en",
-                tweet_fields=["public_metrics"],
-                max_results=100,
-            )
-            if resp.data:
-                return [
-                    {
-                        "id": str(t.id),
-                        "text": t.text,
-                        "likes":       (t.public_metrics or {}).get("like_count", 0),
-                        "replies":     (t.public_metrics or {}).get("reply_count", 0),
-                        "retweets":    (t.public_metrics or {}).get("retweet_count", 0),
-                        "impressions": (t.public_metrics or {}).get("impression_count", 0),
-                    }
-                    for t in resp.data
-                ]
-        except Exception:
-            pass  # fall through to get_users_tweets
-
-    # Fallback: direct timeline endpoint without tweet_fields
     resp = client.get_users_tweets(
         id=user_id,
         exclude=["retweets", "replies"],
-        max_results=50,
+        tweet_fields=["public_metrics"],
+        max_results=100,
     )
     if not resp.data:
         return []
 
     return [
-        {"id": str(t.id), "text": t.text,
-         "likes": 0, "replies": 0, "retweets": 0, "impressions": 0}
+        {
+            "id": str(t.id),
+            "text": t.text,
+            "likes":       (t.public_metrics or {}).get("like_count", 0),
+            "replies":     (t.public_metrics or {}).get("reply_count", 0),
+            "retweets":    (t.public_metrics or {}).get("retweet_count", 0),
+            "impressions": (t.public_metrics or {}).get("impression_count", 0),
+        }
         for t in resp.data
     ]
 

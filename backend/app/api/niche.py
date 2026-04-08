@@ -316,15 +316,20 @@ def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) ->
     if not project.personal_x_handle:
         raise HTTPException(status_code=400, detail="No personal X handle set. Add it in Project → Integrations.")
 
-    # Prefer OAuth 1.0a (user context) — doesn't hit pay-per-use billing
-    has_oauth = all([project.x_api_key, project.x_api_secret,
-                     project.x_access_token, project.x_access_token_secret])
+    # Prefer OAuth 1.0a (user context) — works without pay-per-use credits
+    # Check project-level first, fall back to global Railway env vars
+    api_key    = project.x_api_key    or _settings.x_api_key
+    api_secret = project.x_api_secret or _settings.x_api_secret
+    acc_token  = project.x_access_token or _settings.x_access_token
+    acc_secret = project.x_access_token_secret or _settings.x_access_token_secret
+
+    has_oauth = all([api_key, api_secret, acc_token, acc_secret])
     if has_oauth:
         client = _tweepy.Client(
-            consumer_key=project.x_api_key,
-            consumer_secret=project.x_api_secret,
-            access_token=project.x_access_token,
-            access_token_secret=project.x_access_token_secret,
+            consumer_key=api_key,
+            consumer_secret=api_secret,
+            access_token=acc_token,
+            access_token_secret=acc_secret,
             wait_on_rate_limit=False,
         )
     else:
