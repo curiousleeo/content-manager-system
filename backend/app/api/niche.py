@@ -249,6 +249,19 @@ def get_latest_report(project_id: int, db: Session = Depends(get_db)):
     return {"report": _serialize_report(report)}
 
 
+def _normalize_insights(items: list) -> list[str]:
+    """Flatten top_insights to plain strings regardless of what Claude returned."""
+    result = []
+    for i in items:
+        if isinstance(i, str):
+            result.append(i)
+        elif isinstance(i, dict):
+            result.append(i.get("insight") or i.get("text") or i.get("takeaway") or str(i))
+        else:
+            result.append(str(i))
+    return result
+
+
 def _serialize_report(r: NicheReport) -> dict:
     patterns = r.patterns or {}
     return {
@@ -259,7 +272,7 @@ def _serialize_report(r: NicheReport) -> dict:
         "hook_patterns":     patterns.get("hook_patterns", []),
         "dominant_tone":     patterns.get("dominant_tone", ""),
         "post_formats":      patterns.get("post_formats", []),
-        "top_insights":      patterns.get("top_insights", []),
+        "top_insights":      _normalize_insights(patterns.get("top_insights", [])),
         "swipe_file":        r.swipe_file or [],
         "status":            r.status,
         "created_at":        r.created_at.isoformat(),

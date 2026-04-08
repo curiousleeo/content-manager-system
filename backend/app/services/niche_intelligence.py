@@ -91,7 +91,8 @@ Analyze all posts and return a JSON object with:
    Each item: {{"handle": str, "text": str, "hook_type": str, "why": str (1 sentence)}}
    Pick the most diverse set — different hooks, formats, topics.
 
-5. "top_insights": array of 3-5 actionable takeaways for creating better content in this niche.
+5. "top_insights": array of 3-5 plain strings — each a single actionable takeaway.
+   Must be strings, NOT objects. Example: ["Use question hooks — they get 2x replies", "Keep posts under 3 lines"]
    Be specific and practical. Reference patterns you actually observed.
 
 Return ONLY valid JSON, no markdown, no explanation."""
@@ -110,6 +111,16 @@ Return ONLY valid JSON, no markdown, no explanation."""
     if start > 0:
         raw = raw[start:]
     try:
-        return json.loads(raw)
+        result = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ValueError(f"Claude returned non-JSON response: {exc}. Raw: {raw[:300]}")
+
+    # Normalize top_insights — Claude sometimes returns objects instead of strings
+    raw_insights = result.get("top_insights", [])
+    result["top_insights"] = [
+        i if isinstance(i, str)
+        else i.get("insight") or i.get("text") or i.get("takeaway") or str(i)
+        for i in raw_insights
+    ]
+
+    return result
