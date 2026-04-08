@@ -43,7 +43,7 @@ def _lookup_user_id(client: tweepy.Client, handle: str) -> str:
 
 def _fetch_timeline(client: tweepy.Client, user_id: str) -> list[dict]:
     """
-    Call GET /2/users/:id/tweets once — max 100 original posts, sorted by relevancy.
+    Call GET /2/users/:id/tweets once — max 100 original posts.
     Returns list of dicts with id, text, likes, replies, retweets, impressions.
     """
     resp = client.get_users_tweets(
@@ -69,6 +69,27 @@ def _fetch_timeline(client: tweepy.Client, user_id: str) -> list[dict]:
 
     # Filter engagement post-hoc — never paginate to find more
     return [t for t in tweets if t["likes"] >= MIN_LIKES]
+
+
+def fetch_own_timeline(client: tweepy.Client, user_id: str) -> list[dict]:
+    """
+    Fetch the authenticated user's own tweets without requesting public_metrics.
+    Uses a smaller max_results to stay within pay-per-use credit limits.
+    No engagement filter — we want all recent tweets for audit purposes.
+    """
+    resp = client.get_users_tweets(
+        id=user_id,
+        exclude=["retweets", "replies"],
+        max_results=50,
+    )
+    if not resp.data:
+        return []
+
+    return [
+        {"id": str(t.id), "text": t.text,
+         "likes": 0, "replies": 0, "retweets": 0, "impressions": 0}
+        for t in resp.data
+    ]
 
 
 def get_cache_status(account: WatchedAccount) -> dict:

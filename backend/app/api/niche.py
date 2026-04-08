@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.content import WatchedAccount, NicheReport, Project, PersonalAudit
-from app.scrapers.niche_scraper import scrape_watched_accounts, get_cache_status, _get_client, _lookup_user_id, _fetch_timeline
+from app.scrapers.niche_scraper import scrape_watched_accounts, get_cache_status, _get_client, _lookup_user_id, _fetch_timeline, fetch_own_timeline
 from app.services.niche_intelligence import analyze_niche
 from app.services.tweet_auditor import audit_tweets
 from app.services.usage_tracker import record_usage
@@ -330,9 +330,9 @@ def _fetch_user_tweets(project: Project, db, bearer_token: str | None = None) ->
         user_id = project.personal_x_user_id
 
     try:
-        tweets = _fetch_timeline(client, user_id)
+        tweets = fetch_own_timeline(client, user_id)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Failed to fetch timeline: {e}")
+        raise HTTPException(status_code=502, detail=f"Failed to fetch timeline (user_id={user_id}): {type(e).__name__}: {e}")
 
     return tweets
 
