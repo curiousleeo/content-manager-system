@@ -7,11 +7,11 @@ import { store } from "@/lib/store";
 import { Search, Zap, Loader2, Check, ArrowRight, Lightbulb } from "lucide-react";
 
 const SOURCES = [
-  { key: "google_trends", label: "Google Trends",   accentColor: "var(--gold)",     accentDim: "rgba(255,184,0,0.10)",    accentBorder: "rgba(255,184,0,0.25)"    },
-  { key: "coingecko",     label: "CoinGecko",        accentColor: "var(--purple-l)", accentDim: "rgba(107,47,217,0.10)",   accentBorder: "rgba(107,47,217,0.25)"   },
-  { key: "youtube",       label: "YouTube",           accentColor: "var(--red)",      accentDim: "rgba(239,68,68,0.08)",    accentBorder: "rgba(239,68,68,0.20)"    },
-  { key: "telegram",      label: "Telegram",          accentColor: "var(--blue)",     accentDim: "rgba(29,161,242,0.08)",   accentBorder: "rgba(29,161,242,0.20)"   },
-  { key: "grok_manual",   label: "Grok Manual",       accentColor: "var(--t2)",       accentDim: "rgba(255,255,255,0.05)",  accentBorder: "rgba(255,255,255,0.12)"  },
+  { key: "competitor_topics", label: "Competitor Topics", accentColor: "var(--green)",    accentDim: "rgba(34,197,94,0.10)",    accentBorder: "rgba(34,197,94,0.25)",   always: true  },
+  { key: "google_trends",     label: "Google Trends",     accentColor: "var(--gold)",     accentDim: "rgba(255,184,0,0.10)",    accentBorder: "rgba(255,184,0,0.25)",   always: true  },
+  { key: "coingecko",         label: "CoinGecko",         accentColor: "var(--purple-l)", accentDim: "rgba(107,47,217,0.10)",   accentBorder: "rgba(107,47,217,0.25)",  always: false },
+  { key: "telegram",          label: "Telegram",          accentColor: "var(--blue)",     accentDim: "rgba(29,161,242,0.08)",   accentBorder: "rgba(29,161,242,0.20)",  always: false },
+  { key: "grok_manual",       label: "Grok Manual",       accentColor: "var(--t2)",       accentDim: "rgba(255,255,255,0.05)",  accentBorder: "rgba(255,255,255,0.12)", always: true  },
 ];
 
 const SOURCE_LABELS: Record<string, string> = Object.fromEntries(SOURCES.map((s) => [s.key, s.label]));
@@ -19,7 +19,7 @@ const SOURCE_LABELS: Record<string, string> = Object.fromEntries(SOURCES.map((s)
 export default function ResearchPage() {
   const router = useRouter();
   const [query, setQuery]       = useState("");
-  const [sources, setSources]   = useState<string[]>(["google_trends"]);
+  const [sources, setSources]   = useState<string[]>(["competitor_topics"]);
   const [loading, setLoading]   = useState(false);
   const [results, setResults]   = useState<Record<string, unknown> | null>(null);
   const [error, setError]       = useState("");
@@ -70,7 +70,7 @@ export default function ResearchPage() {
   }
 
   const availableSources = SOURCES.filter((s) =>
-    s.key === "google_trends" || s.key === "grok_manual" || (s.key === "coingecko" && coingeckoEnabled)
+    s.always || (s.key === "coingecko" && coingeckoEnabled)
   );
 
   return (
@@ -279,34 +279,84 @@ export default function ResearchPage() {
                       <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: srcConfig?.accentColor ?? "var(--t2)" }}>
                         {SOURCE_LABELS[source] ?? source}
                       </span>
+                      {source === "competitor_topics" && typeof items === "object" && items !== null && !Array.isArray(items) && (
+                        <span style={{ fontSize: "10px", color: "var(--t3)", marginLeft: "auto" }}>
+                          {(items as Record<string, unknown>).posts_analyzed as number} posts analyzed · {(items as Record<string, unknown>).accounts_sampled as number} accounts
+                        </span>
+                      )}
                     </div>
-                    {Array.isArray(items) && items.length > 0 ? (
+
+                    {/* Competitor Topics — structured topic cards */}
+                    {source === "competitor_topics" && typeof items === "object" && items !== null && !Array.isArray(items) && (() => {
+                      type Topic = { topic?: string; angle?: string; why_it_works?: string; example_tweet?: string; handle?: string; engagement?: number };
+                      const topics = ((items as Record<string, unknown>).topics as Topic[]) ?? [];
+                      return topics.length > 0 ? (
+                        <div>
+                          {topics.map((t, i) => (
+                            <div key={i} style={{ padding: "14px 18px", borderBottom: i < topics.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px", marginBottom: "4px" }}>
+                                <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--t1)" }}>{t.topic ?? ""}</span>
+                                {t.engagement && <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--green)", flexShrink: 0 }}>{t.engagement} score</span>}
+                              </div>
+                              {t.angle && <p style={{ fontSize: "12px", color: "var(--gold)", margin: "0 0 4px" }}>Angle: {t.angle}</p>}
+                              {t.why_it_works && <p style={{ fontSize: "11px", color: "var(--t3)", margin: "0 0 8px", lineHeight: 1.5 }}>{t.why_it_works}</p>}
+                              {t.example_tweet && (
+                                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "6px", padding: "8px 10px", borderLeft: "2px solid rgba(34,197,94,0.3)" }}>
+                                  <p style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--t2)", margin: "0 0 3px", lineHeight: 1.5 }}>&ldquo;{t.example_tweet}&rdquo;</p>
+                                  {t.handle && <span style={{ fontSize: "10px", color: "var(--t3)" }}>@{t.handle}</span>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ padding: "14px 18px", fontSize: "13px", color: "var(--t3)" }}>
+                          No competitor data yet. Add watched accounts in Niche Intelligence and run a report first.
+                        </p>
+                      );
+                    })()}
+
+                    {/* Google Trends — flat string list */}
+                    {source === "google_trends" && Array.isArray(items) && (
                       <div>
-                        {(items as Record<string, unknown>[]).slice(0, 8).map((item, i) => (
-                          <div key={i} style={{ padding: "11px 18px", fontSize: "13px", color: "var(--t2)", borderBottom: i < 7 ? "1px solid rgba(255,255,255,0.03)" : "none", lineHeight: 1.5 }}>
-                            {source === "google_trends" && <span style={{ color: "var(--t1)" }}>{String(item)}</span>}
-                            {source === "coingecko" && (
-                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span style={{ fontWeight: 500, color: "var(--t1)" }}>{String((item as Record<string, unknown>).name ?? "")}</span>
-                                <span style={{ fontSize: "10px", fontFamily: "var(--font-mono), monospace", color: "var(--t3)" }}>{String((item as Record<string, unknown>).symbol ?? "").toUpperCase()}</span>
-                                {(item as Record<string, unknown>).market_cap_rank != null && (
-                                  <span style={{ fontSize: "10px", color: "var(--t3)" }}>#{String((item as Record<string, unknown>).market_cap_rank)}</span>
-                                )}
-                              </div>
-                            )}
-                            {source === "telegram" && (
-                              <div>
-                                <p style={{ marginBottom: "3px", color: "var(--t1)", lineHeight: 1.55 }}>{String((item as Record<string, unknown>).text ?? "")}</p>
-                                <span style={{ fontSize: "10px", fontFamily: "var(--font-mono), monospace", color: "var(--t3)" }}>@{String((item as Record<string, unknown>).channel ?? "")}</span>
-                              </div>
-                            )}
+                        {(items as string[]).slice(0, 8).map((item, i) => (
+                          <div key={i} style={{ padding: "10px 18px", fontSize: "13px", color: "var(--t1)", borderBottom: i < 7 ? "1px solid rgba(255,255,255,0.03)" : "none" }}>
+                            {item}
                           </div>
                         ))}
                       </div>
-                    ) : typeof items === "string" ? (
-                      <p style={{ padding: "14px 18px", fontSize: "13px", color: "var(--t2)", whiteSpace: "pre-wrap", lineHeight: 1.65 }}>{items}</p>
-                    ) : (
-                      <p style={{ padding: "14px 18px", fontSize: "13px", color: "var(--t3)" }}>No results</p>
+                    )}
+
+                    {/* CoinGecko */}
+                    {source === "coingecko" && Array.isArray(items) && (
+                      <div>
+                        {(items as Record<string, unknown>[]).slice(0, 8).map((item, i) => (
+                          <div key={i} style={{ padding: "10px 18px", fontSize: "13px", color: "var(--t2)", borderBottom: i < 7 ? "1px solid rgba(255,255,255,0.03)" : "none", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontWeight: 500, color: "var(--t1)" }}>{String(item.name ?? "")}</span>
+                            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--t3)" }}>{String(item.symbol ?? "").toUpperCase()}</span>
+                            {item.market_cap_rank != null && <span style={{ fontSize: "10px", color: "var(--t3)" }}>#{String(item.market_cap_rank)}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Telegram */}
+                    {source === "telegram" && Array.isArray(items) && (
+                      <div>
+                        {(items as Record<string, unknown>[]).slice(0, 6).map((item, i) => (
+                          <div key={i} style={{ padding: "11px 18px", fontSize: "13px", color: "var(--t2)", borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.03)" : "none" }}>
+                            <p style={{ marginBottom: "3px", color: "var(--t1)", lineHeight: 1.55 }}>{String(item.text ?? "")}</p>
+                            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--t3)" }}>@{String(item.channel ?? "")}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Fallback for unknown sources */}
+                    {!["competitor_topics", "google_trends", "coingecko", "telegram"].includes(source) && (
+                      typeof items === "string"
+                        ? <p style={{ padding: "14px 18px", fontSize: "13px", color: "var(--t2)", whiteSpace: "pre-wrap", lineHeight: 1.65 }}>{items}</p>
+                        : <p style={{ padding: "14px 18px", fontSize: "13px", color: "var(--t3)" }}>No results</p>
                     )}
                   </div>
                 );
@@ -326,26 +376,23 @@ export default function ResearchPage() {
                 </p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                {["GOOGLE TRENDS", "COINGECKO", "GROK MANUAL"].map((label, i) => {
-                  const colors = [
-                    { color: "var(--gold)",     border: "rgba(255,184,0,0.15)"    },
-                    { color: "var(--purple-l)", border: "rgba(107,47,217,0.15)"   },
-                    { color: "var(--t3)",       border: "rgba(255,255,255,0.07)"  },
-                  ];
-                  return (
-                    <div key={label} style={{ background: "var(--bg-card)", border: `1px solid ${colors[i].border}`, borderRadius: "12px", overflow: "hidden" }}>
-                      <div style={{ padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: colors[i].color }} />
-                        <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: colors[i].color }}>{label}</span>
-                      </div>
-                      <div style={{ padding: "24px 18px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                        {[...Array(3)].map((_, j) => (
-                          <div key={j} style={{ height: "12px", borderRadius: "4px", background: "rgba(255,255,255,0.04)", width: j === 0 ? "80%" : j === 1 ? "65%" : "50%" }} />
-                        ))}
-                      </div>
+                {[
+                  { label: "COMPETITOR TOPICS", color: "var(--green)",    border: "rgba(34,197,94,0.15)"    },
+                  { label: "GOOGLE TRENDS",     color: "var(--gold)",     border: "rgba(255,184,0,0.15)"    },
+                  { label: "GROK MANUAL",       color: "var(--t3)",       border: "rgba(255,255,255,0.07)"  },
+                ].map(({ label, color, border }) => (
+                  <div key={label} style={{ background: "var(--bg-card)", border: `1px solid ${border}`, borderRadius: "12px", overflow: "hidden" }}>
+                    <div style={{ padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color }} />
+                      <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color }}>{label}</span>
                     </div>
-                  );
-                })}
+                    <div style={{ padding: "24px 18px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {[...Array(3)].map((_, j) => (
+                        <div key={j} style={{ height: "12px", borderRadius: "4px", background: "rgba(255,255,255,0.04)", width: j === 0 ? "80%" : j === 1 ? "65%" : "50%" }} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}

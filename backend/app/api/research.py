@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.scrapers import google_scraper
 from app.scrapers.coingecko_scraper import get_trending_coins
 from app.scrapers.telegram_scraper import scrape_channels
+from app.services.topic_discovery import discover_topics
 from app.core.database import get_db
 from app.models.content import ResearchTopic, Project
 
@@ -14,7 +15,9 @@ router = APIRouter()
 
 class ResearchRequest(BaseModel):
     query: str
-    sources: list[str] = ["google_trends"]
+    # Default is now competitor_topics — reads from cached tweets, no API cost.
+    # google_trends is available but no longer the default.
+    sources: list[str] = ["competitor_topics"]
     project_id: Optional[int] = None
 
 
@@ -29,7 +32,16 @@ def run_research(req: ResearchRequest, db: Session = Depends(get_db)):
     results = {}
     sources_used = []
 
-    # Google Trends — always available
+    # Competitor topics — primary source. Reads cached tweets already in DB.
+    # No X API calls. Uses Claude Haiku to extract what's getting traction.
+    if "competitor_topics" in req.sources and req.project_id:
+        discovery = discover_topics(req.project_id, db)
+        if discovery["has_data"]:
+            results["competitor_topics"] = discovery
+            sources_used.append("competitor_topics")
+
+    # Google Trends — supplementary only. Useful for search intent context.
+    # Not the primary source — keyword lists don't produce usable content angles.
     if "google_trends" in req.sources:
         results["google_trends"] = google_scraper.google_trends_related(req.query)
         sources_used.append("google_trends")

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import research, insights, content, review, scheduler, projects, notifications, niche, analytics, calendar
+from app.api import research, insights, content, review, scheduler, projects, notifications, niche, analytics, calendar, brand_brain
 from app.core.config import settings
 from app.core.database import init_db
 
@@ -40,6 +40,7 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["not
 app.include_router(niche.router, prefix="/api/niche", tags=["niche"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
+app.include_router(brand_brain.router, prefix="/api/brand-brain", tags=["brand-brain"])
 
 
 @app.get("/health")

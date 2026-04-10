@@ -1,18 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { api, type BrandBrainData } from "@/lib/api";
 import { store, type Project } from "@/lib/store";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 const NAV_SECTIONS = [
   { id: "identity", label: "Core Identity" },
+  { id: "brand-brain", label: "Brand Brain" },
   { id: "pillars", label: "Content Pillars" },
   { id: "schedule", label: "Posting Schedule" },
   { id: "channels", label: "Logic & Channels" },
   { id: "integrations", label: "Integrations" },
 ];
+
+const emptyBrain = (): BrandBrainData => ({
+  mission: "",
+  core_beliefs: [],
+  hard_nos: [],
+  topic_angles: {},
+  voice_examples: [],
+  competitor_gap: "",
+});
 
 const empty = (): Partial<Project> => ({
   name: "",
@@ -53,6 +63,14 @@ export default function ProjectsPage() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeSection, setActiveSection] = useState("identity");
   const [pillarInput, setPillarInput] = useState("");
+  const [brain, setBrain] = useState<BrandBrainData>(emptyBrain());
+  // topic angle editor state
+  const [angleKey, setAngleKey] = useState("");
+  const [angleVal, setAngleVal] = useState("");
+  // list item editors
+  const [beliefInput, setBeliefInput] = useState("");
+  const [hardNoInput, setHardNoInput] = useState("");
+  const [exampleInput, setExampleInput] = useState("");
 
   useEffect(() => {
     loadProjects();
@@ -66,15 +84,34 @@ export default function ProjectsPage() {
     } catch { /* backend may not be running */ }
   }
 
+  async function openEditor(p: Project | null, isNewProject: boolean) {
+    setEditing(p ?? empty());
+    setIsNew(isNewProject);
+    setActiveSection("identity");
+    setBrain(emptyBrain());
+    if (p?.id) {
+      try {
+        const data = await api.brandBrain.get(p.id);
+        setBrain(data);
+      } catch { /* brain may not exist yet — empty is fine */ }
+    }
+  }
+
   async function save() {
     if (!editing?.name?.trim()) return;
     setSaving(true);
     setError("");
     try {
+      let savedId = editing.id;
       if (isNew) {
-        await api.projects.create(editing);
+        const created = await api.projects.create(editing) as Project;
+        savedId = created.id;
       } else {
         await api.projects.update(editing.id!, editing);
+      }
+      // Save brain alongside project (only if project has an id)
+      if (savedId) {
+        await api.brandBrain.upsert(savedId, brain);
       }
       setEditing(null);
       await loadProjects();
@@ -138,7 +175,7 @@ export default function ProjectsPage() {
         </div>
         {!editing && (
           <button
-            onClick={() => { setEditing(empty()); setIsNew(true); setActiveSection("identity"); }}
+            onClick={() => openEditor(null, true)}
             style={{ padding: "10px 22px", background: "var(--gold)", color: "#000", fontSize: "13px", fontWeight: 700, borderRadius: "10px", border: "none", cursor: "pointer", fontFamily: "var(--font-manrope)" }}
           >
             New Project
@@ -197,7 +234,7 @@ export default function ProjectsPage() {
                     {activeProject?.id === p.id ? "Active" : "Select"}
                   </button>
                   <button
-                    onClick={() => { setEditing(p); setIsNew(false); setActiveSection("identity"); }}
+                    onClick={() => openEditor(p, false)}
                     style={{ fontSize: "12px", padding: "7px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)", color: "var(--t2)", background: "var(--bg-mid)", cursor: "pointer" }}
                   >
                     Edit
@@ -295,6 +332,153 @@ export default function ProjectsPage() {
                     value={editing.target_audience ?? ""}
                     onChange={(e) => setEditing({ ...editing, target_audience: e.target.value })}
                     placeholder="e.g. active crypto traders, DeFi users"
+                  />
+                </FieldRow>
+              </>
+            )}
+
+            {activeSection === "brand-brain" && (
+              <>
+                <SectionHeading>Brand Brain</SectionHeading>
+                <p style={{ fontSize: "12px", color: "var(--ti)", marginTop: "-12px" }}>
+                  Set once. Used in every generation call. This is what makes the content sound like you — not generic AI.
+                </p>
+
+                {/* Mission */}
+                <FieldRow label="Mission" hint="One line. What is this brand fundamentally doing?">
+                  <input
+                    style={inputStyle()}
+                    value={brain.mission ?? ""}
+                    onChange={(e) => setBrain({ ...brain, mission: e.target.value })}
+                    placeholder="e.g. Give active traders a self-custodial terminal that works across every asset class"
+                  />
+                </FieldRow>
+
+                {/* Core beliefs */}
+                <FieldRow label="Core Beliefs" hint="What does this brand believe that most people don't?">
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                    <input
+                      style={{ ...inputStyle(), flex: 1 }}
+                      value={beliefInput}
+                      onChange={(e) => setBeliefInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && beliefInput.trim()) {
+                          setBrain({ ...brain, core_beliefs: [...brain.core_beliefs, beliefInput.trim()] });
+                          setBeliefInput("");
+                        }
+                      }}
+                      placeholder="e.g. Self-custody is the minimum requirement, not a feature"
+                    />
+                    <button
+                      onClick={() => { if (beliefInput.trim()) { setBrain({ ...brain, core_beliefs: [...brain.core_beliefs, beliefInput.trim()] }); setBeliefInput(""); } }}
+                      style={addBtnStyle(!beliefInput.trim())}
+                    >+ Add</button>
+                  </div>
+                  <TagList items={brain.core_beliefs} onRemove={(i) => setBrain({ ...brain, core_beliefs: brain.core_beliefs.filter((_, idx) => idx !== i) })} />
+                </FieldRow>
+
+                {/* Hard nos */}
+                <FieldRow label="Hard No's" hint="What does this brand NEVER say or imply?">
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                    <input
+                      style={{ ...inputStyle(), flex: 1 }}
+                      value={hardNoInput}
+                      onChange={(e) => setHardNoInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && hardNoInput.trim()) {
+                          setBrain({ ...brain, hard_nos: [...brain.hard_nos, hardNoInput.trim()] });
+                          setHardNoInput("");
+                        }
+                      }}
+                      placeholder="e.g. Price predictions, moon talk, 'buy the dip'"
+                    />
+                    <button
+                      onClick={() => { if (hardNoInput.trim()) { setBrain({ ...brain, hard_nos: [...brain.hard_nos, hardNoInput.trim()] }); setHardNoInput(""); } }}
+                      style={addBtnStyle(!hardNoInput.trim())}
+                    >+ Add</button>
+                  </div>
+                  <TagList items={brain.hard_nos} onRemove={(i) => setBrain({ ...brain, hard_nos: brain.hard_nos.filter((_, idx) => idx !== i) })} color="var(--red)" borderColor="rgba(239,68,68,0.25)" bg="rgba(239,68,68,0.06)" />
+                </FieldRow>
+
+                {/* Topic angles */}
+                <FieldRow label="Topic Angles" hint="When X is trending, here's our take on it">
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                    <input
+                      style={{ ...inputStyle(), flex: "0 0 38%" }}
+                      value={angleKey}
+                      onChange={(e) => setAngleKey(e.target.value)}
+                      placeholder="topic (e.g. market crash)"
+                    />
+                    <input
+                      style={{ ...inputStyle(), flex: 1 }}
+                      value={angleVal}
+                      onChange={(e) => setAngleVal(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && angleKey.trim() && angleVal.trim()) {
+                          setBrain({ ...brain, topic_angles: { ...brain.topic_angles, [angleKey.trim()]: angleVal.trim() } });
+                          setAngleKey(""); setAngleVal("");
+                        }
+                      }}
+                      placeholder="our angle (e.g. tools work in both directions)"
+                    />
+                    <button
+                      onClick={() => { if (angleKey.trim() && angleVal.trim()) { setBrain({ ...brain, topic_angles: { ...brain.topic_angles, [angleKey.trim()]: angleVal.trim() } }); setAngleKey(""); setAngleVal(""); } }}
+                      style={addBtnStyle(!angleKey.trim() || !angleVal.trim())}
+                    >+ Add</button>
+                  </div>
+                  {Object.entries(brain.topic_angles).length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {Object.entries(brain.topic_angles).map(([k, v]) => (
+                        <div key={k} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "8px", background: "var(--bg-mid)", border: "1px solid rgba(255,255,255,0.06)", fontSize: "12px" }}>
+                          <span style={{ color: "var(--gold)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>{k}</span>
+                          <span style={{ color: "var(--ti)" }}>→</span>
+                          <span style={{ color: "var(--t2)", flex: 1 }}>{v}</span>
+                          <button onClick={() => { const next = { ...brain.topic_angles }; delete next[k]; setBrain({ ...brain, topic_angles: next }); }} style={{ background: "none", border: "none", color: "var(--ti)", cursor: "pointer", fontSize: "14px", lineHeight: 1, padding: 0 }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </FieldRow>
+
+                {/* Voice examples */}
+                <FieldRow label="Voice Examples" hint="3–5 hand-written tweets that sound exactly like this brand">
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                    <input
+                      style={{ ...inputStyle(), flex: 1 }}
+                      value={exampleInput}
+                      onChange={(e) => setExampleInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && exampleInput.trim()) {
+                          setBrain({ ...brain, voice_examples: [...brain.voice_examples, exampleInput.trim()] });
+                          setExampleInput("");
+                        }
+                      }}
+                      placeholder="Paste an example tweet that sounds like you"
+                    />
+                    <button
+                      onClick={() => { if (exampleInput.trim()) { setBrain({ ...brain, voice_examples: [...brain.voice_examples, exampleInput.trim()] }); setExampleInput(""); } }}
+                      style={addBtnStyle(!exampleInput.trim())}
+                    >+ Add</button>
+                  </div>
+                  {brain.voice_examples.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {brain.voice_examples.map((ex, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "10px 12px", borderRadius: "8px", background: "var(--bg-mid)", border: "1px solid rgba(255,255,255,0.06)", fontSize: "12px", color: "var(--t2)" }}>
+                          <span style={{ flex: 1, lineHeight: 1.5 }}>&ldquo;{ex}&rdquo;</span>
+                          <button onClick={() => setBrain({ ...brain, voice_examples: brain.voice_examples.filter((_, idx) => idx !== i) })} style={{ background: "none", border: "none", color: "var(--ti)", cursor: "pointer", fontSize: "14px", lineHeight: 1, padding: 0, flexShrink: 0 }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </FieldRow>
+
+                {/* Competitor gap */}
+                <FieldRow label="Competitor Gap" hint="What do competitors do that we explicitly don't?">
+                  <textarea
+                    style={{ ...inputStyle(), minHeight: "80px", resize: "vertical", borderRadius: "8px" }}
+                    value={brain.competitor_gap ?? ""}
+                    onChange={(e) => setBrain({ ...brain, competitor_gap: e.target.value })}
+                    placeholder="e.g. Competitors act as advisors or imply they know what the market will do. We don't. We give traders tools, not tips."
                   />
                 </FieldRow>
               </>
@@ -518,6 +702,41 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function addBtnStyle(disabled: boolean): React.CSSProperties {
+  return {
+    padding: "9px 16px", borderRadius: "8px", fontSize: "12px", fontWeight: 600,
+    background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.3)",
+    color: "var(--gold)", cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.4 : 1, whiteSpace: "nowrap" as const,
+  };
+}
+
+function TagList({
+  items,
+  onRemove,
+  color = "var(--gold)",
+  borderColor = "rgba(255,184,0,0.2)",
+  bg = "rgba(255,184,0,0.08)",
+}: {
+  items: string[];
+  onRemove: (i: number) => void;
+  color?: string;
+  borderColor?: string;
+  bg?: string;
+}) {
+  if (!items.length) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+      {items.map((item, i) => (
+        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "20px", fontSize: "12px", background: bg, border: `1px solid ${borderColor}`, color }}>
+          {item}
+          <button onClick={() => onRemove(i)} style={{ background: "none", border: "none", cursor: "pointer", color, opacity: 0.6, padding: 0, lineHeight: 1, fontSize: "14px" }}>×</button>
+        </span>
+      ))}
     </div>
   );
 }

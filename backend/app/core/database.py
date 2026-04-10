@@ -22,6 +22,11 @@ def _run_column_migrations():
         "ALTER TABLE projects ADD COLUMN IF NOT EXISTS personal_x_handle VARCHAR(100)",
         "ALTER TABLE projects ADD COLUMN IF NOT EXISTS personal_x_user_id VARCHAR(30)",
         "ALTER TABLE projects ADD COLUMN IF NOT EXISTS audit_auto_fetch BOOLEAN DEFAULT FALSE",
+        # brand_brains table — created by create_all, but column guards for safety
+        "ALTER TABLE brand_brains ADD COLUMN IF NOT EXISTS mission TEXT",
+        "ALTER TABLE brand_brains ADD COLUMN IF NOT EXISTS competitor_gap TEXT",
+        # feedback loop — performance score written after analytics pull
+        "ALTER TABLE content_drafts ADD COLUMN IF NOT EXISTS performance_score JSON",
     ]
 
     is_sqlite = engine.dialect.name == "sqlite"

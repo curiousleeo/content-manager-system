@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from app.core.database import get_db
-from app.models.content import ContentDraft, ContentStatus, Platform, Project, NicheReport
+from app.models.content import ContentDraft, ContentStatus, Platform, Project, BrandBrain
 from app.services.claude_service import generate_content, batch_generate_content
+from app.services.example_bank import build_example_bank
 from app.services.x_poster import post_tweet
 from app.services.platform_compliance import hard_block_check
 from app.services.usage_tracker import record_usage
@@ -28,29 +29,28 @@ def _get_project(project_id: int | None, db: Session) -> dict | None:
     }
 
 
-def _get_latest_niche_report(project_id: int | None, db: Session) -> dict | None:
-    """Return the latest injected niche report within 7 days."""
+def _get_brand_brain(project_id: int | None, db: Session) -> dict | None:
     if not project_id:
         return None
-    cutoff = datetime.utcnow() - timedelta(days=7)
-    report = (
-        db.query(NicheReport)
-        .filter(
-            NicheReport.project_id == project_id,
-            NicheReport.report_date >= cutoff,
-            NicheReport.status == "injected",
-        )
-        .order_by(NicheReport.report_date.desc())
-        .first()
-    )
-    if not report:
+    brain = db.query(BrandBrain).filter(BrandBrain.project_id == project_id).first()
+    if not brain:
         return None
-    patterns = report.patterns or {}
     return {
-        "dominant_tone": patterns.get("dominant_tone", ""),
-        "hook_patterns": patterns.get("hook_patterns", []),
-        "swipe_file": report.swipe_file or [],
+        "mission": brain.mission,
+        "core_beliefs": brain.core_beliefs or [],
+        "hard_nos": brain.hard_nos or [],
+        "topic_angles": brain.topic_angles or {},
+        "voice_examples": brain.voice_examples or [],
+        "competitor_gap": brain.competitor_gap,
     }
+
+
+def _get_example_bank(project_id: int | None, db: Session) -> dict | None:
+    """Build rich example bank from cached competitor tweets + injected niche report."""
+    if not project_id:
+        return None
+    bank = build_example_bank(project_id, db)
+    return bank if bank["has_data"] else None
 
 
 def _serialize_draft(d: ContentDraft) -> dict:
@@ -106,8 +106,9 @@ class AutoQueueRequest(BaseModel):
 @router.post("/generate")
 def generate(req: GenerateRequest, db: Session = Depends(get_db)):
     project = _get_project(req.project_id, db)
-    niche_report = _get_latest_niche_report(req.project_id, db)
-    text = generate_content(req.topic, req.insights, req.platform, project=project, niche_report=niche_report)
+    example_bank = _get_example_bank(req.project_id, db)
+    brand_brain = _get_brand_brain(req.project_id, db)
+    text = generate_content(req.topic, req.insights, req.platform, project=project, example_bank=example_bank, brand_brain=brand_brain)
     record_usage(db, "claude_calls", project_id=req.project_id)
     return {"platform": req.platform, "text": text}
 
@@ -123,14 +124,16 @@ def batch_generate(req: BatchGenerateRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="No content pillars configured for this project")
 
     project = _get_project(req.project_id, db)
-    niche_report = _get_latest_niche_report(req.project_id, db)
+    example_bank = _get_example_bank(req.project_id, db)
+    brand_brain = _get_brand_brain(req.project_id, db)
 
     posts = batch_generate_content(
         pillars=pillars,
         insights=req.insights,
         platform=req.platform,
         project=project,
-        niche_report=niche_report,
+        example_bank=example_bank,
+        brand_brain=brand_brain,
         count=req.count,
     )
     record_usage(db, "claude_calls", project_id=req.project_id)

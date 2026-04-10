@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.database import SessionLocal
 from app.models.content import ContentDraft, ContentStatus, PostAnalytics, Project
 from app.models.notifications import Notification
+from app.services.feedback_loop import score_project_posts
 
 log = logging.getLogger(__name__)
 
@@ -97,6 +98,9 @@ def pull_analytics_for_project(project_id: int) -> None:
 
         db.commit()
         log.info("Analytics pulled for project %d — %d tweets", project_id, len(drafts))
+
+        # Feedback loop — score all posts now that analytics are fresh
+        score_project_posts(project_id, db)
 
     except Exception as e:
         log.exception("Analytics pull failed for project %d", project_id)

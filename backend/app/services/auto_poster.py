@@ -6,9 +6,10 @@ import logging
 import pytz
 from datetime import datetime, timedelta
 from app.core.database import SessionLocal
-from app.models.content import ContentDraft, ContentStatus, Platform, Project, NicheReport, ResearchTopic
+from app.models.content import ContentDraft, ContentStatus, Platform, Project, BrandBrain, NicheReport, ResearchTopic
 from app.models.notifications import Notification
 from app.services.claude_service import generate_content
+from app.services.example_bank import build_example_bank
 from app.services.x_poster import post_tweet
 from app.services.platform_compliance import hard_block_check
 from app.services.usage_tracker import record_usage
@@ -55,26 +56,22 @@ def auto_post_for_project(project_id: int) -> None:
             "x_bearer_token": project.x_bearer_token,
         }
 
-        # Load latest injected niche report if within 7 days
-        cutoff = datetime.utcnow() - timedelta(days=7)
-        niche_report_row = (
-            db.query(NicheReport)
-            .filter(
-                NicheReport.project_id == project_id,
-                NicheReport.report_date >= cutoff,
-                NicheReport.status == "injected",
-            )
-            .order_by(NicheReport.report_date.desc())
-            .first()
-        )
-        niche_ctx = None
-        if niche_report_row:
-            patterns = niche_report_row.patterns or {}
-            niche_ctx = {
-                "dominant_tone": patterns.get("dominant_tone", ""),
-                "hook_patterns": patterns.get("hook_patterns", []),
-                "swipe_file": niche_report_row.swipe_file or [],
+        # Load brand brain
+        brain_row = db.query(BrandBrain).filter(BrandBrain.project_id == project_id).first()
+        brand_brain_ctx = None
+        if brain_row:
+            brand_brain_ctx = {
+                "mission":        brain_row.mission,
+                "core_beliefs":   brain_row.core_beliefs or [],
+                "hard_nos":       brain_row.hard_nos or [],
+                "topic_angles":   brain_row.topic_angles or {},
+                "voice_examples": brain_row.voice_examples or [],
+                "competitor_gap": brain_row.competitor_gap,
             }
+
+        # Build example bank (competitor tweets + our own scored posts — no API calls)
+        bank = build_example_bank(project_id, db)
+        example_bank_ctx = bank if bank["has_data"] else None
 
         # ── Draft reservoir: claim oldest queued draft atomically ────────────
         # Phase 1: count available drafts (threshold check)
@@ -147,7 +144,12 @@ def auto_post_for_project(project_id: int) -> None:
                 project.name, pillar, queued_count,
                 "loaded" if research_insights else "none",
             )
-            text = generate_content(pillar, research_insights, "x", project=proj_ctx, niche_report=niche_ctx)
+            text = generate_content(
+                pillar, research_insights, "x",
+                project=proj_ctx,
+                example_bank=example_bank_ctx,
+                brand_brain=brand_brain_ctx,
+            )
             record_usage(db, "claude_calls")
 
         # Compliance check
@@ -317,6 +319,12 @@ def run_niche_report_for_project(project_id: int) -> None:
         report_data = analyze_niche(scraped, proj_ctx)
         record_usage(db, "claude_calls", project_id=project_id)
 
+        # Discard any previously injected report before adding the new one
+        db.query(NicheReport).filter(
+            NicheReport.project_id == project_id,
+            NicheReport.status == "injected",
+        ).update({"status": "discarded"})
+
         report = NicheReport(
             project_id=project_id,
             report_date=datetime.utcnow(),
@@ -328,15 +336,15 @@ def run_niche_report_for_project(project_id: int) -> None:
                 "top_insights": report_data.get("top_insights", []),
             },
             swipe_file=report_data.get("swipe_file", []),
-            status="pending",
+            # Auto-inject — no manual step required. User can still discard via UI.
+            status="injected",
         )
         db.add(report)
 
-        # Notify user to review the new report
         db.add(Notification(
             type="info",
-            title=f"New niche report ready — {project.name if project else f'project #{project_id}'}",
-            message="A weekly niche intelligence report is ready. Go to Niche Intel to inject or discard it.",
+            title=f"Niche report auto-updated — {project.name if project else f'project #{project_id}'}",
+            message="Weekly niche intelligence refreshed and injected automatically. Content generation is now using fresh competitor data.",
         ))
 
         db.commit()

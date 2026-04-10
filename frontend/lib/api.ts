@@ -161,6 +161,16 @@ export const api = {
       }),
   },
 
+  brandBrain: {
+    get: (project_id: number) =>
+      request<BrandBrainData>(`/api/brand-brain/${project_id}`),
+    upsert: (project_id: number, data: Partial<BrandBrainData>) =>
+      request<BrandBrainData>(`/api/brand-brain/${project_id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+  },
+
   niche: {
     listAccounts: (project_id: number) =>
       request<{ accounts: { id: number; x_handle: string; category: string; added_at: string; fetched_at: string | null }[] }>(
@@ -343,6 +353,17 @@ export interface PersonalAuditData {
     weaknesses: string[];
     tweet_reviews: TweetReview[];
   } | null;
+}
+
+export interface BrandBrainData {
+  project_id?: number;
+  mission: string | null;
+  core_beliefs: string[];
+  hard_nos: string[];
+  topic_angles: Record<string, string>;
+  voice_examples: string[];
+  competitor_gap: string | null;
+  updated_at?: string | null;
 }
 
 export interface NicheReportData {

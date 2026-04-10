@@ -79,6 +79,9 @@ class ContentDraft(Base):
     auto_queue = Column(JSON, nullable=True, default=False)  # boolean — in auto-poster reservoir
     scheduled_at = Column(DateTime, nullable=True)
     posted_at = Column(DateTime, nullable=True)
+    # Set after analytics pull: weighted engagement score. Used by feedback loop.
+    # NULL = not yet scored. >0 = scored. Negative scores don't exist — floor is 0.
+    performance_score = Column(JSON, nullable=True)   # float stored as JSON for SQLite compat
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -145,3 +148,36 @@ class NicheReport(Base):
     swipe_file = Column(JSON, nullable=True) # list of best example posts
     status = Column(String(20), nullable=False, default="pending")  # pending | injected | discarded
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class BrandBrain(Base):
+    """
+    The brand's encoded judgment — set once, used in every generation call.
+    Replaces the thin tone/style fields with a rich, opinionated brand context.
+    """
+    __tablename__ = "brand_brains"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, unique=True)
+
+    # What the brand believes that most people don't
+    core_beliefs = Column(JSON, nullable=True)          # list[str]
+
+    # Hard lines — what this brand never says or implies
+    hard_nos = Column(JSON, nullable=True)              # list[str]
+
+    # Topic → angle mapping: when X is trending, here's our take
+    # e.g. {"market crash": "tools work in both directions", "CEX hacks": "not your keys"}
+    topic_angles = Column(JSON, nullable=True)          # dict[str, str]
+
+    # 3-5 hand-written example tweets that sound exactly like this brand
+    voice_examples = Column(JSON, nullable=True)        # list[str]
+
+    # What competitors do that we explicitly don't
+    competitor_gap = Column(Text, nullable=True)
+
+    # One-line mission statement used as grounding context
+    mission = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
