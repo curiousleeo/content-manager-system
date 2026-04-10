@@ -7,7 +7,6 @@ import { store, type Project } from "@/lib/store";
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 const NAV_SECTIONS = [
-  { id: "identity", label: "Core Identity" },
   { id: "brand-brain", label: "Brand Brain" },
   { id: "pillars", label: "Content Pillars" },
   { id: "schedule", label: "Posting Schedule" },
@@ -87,7 +86,7 @@ export default function ProjectsPage() {
   async function openEditor(p: Project | null, isNewProject: boolean) {
     setEditing(p ?? empty());
     setIsNew(isNewProject);
-    setActiveSection("identity");
+    setActiveSection("brand-brain");
     setBrain(emptyBrain());
     if (p?.id) {
       try {
@@ -283,65 +282,31 @@ export default function ProjectsPage() {
           {/* Right form */}
           <div style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "16px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
 
-            {activeSection === "identity" && (
-              <>
-                <SectionHeading>Core Identity</SectionHeading>
-                <FieldRow label="Project Name *">
-                  <input
-                    style={inputStyle()}
-                    value={editing.name ?? ""}
-                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                    placeholder="e.g. GTR Trade, Personal Brand"
-                  />
-                </FieldRow>
-                <FieldRow label="Description">
-                  <input
-                    style={inputStyle()}
-                    value={editing.description ?? ""}
-                    onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                    placeholder="What is this project about?"
-                  />
-                </FieldRow>
-                <FieldRow label="Tone" hint="How should it sound?">
-                  <input
-                    style={inputStyle()}
-                    value={editing.tone ?? ""}
-                    onChange={(e) => setEditing({ ...editing, tone: e.target.value })}
-                    placeholder="e.g. direct, trader-to-trader, no hype"
-                  />
-                </FieldRow>
-                <FieldRow label="Style" hint="How should it be written?">
-                  <input
-                    style={inputStyle()}
-                    value={editing.style ?? ""}
-                    onChange={(e) => setEditing({ ...editing, style: e.target.value })}
-                    placeholder="e.g. short sentences, first person, punchy"
-                  />
-                </FieldRow>
-                <FieldRow label="Avoid" hint="What should never appear?">
-                  <input
-                    style={inputStyle()}
-                    value={editing.avoid ?? ""}
-                    onChange={(e) => setEditing({ ...editing, avoid: e.target.value })}
-                    placeholder="e.g. emojis, buzzwords, corporate language, hype"
-                  />
-                </FieldRow>
-                <FieldRow label="Target Audience">
-                  <input
-                    style={inputStyle()}
-                    value={editing.target_audience ?? ""}
-                    onChange={(e) => setEditing({ ...editing, target_audience: e.target.value })}
-                    placeholder="e.g. active crypto traders, DeFi users"
-                  />
-                </FieldRow>
-              </>
-            )}
-
             {activeSection === "brand-brain" && (
               <>
+                {/* Project name + description — minimal, at top of the only first section */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingBottom: "20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <FieldRow label="Project Name *">
+                    <input
+                      style={inputStyle()}
+                      value={editing.name ?? ""}
+                      onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                      placeholder="e.g. GTR Trade, Personal Brand"
+                    />
+                  </FieldRow>
+                  <FieldRow label="Description">
+                    <input
+                      style={inputStyle()}
+                      value={editing.description ?? ""}
+                      onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                      placeholder="What is this project about?"
+                    />
+                  </FieldRow>
+                </div>
+
                 <SectionHeading>Brand Brain</SectionHeading>
                 <p style={{ fontSize: "12px", color: "var(--ti)", marginTop: "-12px" }}>
-                  Set once. Used in every generation call. This is what makes the content sound like you — not generic AI.
+                  This drives every generation call. The more specific you are, the better the output.
                 </p>
 
                 {/* Mission */}
@@ -479,6 +444,24 @@ export default function ProjectsPage() {
                     value={brain.competitor_gap ?? ""}
                     onChange={(e) => setBrain({ ...brain, competitor_gap: e.target.value })}
                     placeholder="e.g. Competitors act as advisors or imply they know what the market will do. We don't. We give traders tools, not tips."
+                  />
+                </FieldRow>
+
+                {/* Target audience + avoid — moved here from old Core Identity */}
+                <FieldRow label="Target Audience" hint="Who is this written for?">
+                  <input
+                    style={inputStyle()}
+                    value={editing.target_audience ?? ""}
+                    onChange={(e) => setEditing({ ...editing, target_audience: e.target.value })}
+                    placeholder="e.g. active crypto traders, DeFi power users"
+                  />
+                </FieldRow>
+                <FieldRow label="Hard Avoid (quick)" hint="Short list — add full detail in Hard No's above">
+                  <input
+                    style={inputStyle()}
+                    value={editing.avoid ?? ""}
+                    onChange={(e) => setEditing({ ...editing, avoid: e.target.value })}
+                    placeholder="e.g. moon, LFG, revolutionary, chains of emojis"
                   />
                 </FieldRow>
               </>

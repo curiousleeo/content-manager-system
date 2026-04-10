@@ -375,24 +375,17 @@ export default function ResearchPage() {
                   Live Intelligence Stream
                 </p>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                {[
-                  { label: "COMPETITOR TOPICS", color: "var(--green)",    border: "rgba(34,197,94,0.15)"    },
-                  { label: "GOOGLE TRENDS",     color: "var(--gold)",     border: "rgba(255,184,0,0.15)"    },
-                  { label: "GROK MANUAL",       color: "var(--t3)",       border: "rgba(255,255,255,0.07)"  },
-                ].map(({ label, color, border }) => (
-                  <div key={label} style={{ background: "var(--bg-card)", border: `1px solid ${border}`, borderRadius: "12px", overflow: "hidden" }}>
-                    <div style={{ padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color }} />
-                      <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color }}>{label}</span>
-                    </div>
-                    <div style={{ padding: "24px 18px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {[...Array(3)].map((_, j) => (
-                        <div key={j} style={{ height: "12px", borderRadius: "4px", background: "rgba(255,255,255,0.04)", width: j === 0 ? "80%" : j === 1 ? "65%" : "50%" }} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "12px", overflow: "hidden" }}>
+                <div style={{ padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "var(--bg-card2)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--green)" }} />
+                  <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--green)" }}>COMPETITOR TOPICS</span>
+                </div>
+                <div style={{ padding: "20px 18px" }}>
+                  <p style={{ fontSize: "12px", color: "var(--ti)", lineHeight: 1.6, margin: 0 }}>
+                    Reads cached competitor tweets. No API calls.<br />
+                    Hit <strong style={{ color: "var(--t2)" }}>Run</strong> to discover what topics are getting traction in your niche right now.
+                  </p>
+                </div>
               </div>
             </>
           )}
