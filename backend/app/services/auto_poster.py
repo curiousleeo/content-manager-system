@@ -6,7 +6,7 @@ import logging
 import pytz
 from datetime import datetime, timedelta
 from app.core.database import SessionLocal
-from app.models.content import ContentDraft, ContentStatus, Platform, Project, BrandBrain, NicheReport, ResearchTopic
+from app.models.content import ContentDraft, ContentStatus, Platform, Project, BrandBrain, NicheReport
 from app.models.notifications import Notification
 from app.services.claude_service import generate_content
 from app.services.example_bank import build_example_bank
@@ -128,24 +128,17 @@ def auto_post_for_project(project_id: int) -> None:
             text = claimed_draft.body
             pillar = claimed_draft.topic or pillar
         else:
-            # Fall back to live generation — pull latest research insights from DB
-            latest_research = (
-                db.query(ResearchTopic)
-                .filter(
-                    ResearchTopic.project_id == project_id,
-                    ResearchTopic.insights.isnot(None),
-                )
-                .order_by(ResearchTopic.created_at.desc())
-                .first()
-            )
-            research_insights = latest_research.insights if latest_research else {}
+            # Fall back to live generation.
+            # Do NOT pull ResearchTopic.insights — those are competitor analysis notes
+            # (e.g. "Hyperliquid launched copy trading") and will cause Claude to write
+            # about competitor features as if they belong to GTR Trade.
+            # Brand brain + example bank provide all the context needed.
             log.info(
-                "Auto-generating for %s — pillar: %s (queue=%d, research=%s)",
+                "Auto-generating for %s — pillar: %s (queue=%d)",
                 project.name, pillar, queued_count,
-                "loaded" if research_insights else "none",
             )
             text = generate_content(
-                pillar, research_insights, "x",
+                pillar, {}, "x",
                 project=proj_ctx,
                 example_bank=example_bank_ctx,
                 brand_brain=brand_brain_ctx,

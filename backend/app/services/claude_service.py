@@ -126,8 +126,11 @@ def _niche_context(example_bank: dict | None) -> str:
             header = f"@{e['handle']}{hook}" + (f" — {engagement}" if engagement else "")
             lines.append(f"{header}\n   \"{e['text'][:280]}\"{why}")
         parts.append(
-            "High-engagement posts from this niche — study the style, hook, and structure. "
-            "DO NOT copy. Write original content that uses the same energy:\n\n"
+            "High-engagement posts from COMPETITOR accounts — these are not our posts and not our features.\n"
+            "Study ONLY the style, hook structure, and sentence rhythm. "
+            "DO NOT copy their content. "
+            "DO NOT adopt their product claims, feature announcements, or platform specifics. "
+            "Write original GTR Trade content that uses the same energy:\n\n"
             + "\n\n".join(lines)
         )
 
@@ -140,7 +143,8 @@ def _niche_context(example_bank: dict | None) -> str:
             header = f"@{t['handle']}" + (f" — {engagement}" if engagement else "")
             lines.append(f"{header}\n   \"{t['text'][:280]}\"")
         parts.append(
-            "Top posts from watched accounts by engagement (use for style reference only):\n\n"
+            "Top posts from COMPETITOR accounts — style reference only.\n"
+            "Do NOT treat their features, announcements, or platform claims as things we offer or can say:\n\n"
             + "\n\n".join(lines)
         )
 
@@ -178,7 +182,8 @@ def generate_content(topic: str, insights: dict, platform: str = "x", project: d
         "x": "Twitter/X post. Max 280 characters. No hashtag spam (max 1-2 if relevant). Direct, punchy, no fluff.",
     }
 
-    prompt = f"""You are a content writer. Write a {platform_rules.get(platform, platform)} post about: {topic}
+    prompt = f"""You are a content writer for GTR Trade — a self-custodial multi-asset trading platform.
+Write a {platform_rules.get(platform, platform)} post about: {topic}
 
 Use these insights to make it relevant:
 {insights}
@@ -189,6 +194,8 @@ Content rules:
 - No hype words (amazing, incredible, revolutionary)
 - Get to the point immediately
 - Write in first person where it makes sense
+- CRITICAL: You are writing for GTR Trade. Never attribute features or announcements from other platforms (Hyperliquid, Drift, Binance, dYdX, etc.) to GTR Trade
+- CRITICAL: Only write about things GTR Trade actually does — multi-asset self-custodial trading, crypto perps, RWA perps, tokenized stocks, forex-style markets
 {_brand_context(project, brand_brain)}
 {_niche_context(example_bank)}
 {get_generation_guardrails()}
@@ -228,7 +235,8 @@ def batch_generate_content(
         n = per_pillar + (1 if i < remainder else 0)
         distribution.append(f"- {pillar}: {n} posts")
 
-    prompt = f"""You are a content writer. Generate a batch of {count} {platform_rules.get(platform, platform)} posts.
+    prompt = f"""You are a content writer for GTR Trade — a self-custodial multi-asset trading platform.
+Generate a batch of {count} {platform_rules.get(platform, platform)} posts.
 
 Distribution across content pillars:
 {chr(10).join(distribution)}
@@ -242,6 +250,8 @@ Rules for every post:
 - Get to the point immediately
 - Write in first person where it makes sense
 - Each post must be different — vary hooks, angles, and structure
+- CRITICAL: You are writing for GTR Trade. Never attribute features or announcements from other platforms (Hyperliquid, Drift, Binance, dYdX, etc.) to GTR Trade
+- CRITICAL: Only write about things GTR Trade actually does — multi-asset self-custodial trading, crypto perps, RWA perps, tokenized stocks, forex-style markets
 {_brand_context(project, brand_brain)}
 {_niche_context(example_bank)}
 {get_generation_guardrails()}
